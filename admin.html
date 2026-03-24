@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Backoffice - Products</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <main class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <span class="brand-g">g-</span><span class="brand-store">STORE</span>
+      </div>
+      <p class="sidebar-caption">Admin backoffice</p>
+      <nav class="sidebar-nav">
+        <a href="#product-form">Create product</a>
+        <a href="#products-list">Products list</a>
+        <a href="/">Back to landing</a>
+      </nav>
+    </aside>
+
+    <section class="admin-content">
+      <section class="auth-panel panel" id="auth-panel">
+        <div class="panel-head">
+          <p class="eyebrow">Admin Login</p>
+          <h1>Admin access</h1>
+          <p>Connect with the admin email and password to access the product backoffice.</p>
+        </div>
+
+        <form id="admin-login-form" class="product-form">
+          <label class="full">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="admin@gstore.local" required />
+          </label>
+
+          <label class="full">
+            <span>Password</span>
+            <input type="password" name="password" placeholder="••••••••" required />
+          </label>
+
+          <button class="submit-btn" type="submit">Login as admin</button>
+        </form>
+
+        <p class="form-message" id="auth-message"></p>
+      </section>
+
+      <section class="dashboard" id="dashboard" hidden>
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">Dashboard</p>
+            <h1>Product management</h1>
+          </div>
+          <div class="header-actions">
+            <div class="status-pill" id="api-status">API loading...</div>
+            <button class="logout-btn" id="logout-btn" type="button">Logout</button>
+          </div>
+        </header>
+
+        <section class="panel user-panel">
+          <div class="user-card">
+            <div class="user-avatar" id="user-avatar">D</div>
+            <div>
+              <strong id="user-name">Admin User</strong>
+              <p id="user-email">Connected as admin</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-grid">
+          <section class="panel form-panel" id="product-form">
+            <div class="panel-head">
+              <h2>Add a product</h2>
+              <p>Create a new item with price, description, category and tags.</p>
+            </div>
+
+            <form id="product-form-element" class="product-form">
+              <label>
+                <span>Product name</span>
+                <input type="text" name="name" placeholder="Tow Truck Driver Job 2" required />
+              </label>
+
+              <label>
+                <span>Price</span>
+                <input type="number" name="price" min="0" step="0.01" placeholder="7.20" required />
+              </label>
+
+              <label class="full">
+                <span>Description</span>
+                <textarea name="description" rows="5" placeholder="Describe the product..." required></textarea>
+              </label>
+
+              <label>
+                <span>Category</span>
+                <input type="text" name="category" placeholder="Jobs" required />
+              </label>
+
+              <label>
+                <span>Tags</span>
+                <input type="text" name="tags" placeholder="tow truck, service, vehicles" />
+              </label>
+
+              <button type="submit" class="submit-btn">Create product</button>
+            </form>
+
+            <p class="form-message" id="form-message"></p>
+          </section>
+
+          <section class="panel list-panel" id="products-list">
+            <div class="panel-head">
+              <h2>Saved products</h2>
+              <p>All products stored in PostgreSQL via Neon.</p>
+            </div>
+
+            <div class="products-list" id="products-list-container">
+              <div class="empty-state">Loading products...</div>
+            </div>
+          </section>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

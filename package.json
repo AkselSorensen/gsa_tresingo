@@ -1,0 +1,17 @@
+{
+  "name": "gsa_tresingo",
+  "version": "1.0.0",
+  "description": "Landing page and admin backoffice for products",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1"
+  }
+}

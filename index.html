@@ -15,245 +15,184 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="components/hero/style.css" />
+    <link rel="stylesheet" href="components/trending/style.css" />
+    <link rel="stylesheet" href="components/showcase/style.css" />
+    <link rel="stylesheet" href="components/scripts/style.css" />
   </head>
   <body data-page="home">
     <div class="site-shell">
-      <header class="site-header">
-        <div class="container header-row">
-          <a class="brand" href="index.html" aria-label="Retour à l'accueil GSA">
-            <span class="brand-mark">GSA</span>
-            <span class="brand-text">Marketplace</span>
+      <header class="site-header site-header-unified">
+        <div class="container header-row header-row-unified">
+          <a class="brand brand-unified" href="index.html" aria-label="Retour à l'accueil GSA">
+            <span class="brand-mark brand-mark-unified">g-<em>STORE</em></span>
           </a>
 
-          <nav class="main-nav">
-            <a href="catalogue.html">Produit</a>
-            <a href="prestation.html">Prestation</a>
+          <nav class="main-nav main-nav-unified">
+            <a href="catalogue.html">Marketplace</a>
             <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support</a>
-            <a href="about.html">À propos</a>
+            <a href="about.html">About</a>
           </nav>
 
-          <div class="header-tools">
-            <label class="search-field">
-              <input id="global-search-input" type="search" placeholder="Rechercher un produit, un tag..." />
+          <div class="header-tools header-tools-unified">
+            <button id="language-toggle" class="ghost-button nav-mini-button" type="button">EN</button>
+            <label class="search-field search-field-unified">
+              <input id="global-search-input" type="search" placeholder="Rechercher" />
               <span>⌕</span>
             </label>
-            <button id="language-toggle" class="ghost-button" type="button">EN</button>
-            <a class="ghost-button" href="cart.html">Panier <span id="cart-count-badge">0</span></a>
-            <a class="primary-button" href="login.html">Log in / Register</a>
+            <a class="ghost-button nav-auth-button" href="login.html">Log in</a>
+            <a class="primary-button nav-register-button" href="login.html">Register</a>
           </div>
         </div>
       </header>
 
       <main id="page-content">
-        <section class="hero-section">
+        <section class="hero-section hero-section-v2">
           <div class="hero-backdrop"></div>
-          <div class="container hero-grid">
-            <div class="hero-copy">
-              <span class="eyebrow">GSA — Une vision claire. Un écosystème solide. Un standard à venir.</span>
-              <h1>Distribution d'assets Garry's Mod et accompagnement de projet sérieux.</h1>
-              <p>
-                Le marché GMod est saturé, mais mal structuré. GSA professionnalise la mise en avant, la vente,
-                l'accompagnement, le support et la diffusion d'assets premium pour les serveurs francophones et
-                internationaux.
-              </p>
+          <div class="hero-noise"></div>
 
-              <div class="hero-actions">
-                <a class="primary-button" href="catalogue.html">Explorer le catalogue</a>
-                <a class="ghost-button" href="prestation.html">Découvrir les prestations</a>
+          <div class="container hero-shell hero-shell-frame">
+            <div class="hero-grid hero-grid-v2">
+              <div class="hero-copy hero-copy-v2">
+                <h1>The best Garry’s Mod scripts.</h1>
+                <p>
+                  G-Store is the ultimate marketplace for Garry’s Mod featuring scripts, gamemodes, maps, mods,
+                  and custom graphics. With assets from top creators, you can easily expand, optimize, and
+                  personalize your server.
+                </p>
               </div>
 
-              <ul class="hero-points">
-                <li>Mise en valeur graphique et commerciale</li>
-                <li>Support client et diffusion internationale</li>
-                <li>Assets testés, documentés et exploitables immédiatement</li>
-              </ul>
-            </div>
-
-            <aside class="hero-highlight-card">
-              <span class="chip chip-accent">Marketplace premium</span>
-              <h2>Le créateur se concentre sur son domaine. GSA gère la distribution complète.</h2>
-              <p>
-                Visuels, démonstrations, relation client, vente, suivi, communication : une fois le produit sorti, le
-                créateur n'a plus qu'à encaisser.
-              </p>
-              <div class="stat-grid">
-                <article>
-                  <strong id="hero-products-count">0</strong>
-                  <span>assets en vitrine</span>
-                </article>
-                <article>
-                  <strong>FR / EN</strong>
-                  <span>switch de langue</span>
-                </article>
-                <article>
-                  <strong>24/7</strong>
-                  <span>accès au support Discord</span>
-                </article>
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section class="content-section">
-          <div class="container section-head">
-            <div>
-              <span class="eyebrow">Tendance</span>
-              <h2>Les produits mis en avant cette semaine</h2>
-            </div>
-            <a class="section-link" href="catalogue.html?tag=tendance">Tout voir</a>
-          </div>
-
-          <div class="container featured-grid" id="trending-featured"></div>
-
-          <div class="container">
-            <div class="carousel-shell">
-              <button class="carousel-arrow" type="button" data-carousel-prev="trending-carousel">←</button>
-              <div class="product-carousel" id="trending-carousel"></div>
-              <button class="carousel-arrow" type="button" data-carousel-next="trending-carousel">→</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="proof-strip">
-          <div class="container">
-            <div class="section-head compact">
-              <div>
-                <span class="eyebrow">Social proof</span>
-                <h2>Collaborateurs</h2>
+              <div class="hero-figure" aria-hidden="true">
+                <div class="hero-figure-glow"></div>
+                <div class="hero-figure-image"></div>
               </div>
             </div>
-            <div class="logo-list" id="collaborators-list"></div>
           </div>
         </section>
 
-        <section class="content-section alt">
-          <div class="container section-head">
-            <div>
-              <span class="eyebrow">Réduction</span>
-              <h2>Offres actives à saisir</h2>
-            </div>
-            <a class="section-link" href="catalogue.html?discount=true">Tout voir</a>
-          </div>
+        <section class="content-section trending-section-v2">
+          <div class="container trending-shell">
+            <div class="trending-panel">
+              <div class="trending-panel-head">
+                <div class="trending-title-wrap">
+                  <span class="trending-title-icon">↗</span>
+                  <h2>Trending</h2>
+                </div>
+                <a class="trending-view-all" href="catalogue.html?tag=tendance">View All</a>
+              </div>
 
-          <div class="container">
-            <div class="carousel-shell">
-              <button class="carousel-arrow" type="button" data-carousel-prev="discount-carousel">←</button>
-              <div class="product-carousel three-up" id="discount-carousel"></div>
-              <button class="carousel-arrow" type="button" data-carousel-next="discount-carousel">→</button>
-            </div>
-          </div>
-        </section>
+              <div class="trending-featured-grid" id="trending-featured"></div>
 
-        <section class="proof-strip alt">
-          <div class="container">
-            <div class="section-head compact">
-              <div>
-                <span class="eyebrow">Social proof</span>
-                <h2>Communautés clientes</h2>
+              <div class="trending-bottom-row">
+                <button class="trending-nav-arrow" type="button" data-carousel-prev="trending-carousel">←</button>
+                <div class="trending-carousel-strip" id="trending-carousel"></div>
+                <button class="trending-nav-arrow" type="button" data-carousel-next="trending-carousel">→</button>
+              </div>
+
+              <div class="trending-progress">
+                <span></span>
               </div>
             </div>
-            <div class="logo-list" id="communities-list"></div>
           </div>
         </section>
 
-        <section class="content-section">
-          <div class="container section-head with-actions">
-            <div>
-              <span class="eyebrow">Produit</span>
-              <h2>Par catégorie</h2>
-            </div>
+        <section class="showcase-banner-section">
+          <div class="container showcase-banner-shell">
+            <div class="showcase-banner"><span>SOCIAL PROOF</span></div>
+          </div>
+        </section>
 
-            <div class="inline-actions">
-              <div class="sort-pills">
-                <button class="filter-pill active" type="button" data-sort-mode="popular">Populaire</button>
-                <button class="filter-pill" type="button" data-sort-mode="new">Nouveau</button>
-                <button class="filter-pill" type="button" data-sort-mode="discount">Réduction</button>
+        <section class="sales-section-v2">
+          <div class="container sales-shell">
+            <div class="sales-panel">
+              <div class="sales-panel-head">
+                <div class="sales-title-wrap">
+                  <span class="sales-title-icon">↙</span>
+                  <h2>Sales</h2>
+                </div>
+                <a class="sales-view-all" href="catalogue.html?discount=true">View All</a>
               </div>
-              <a class="section-link" href="catalogue.html">Tout voir</a>
+
+              <div class="sales-row">
+                <button class="sales-nav-arrow" type="button" data-carousel-prev="discount-carousel">←</button>
+                <div class="sales-carousel-strip" id="discount-carousel"></div>
+                <button class="sales-nav-arrow" type="button" data-carousel-next="discount-carousel">→</button>
+              </div>
             </div>
           </div>
-
-          <div class="container category-rows" id="category-showcase"></div>
         </section>
 
-        <section class="editorial-section">
-          <div class="container editorial-grid">
-            <article class="editorial-card">
-              <span class="eyebrow">Accompagnement de projet</span>
-              <h2>La base d'un serveur qui dure</h2>
-              <p>
-                Un serveur GMod ne meurt pas par manque d'idées. Il meurt souvent à cause de mauvais choix techniques,
-                d'une économie bancale, d'un gameplay mal équilibré et de mois de développement inutile.
-              </p>
-              <ul>
-                <li>Analyse du plateau de jeu, de l'économie et de la durabilité du concept</li>
-                <li>Optimisation du temps, du budget et de l'énergie</li>
-                <li>Mise en relation avec des prestataires fiables et adaptés</li>
-              </ul>
-            </article>
-
-            <article class="editorial-card">
-              <span class="eyebrow">Game design</span>
-              <h2>Transformer un serveur en expérience</h2>
-              <p>
-                GSA intervient sur la rétention des joueurs, l'équilibrage PVP / grind, la lisibilité du gameplay et
-                la réflexion de maps, systèmes et mécaniques.
-              </p>
-              <ul>
-                <li>Moins de frustration</li>
-                <li>Plus d'attachement joueur</li>
-                <li>Un serveur qui donne envie de rester</li>
-              </ul>
-            </article>
-
-            <article class="editorial-card">
-              <span class="eyebrow">Vente d'assets</span>
-              <h2>Pas une boutique, un standard</h2>
-              <p>
-                Models, maps, particules, animations, interface utilisateur et bien plus à venir. Créés par des
-                prestataires sérieux, testés, documentés et prêts à l'emploi.
-              </p>
-              <ul>
-                <li>Qualité maximale</li>
-                <li>Prix archi compétitif</li>
-                <li>Déploiement rapide</li>
-              </ul>
-            </article>
+        <section class="showcase-banner-section">
+          <div class="container showcase-banner-shell">
+            <div class="showcase-banner"><span>SOCIAL PROOF</span></div>
           </div>
         </section>
+
+        <section class="scripts-section-v2">
+          <div class="container scripts-shell">
+            <div class="scripts-panel">
+              <div class="scripts-panel-head">
+                <div class="scripts-title-wrap">
+                  <span class="scripts-title-icon">〈/〉</span>
+                  <h2>Scripts</h2>
+                </div>
+                <a class="scripts-view-all" href="catalogue.html">View All</a>
+              </div>
+
+              <div class="scripts-toolbar">
+                <div class="scripts-filters">
+                  <button class="scripts-filter" type="button">☼ New</button>
+                  <button class="scripts-filter" type="button">◌ Updated</button>
+                  <button class="scripts-filter" type="button">↗ Trending</button>
+                  <button class="scripts-filter active" type="button">⬢ Popular</button>
+                </div>
+
+                <button class="scripts-sort" type="button">All Time ⌄</button>
+              </div>
+
+              <div class="scripts-grid" id="category-showcase"></div>
+
+              <div class="scripts-footer">
+                <div class="scripts-footer-brand-wrap">
+                  <a class="brand footer-brand scripts-footer-brandmark" href="index.html">
+                    <span class="brand-mark">GSA</span>
+                    <span class="brand-text">Marketplace</span>
+                  </a>
+                  <p class="scripts-footer-copy">
+                    GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré
+                    uniquement par Tresingo.
+                  </p>
+                </div>
+                <div class="scripts-footer-links">
+                  <div class="scripts-footer-column">
+                    <h3>Navigation</h3>
+                    <a href="catalogue.html">Catalogue</a>
+                    <a href="prestation.html">Prestation</a>
+                    <a href="about.html">À propos</a>
+                    <a href="cart.html">Panier</a>
+                  </div>
+                  <div class="scripts-footer-column">
+                    <h3>Légal & contact</h3>
+                    <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Discord Ticket</a>
+                    <a href="login.html">Connexion</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                  </div>
+                </div>
+                <div class="scripts-footer-bottom">
+                  <span>© 2026 GSA</span>
+                  <span>g-<em>STORE</em></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </main>
-
-      <footer class="site-footer">
-        <div class="container footer-grid">
-          <div>
-            <a class="brand footer-brand" href="index.html">
-              <span class="brand-mark">GSA</span>
-              <span class="brand-text">Marketplace</span>
-            </a>
-            <p class="footer-copy">
-              GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré
-              uniquement par Tresingo.
-            </p>
-          </div>
-
-          <div class="footer-column">
-            <h3>Navigation</h3>
-            <a href="catalogue.html">Catalogue</a>
-            <a href="prestation.html">Prestation</a>
-            <a href="about.html">À propos</a>
-            <a href="cart.html">Panier</a>
-          </div>
-
-          <div class="footer-column">
-            <h3>Légal & contact</h3>
-            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Discord Ticket</a>
-            <a href="login.html">Connexion</a>
-            <span>© 2026 GSA</span>
-          </div>
-        </div>
-      </footer>
     </div>
 
+    <script src="components/hero/script.js"></script>
+    <script src="components/trending/script.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

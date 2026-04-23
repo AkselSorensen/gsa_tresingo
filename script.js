@@ -147,6 +147,112 @@ function productCard(product, detailed = false) {
   `;
 }
 
+function trendingCard(product, featured = false) {
+  const thumb =
+    product.thumbnail ||
+    product.media?.[0]?.thumbnail ||
+    product.media?.[0]?.url ||
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80";
+
+  const title = escapeHtml(product.title);
+  const meta = escapeHtml(product.shortDescription || product.category || product.categoryName || "");
+  const rating = Number(product.rating || 0).toFixed(1);
+  const reviews = product.reviewCount || 0;
+  const price = currency(product.price);
+
+  return featured
+    ? `
+      <article class="trending-featured-card">
+        <a class="trending-featured-media" href="product.html?slug=${encodeURIComponent(product.slug)}">
+          <img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy" />
+        </a>
+        <div class="trending-featured-body">
+          <h3 class="trending-featured-title"><a href="product.html?slug=${encodeURIComponent(product.slug)}">${title}</a></h3>
+          <div class="trending-featured-meta">${meta}</div>
+          <div class="trending-featured-footer">
+            <span>${rating} ★ (${reviews})</span>
+            <span class="trending-price">${price}</span>
+          </div>
+        </div>
+      </article>
+    `
+    : `
+      <article class="trending-mini-card">
+        <a class="trending-mini-media" href="product.html?slug=${encodeURIComponent(product.slug)}">
+          <img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy" />
+        </a>
+        <div class="trending-mini-body">
+          <h3 class="trending-mini-title"><a href="product.html?slug=${encodeURIComponent(product.slug)}">${title}</a></h3>
+          <div class="trending-mini-footer">
+            <span>${rating} ★ (${reviews})</span>
+            <span class="trending-price">${price}</span>
+          </div>
+        </div>
+      </article>
+    `;
+}
+
+function salesCard(product) {
+  const thumb =
+    product.thumbnail ||
+    product.media?.[0]?.thumbnail ||
+    product.media?.[0]?.url ||
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80";
+
+  const title = escapeHtml(product.title);
+  const rating = Number(product.rating || 0).toFixed(1);
+  const reviews = product.reviewCount || 0;
+  const discount = Number(product.discountPercent || 0);
+
+  return `
+    <article class="sales-card">
+      <a class="sales-card-media" href="product.html?slug=${encodeURIComponent(product.slug)}">
+        <img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy" />
+      </a>
+      <div class="sales-card-body">
+        <h3 class="sales-card-title"><a href="product.html?slug=${encodeURIComponent(product.slug)}">${title}</a></h3>
+        <div class="sales-card-footer">
+          <span>${rating} ★ (${reviews})</span>
+          <div class="sales-pricing">
+            ${discount > 0 ? `<span class="sales-discount">-${discount}%</span>` : ""}
+            ${product.oldPrice ? `<span class="old">${currency(product.oldPrice)}</span>` : ""}
+            <span class="new">${currency(product.price)}</span>
+          </div>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function scriptLibraryCard(product, categoryName = "") {
+  const thumb =
+    product.thumbnail ||
+    product.media?.[0]?.thumbnail ||
+    product.media?.[0]?.url ||
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80";
+
+  const title = escapeHtml(product.title);
+  const meta = escapeHtml(product.shortDescription || categoryName || product.category || "");
+  const rating = Number(product.rating || 0).toFixed(1);
+  const reviews = product.reviewCount || 0;
+
+  return `
+    <article class="script-card-v2">
+      <a class="script-card-media" href="product.html?slug=${encodeURIComponent(product.slug)}">
+        <img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy" />
+      </a>
+      <div class="script-card-body">
+        <h3 class="script-card-title"><a href="product.html?slug=${encodeURIComponent(product.slug)}">${title}</a></h3>
+        <div class="script-card-meta">${meta}</div>
+        <div class="script-card-footer">
+          <span>${rating} ★ (${reviews})</span>
+          <span class="script-card-price">${currency(product.price)}</span>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function updateHeaderLabels() {
   const searchInput = document.getElementById("global-search-input");
   if (searchInput) searchInput.placeholder = t("searchPlaceholder");
@@ -282,37 +388,32 @@ function renderHomePage() {
   if (heroCount) heroCount.textContent = String(state.bootstrap.trending?.length || 0);
 
   const [first, second, ...rest] = state.bootstrap.trending || [];
-  if (featured) featured.innerHTML = [first, second].filter(Boolean).map((p) => productCard(p, true)).join("");
-  if (carousel) carousel.innerHTML = rest.map((p) => productCard(p)).join("");
-  if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).map((p) => productCard(p)).join("");
-  if (collaborators) {
-    collaborators.innerHTML = (state.bootstrap.collaborators || [])
-      .map((name) => `<span class="logo-pill">${escapeHtml(name)}</span>`)
-      .join("");
-  }
-  if (communities) {
-    communities.innerHTML = (state.bootstrap.communities || [])
-      .map((name) => `<span class="logo-pill">${escapeHtml(name)}</span>`)
-      .join("");
-  }
+  if (featured) featured.innerHTML = [first, second].filter(Boolean).map((p) => trendingCard(p, true)).join("");
+  if (carousel) carousel.innerHTML = rest.map((p) => trendingCard(p)).join("");
+  if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).slice(0, 3).map((p) => salesCard(p)).join("");
 
   if (categoryShowcase) {
-    categoryShowcase.innerHTML = (state.bootstrap.featuredByCategory || [])
+    const scriptPool = [
+      ...(state.bootstrap.trending || []),
+      ...(state.bootstrap.discounts || []),
+      ...((state.bootstrap.featuredByCategory || []).flatMap((group) =>
+        (group.products || []).map((product) => ({ ...product, category: group.categoryName }))
+      ) || []),
+    ].filter(Boolean);
+
+    const uniqueScripts = Array.from(new Map(scriptPool.map((product) => [product.slug, product])).values());
+    const rows = [];
+
+    for (let index = 0; index < Math.min(uniqueScripts.length, 15); index += 5) {
+      rows.push(uniqueScripts.slice(index, index + 5));
+    }
+
+    categoryShowcase.innerHTML = rows
+      .filter((row) => row.length)
       .map(
-        (group) => `
-        <section class="category-row">
-          <div class="category-row-head">
-            <div>
-              <h3>${escapeHtml(group.categoryName)}</h3>
-              <p>${escapeHtml(
-                state.categories.find((c) => c.slug === group.categorySlug)?.description || ""
-              )}</p>
-            </div>
-            <a class="section-link" href="catalogue.html?category=${encodeURIComponent(group.categorySlug)}">Tout voir</a>
-          </div>
-          <div class="product-carousel static-grid">
-            ${group.products.map((product) => productCard({ ...product, category: group.categoryName })).join("")}
-          </div>
+        (row) => `
+        <section class="scripts-row">
+          ${row.map((product) => scriptLibraryCard(product, product.category || "Scripts")).join("")}
         </section>
       `
       )
@@ -336,6 +437,65 @@ function renderHomePage() {
   });
 }
 
+function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort) {
+  const categoryLinks = [
+    `<a class="market-filter-link ${!activeCategory ? "active" : ""}" href="catalogue.html">Overview <span>(All)</span></a>`,
+    ...categories.map(
+      (item) =>
+        `<a class="market-filter-link ${item.slug === activeCategory ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(
+          search
+        )}&category=${encodeURIComponent(item.slug)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(
+          discount
+        )}&sort=${encodeURIComponent(sort)}">${escapeHtml(item.name)} <span>(${item.productCount || 0})</span></a>`
+    ),
+  ].join("");
+
+  return `
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">Categories</div>
+      <div class="market-filter-stack">${categoryLinks}</div>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">Tags</div>
+      <div class="market-select-wrap">
+        <select onchange="if(this.value) window.location.href=this.value">
+          <option value="">Sélectionner</option>
+          <option value="catalogue.html?tag=darkrp">DarkRP</option>
+          <option value="catalogue.html?tag=ui">UI</option>
+          <option value="catalogue.html?tag=job">Job</option>
+          <option value="catalogue.html?tag=economy">Economy</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">Price</div>
+      <div class="market-range-lines">
+        <div class="market-range-bar"></div>
+        <div class="market-range-values"><span>$1</span><span>$0</span></div>
+      </div>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">Rating</div>
+      <label class="market-check"><input type="checkbox" /> ★★★★★ <span>(194)</span></label>
+      <label class="market-check"><input type="checkbox" /> ★★★★☆ <span>(85)</span></label>
+      <label class="market-check"><input type="checkbox" /> ★★★☆☆ <span>(22)</span></label>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">Sale</div>
+      <label class="market-check"><input type="checkbox" ${discount === "true" ? "checked" : ""} onclick="window.location.href='catalogue.html?search=${encodeURIComponent(
+        search
+      )}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=true&sort=${encodeURIComponent(
+        sort
+      )}'" /> On sale</label>
+      <label class="market-check"><input type="checkbox" /> Only show sales</label>
+    </div>
+  `;
+}
+
 async function renderCataloguePage() {
   const app = document.getElementById("catalogue-page");
   if (!app) return;
@@ -354,55 +514,38 @@ async function renderCataloguePage() {
   );
 
   app.innerHTML = `
-    <section class="page-hero small">
-      <div class="container">
-        <span class="eyebrow">Produit</span>
-        <h1>Catalogue GSA</h1>
-        <p>Parcourez les assets, imports, maps, interfaces et packs premium pensés pour Garry's Mod.</p>
+    <section class="market-hero-strip">
+      <div class="container market-hero-shell">
+        <div class="market-breadcrumb">Home <span>›</span> Scripts</div>
+        <div class="market-hero-content">
+          <div>
+            <h1>Stand out your server among all.</h1>
+          </div>
+          <div class="market-hero-art"></div>
+        </div>
       </div>
     </section>
-    <section class="page-section">
-      <div class="container split-layout catalogue-layout">
-        <aside class="catalog-sidebar">
-          <div class="panel filters-panel">
-            <h3>Filtres</h3>
-            <div class="filter-stack">
-              <div class="filter-group">
-                <span class="filter-title">Catégories</span>
-                <div class="filter-list vertical">
-                  <a class="filter-chip ${!category ? "active" : ""}" href="catalogue.html">Toutes</a>
-                  ${state.categories
-                    .map(
-                      (item) =>
-                        `<a class="filter-chip ${item.slug === category ? "active" : ""}" href="catalogue.html?category=${encodeURIComponent(item.slug)}">${escapeHtml(item.name)}</a>`
-                    )
-                    .join("")}
-                </div>
-              </div>
-              <div class="filter-group">
-                <span class="filter-title">Tri</span>
-                <div class="filter-list vertical">
-                  <a class="filter-chip ${sort === "popular" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=popular">Populaire</a>
-                  <a class="filter-chip ${sort === "new" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=new">Nouveau</a>
-                  <a class="filter-chip ${sort === "discount" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=discount">Réduction</a>
-                </div>
-              </div>
-            </div>
-          </div>
+
+    <section class="market-page-section">
+      <div class="container market-layout">
+        <aside class="market-sidebar">
+          ${renderCatalogueFilters(state.categories, category, search, tag, discount, sort)}
         </aside>
-        <div class="catalog-main">
-          <div class="catalog-toolbar panel">
-            <div>
-              <strong>${data.total} résultats</strong>
-              <p>Affichage inspiré marketplace sombre, dense et orienté conversion.</p>
+
+        <div class="market-main">
+          <div class="market-toolbar">
+            <div class="market-toolbar-left">
+              <span class="market-chip active">Hide Filters</span>
             </div>
-            <div class="tag-list">
-              ${category ? `<span class="product-tag">${escapeHtml(category)}</span>` : ""}
-              ${tag ? `<span class="product-tag">${escapeHtml(tag)}</span>` : ""}
-              ${discount === "true" ? `<span class="product-tag">Réduction</span>` : ""}
+            <div class="market-toolbar-right">
+              <span class="market-sort ${sort === "popular" ? "active" : ""}">All Time</span>
+              <span class="market-sort ${sort === "new" ? "active" : ""}">Date Published</span>
+              <span class="market-sort">Updated</span>
+              <span class="market-sort ${sort === "discount" ? "active" : ""}">Trending</span>
             </div>
           </div>
-          <div class="catalog-grid">
+
+          <div class="market-products-grid ${data.items.length ? "" : "is-empty"}">
             ${
               data.items.length
                 ? data.items.map((product) => productCard(product)).join("")
@@ -487,21 +630,23 @@ async function renderProductPage() {
   const media = product.media || [];
 
   app.innerHTML = `
-    <section class="page-section product-page-shell">
-      <div class="container product-header product-topbar">
-        <div>
-          <span class="eyebrow">${escapeHtml(product.category)}</span>
-          <h1>${escapeHtml(product.title)}</h1>
+    <section class="market-product-page">
+      <div class="container market-product-shell">
+        <div class="market-product-breadcrumb">GSA <span>›</span> Scripts <span>›</span> ${escapeHtml(product.title)}</div>
+        <div class="market-product-titlebar">
+          <div>
+            <h1>${escapeHtml(product.title)}</h1>
+          </div>
+          <div class="market-product-stats">
+            <span>👁 ${product.views || 268}</span>
+            <span>★ ${Number(product.rating || 0).toFixed(1)} (${product.reviewCount || 0})</span>
+          </div>
         </div>
-        <div class="product-head-meta">
-          <span>${product.views} vues</span>
-          <span>★ ${Number(product.rating).toFixed(1)} (${product.reviewCount})</span>
-        </div>
-      </div>
-      <div class="container product-layout product-layout-reference">
-        <section class="product-main-panel">
-          <div class="product-main-media" id="main-media-slot">${renderMainMedia(media[0])}</div>
-          <div class="media-thumbs">
+
+        <div class="market-product-layout">
+          <section class="market-product-main">
+            <div class="market-product-media" id="main-media-slot">${renderMainMedia(media[0])}</div>
+            <div class="market-product-thumbs media-thumbs">
             ${media
               .map(
                 (item, index) => `
@@ -511,16 +656,16 @@ async function renderProductPage() {
               `
               )
               .join("")}
-          </div>
-          <div class="tabbed-panel">
-            <div class="tab-buttons">
+            </div>
+            <div class="market-product-tabs tabbed-panel">
+              <div class="tab-buttons market-product-tab-buttons">
               <button class="tab-button active" type="button" data-tab="description">${t("description")}</button>
               <button class="tab-button" type="button" data-tab="installation">${t("install")}</button>
               <button class="tab-button" type="button" data-tab="reviews">${t("reviews")} (${product.reviewCount || 0})</button>
-            </div>
-            <div class="tab-content active" data-tab-panel="description"><p>${escapeHtml(product.description).replace(/\n/g, "<br />")}</p></div>
-            <div class="tab-content" data-tab-panel="installation"><p>${escapeHtml(product.installation).replace(/\n/g, "<br />")}</p></div>
-            <div class="tab-content" data-tab-panel="reviews">
+              </div>
+              <div class="tab-content active" data-tab-panel="description"><p>${escapeHtml(product.description).replace(/\n/g, "<br />")}</p></div>
+              <div class="tab-content" data-tab-panel="installation"><p>${escapeHtml(product.installation).replace(/\n/g, "<br />")}</p></div>
+              <div class="tab-content" data-tab-panel="reviews">
               ${
                 (product.reviews || [])
                   .map(
@@ -529,45 +674,74 @@ async function renderProductPage() {
                   )
                   .join("") || "<p>Aucun avis pour le moment.</p>"
               }
+              </div>
             </div>
-          </div>
-        </section>
-        <aside class="product-sidebar">
-          <div class="panel sticky product-side-panel">
-            <div class="price-panel">
-              <div class="price-cluster large">
+          </section>
+
+          <aside class="market-product-sidebar">
+            <div class="market-side-card">
+              <div class="market-side-price-row">
                 ${product.discountPercent > 0 ? `<span class="old-price">${currency(product.oldPrice)}</span>` : ""}
                 <strong>${currency(product.price)}</strong>
               </div>
-              <button class="primary-button full" type="button" id="add-to-cart-button" data-product-id="${product.id}">${t("addToCart")}</button>
+              <button class="primary-button full market-buy-button" type="button" id="add-to-cart-button" data-product-id="${product.id}">${t("addToCart")}</button>
             </div>
-            <div class="seller-panel">
-              <img src="${escapeHtml(product.sellerAvatar || "https://via.placeholder.com/64")}" alt="${escapeHtml(product.sellerName)}" />
-              <div>
-                <span>${t("seller")}</span>
-                <strong>${escapeHtml(product.sellerName)}</strong>
-                <small>Model Creator</small>
+
+            <div class="market-side-card market-side-meta">
+              <div class="market-side-block">
+                <span class="market-side-label">Author Info</span>
+                <div class="market-author-row">
+                  <img src="${escapeHtml(product.sellerAvatar || "https://via.placeholder.com/64")}" alt="${escapeHtml(product.sellerName)}" />
+                  <div>
+                    <strong>${escapeHtml(product.sellerName)}</strong>
+                    <small>Verified Creator</small>
+                  </div>
+                </div>
               </div>
-            </div>
-            <ul class="detail-list">
-              <li><span>Mise en ligne</span><strong>${new Date(product.createdAt).toLocaleDateString()}</strong></li>
-              <li><span>Dernière mise à jour</span><strong>${new Date(product.updatedAt).toLocaleDateString()}</strong></li>
-              <li><span>${t("category")}</span><strong>${escapeHtml(product.category)}</strong></li>
-            </ul>
-            <div class="side-section">
-              <span class="side-section-title">Tags</span>
-              <div class="tag-list">
-                ${(product.tags || []).map((tag) => `<a class="filter-chip" href="catalogue.html?tag=${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join("")}
+
+              <div class="market-side-block">
+                <span class="market-side-label">Version Information</span>
+                <ul class="market-side-list">
+                  <li><span>Current Version</span><strong>v${escapeHtml(product.version || "4.4")}</strong></li>
+                  <li><span>Last Updated</span><strong>${new Date(product.updatedAt).toLocaleDateString()}</strong></li>
+                </ul>
               </div>
-            </div>
-            <div class="side-section">
-              <span class="side-section-title">Catégories</span>
-              <div class="tag-list">
-                <a class="filter-chip active" href="catalogue.html?category=${encodeURIComponent(product.categorySlug)}">${escapeHtml(product.category)}</a>
+
+              <div class="market-side-block">
+                <span class="market-side-label">Changelog</span>
+                <ul class="market-side-list">
+                  <li><span>Version</span><strong>${escapeHtml(product.version || "4.4")}</strong></li>
+                  <li><span>Released</span><strong>${new Date(product.createdAt).toLocaleDateString()}</strong></li>
+                </ul>
+              </div>
+
+              <div class="market-side-block">
+                <span class="market-side-label">Requirements</span>
+                <div class="market-side-note">${escapeHtml(product.installation || "Default framework requirements.")}</div>
+              </div>
+
+              <div class="market-side-block">
+                <span class="market-side-label">Tags</span>
+                <div class="tag-list market-side-tags">
+                  ${(product.tags || []).map((tag) => `<a class="filter-chip" href="catalogue.html?tag=${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join("")}
+                </div>
+              </div>
+
+              <div class="market-side-block">
+                <span class="market-side-label">Category</span>
+                <div class="tag-list market-side-tags">
+                  <a class="filter-chip active" href="catalogue.html?category=${encodeURIComponent(product.categorySlug)}">${escapeHtml(product.category)}</a>
+                </div>
+              </div>
+
+              <div class="market-side-block">
+                <span class="market-side-label">Need updates & Discord?</span>
+                <div class="market-side-note">Join our Discord to receive updates and support for this resource.</div>
+                <a class="ghost-button full center" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Join our Discord</a>
               </div>
             </div>
           </div>
-        </aside>
+        </div>
       </div>
     </section>
   `;

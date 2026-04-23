@@ -1,400 +1,259 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>G-Store Landing Page</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="page-shell">
-    <section class="hero">
-      <div class="hero-backdrop"></div>
-      <header class="topbar">
-        <div class="brand">
-          <span class="brand-g">g-</span><span class="brand-store">STORE</span>
-        </div>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GSA — Marketplace Garry's Mod</title>
+    <meta
+      name="description"
+      content="GSA structure la distribution d'assets Garry's Mod, les prestations et l'accompagnement de projet dans une marketplace premium."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="home">
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="container header-row">
+          <a class="brand" href="index.html" aria-label="Retour à l'accueil GSA">
+            <span class="brand-mark">GSA</span>
+            <span class="brand-text">Marketplace</span>
+          </a>
 
-        <nav class="nav">
-          <a href="#">Marketplace</a>
-          <a href="#">Community</a>
-          <a href="#">Support</a>
-          <a href="#">About</a>
-        </nav>
+          <nav class="main-nav">
+            <a href="catalogue.html">Produit</a>
+            <a href="prestation.html">Prestation</a>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support</a>
+            <a href="about.html">À propos</a>
+          </nav>
 
-        <div class="topbar-actions">
-          <button class="lang-btn">EN</button>
-
-          <label class="search">
-            <input type="text" placeholder="Rechercher" />
-            <span class="search-icon">⌕</span>
-          </label>
-
-          <a class="btn btn-dark btn-link" href="/auth/discord">Log in</a>
-          <button class="btn btn-primary">Register</button>
+          <div class="header-tools">
+            <label class="search-field">
+              <input id="global-search-input" type="search" placeholder="Rechercher un produit, un tag..." />
+              <span>⌕</span>
+            </label>
+            <button id="language-toggle" class="ghost-button" type="button">EN</button>
+            <a class="ghost-button" href="cart.html">Panier <span id="cart-count-badge">0</span></a>
+            <a class="primary-button" href="login.html">Log in / Register</a>
+          </div>
         </div>
       </header>
 
-      <div class="hero-content">
-        <div class="hero-copy">
-          <h1>The best Garry’s Mod scripts.</h1>
-          <p>
-            G-Store is the ultimate marketplace for Garry’s Mod featuring scripts,
-            gamemodes, maps, models, and custom graphics. With assets from top
-            creators, you can easily expand, optimize, and personalize your server.
-          </p>
-        </div>
+      <main id="page-content">
+        <section class="hero-section">
+          <div class="hero-backdrop"></div>
+          <div class="container hero-grid">
+            <div class="hero-copy">
+              <span class="eyebrow">GSA — Une vision claire. Un écosystème solide. Un standard à venir.</span>
+              <h1>Distribution d'assets Garry's Mod et accompagnement de projet sérieux.</h1>
+              <p>
+                Le marché GMod est saturé, mais mal structuré. GSA professionnalise la mise en avant, la vente,
+                l'accompagnement, le support et la diffusion d'assets premium pour les serveurs francophones et
+                internationaux.
+              </p>
 
-      </div>
-    </section>
+              <div class="hero-actions">
+                <a class="primary-button" href="catalogue.html">Explorer le catalogue</a>
+                <a class="ghost-button" href="prestation.html">Découvrir les prestations</a>
+              </div>
 
-    <section class="trending">
-      <div class="section-head">
-        <h2><span class="trend-icon">↗</span> Trending</h2>
-        <button class="view-all">View All</button>
-      </div>
+              <ul class="hero-points">
+                <li>Mise en valeur graphique et commerciale</li>
+                <li>Support client et diffusion internationale</li>
+                <li>Assets testés, documentés et exploitables immédiatement</li>
+              </ul>
+            </div>
 
-      <div class="cards cards-top">
-        <article class="card">
-          <div class="card-image tow-truck">
-            <div class="card-art-overlay"></div>
-            <div class="card-art-text">
-              <span class="line-main">TOW TRUCK</span>
-              <span class="line-accent">DRIVER JOB 2</span>
-              <span class="line-sub">ADVANCED TOWING SYSTEM</span>
+            <aside class="hero-highlight-card">
+              <span class="chip chip-accent">Marketplace premium</span>
+              <h2>Le créateur se concentre sur son domaine. GSA gère la distribution complète.</h2>
+              <p>
+                Visuels, démonstrations, relation client, vente, suivi, communication : une fois le produit sorti, le
+                créateur n'a plus qu'à encaisser.
+              </p>
+              <div class="stat-grid">
+                <article>
+                  <strong id="hero-products-count">0</strong>
+                  <span>assets en vitrine</span>
+                </article>
+                <article>
+                  <strong>FR / EN</strong>
+                  <span>switch de langue</span>
+                </article>
+                <article>
+                  <strong>24/7</strong>
+                  <span>accès au support Discord</span>
+                </article>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="content-section">
+          <div class="container section-head">
+            <div>
+              <span class="eyebrow">Tendance</span>
+              <h2>Les produits mis en avant cette semaine</h2>
+            </div>
+            <a class="section-link" href="catalogue.html?tag=tendance">Tout voir</a>
+          </div>
+
+          <div class="container featured-grid" id="trending-featured"></div>
+
+          <div class="container">
+            <div class="carousel-shell">
+              <button class="carousel-arrow" type="button" data-carousel-prev="trending-carousel">←</button>
+              <div class="product-carousel" id="trending-carousel"></div>
+              <button class="carousel-arrow" type="button" data-carousel-next="trending-carousel">→</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="card-meta">
-              <h3>Tow Truck Driver Job 2</h3>
-              <p>Tow Trucks, Fine System, Service Calls, Custom Models</p>
-            </div>
-            <div class="card-footer">
-              <span class="rating muted">Not yet rated</span>
-              <span class="price">$7.20</span>
-            </div>
-          </div>
-        </article>
+        </section>
 
-        <article class="card">
-          <div class="card-image paramedic">
-            <div class="card-art-overlay"></div>
-            <div class="card-art-text">
-              <span class="line-main">PARAMEDIC</span>
-              <span class="line-main">ESSENTIALS</span>
-              <span class="line-list">- INJURIES</span>
-              <span class="line-list">- DEFIBRILLATORS</span>
-              <span class="line-list">- DEATH SCREEN</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="card-meta">
-              <h3>Paramedic Essentials</h3>
-              <p>Defibrillators, Health Kit, Injuries & Custom Models</p>
-            </div>
-            <div class="card-footer">
-              <span class="rating">4.6 ★ (139)</span>
-              <span class="price">$11.49</span>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <div class="cards cards-bottom">
-        <article class="mini-card">
-          <div class="mini-card-image notif-card"></div>
-          <div class="mini-card-body">
-            <h4>Notifications</h4>
-            <p>Custom Themes, In-Game Config, Player UI</p>
-            <div class="mini-card-footer">
-              <span>2.9 ★ (32)</span>
-              <span>$6.30</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="mini-card">
-          <div class="mini-card-image advanced-card"></div>
-          <div class="mini-card-body">
-            <h4>Advanced Keys 2</h4>
-            <p>Unlimited Keypairs, Custom Keys & More</p>
-            <div class="mini-card-footer">
-              <span>4.2 ★ (73)</span>
-              <span>$11.70</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="mini-card">
-          <div class="mini-card-image mining-card"></div>
-          <div class="mini-card-body">
-            <h4>Mining</h4>
-            <p>Mine Minerals, Pickaxes & Upgrades</p>
-            <div class="mini-card-footer">
-              <span>3.5 ★ (84)</span>
-              <span>$13.50</span>
-            </div>
-          </div>
-        </article>
-
-        <article class="mini-card">
-          <div class="mini-card-image npc-card"></div>
-          <div class="mini-card-body">
-            <h4>NPC Shops</h4>
-            <p>Job Buying, In-Game Setup, Unlimited Shops</p>
-            <div class="mini-card-footer">
-              <span>4.2 ★ (32)</span>
-              <span>$9.00</span>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <div class="carousel-dots trending-dots">
-        <span></span>
-        <span class="active"></span>
-        <span></span>
-      </div>
-    </section>
-
-    <section class="content-showcase">
-      <section class="social-proof-block">
-        <div class="big-banner">SOCIAL PROOF</div>
-
-        <div class="mini-section-head">
-          <h3>↗ Sales</h3>
-          <button class="view-all">View All</button>
-        </div>
-
-        <div class="sales-strip">
-          <article class="sale-card loan-card">
-            <div class="sale-thumb">
-              <div class="sale-overlay"></div>
-              <div class="sale-title-stack">
-                <span>LOANS</span>
-                <small>- REPAYMENTS</small>
-                <small>- BANKER JOB</small>
-                <small>- INTEREST</small>
+        <section class="proof-strip">
+          <div class="container">
+            <div class="section-head compact">
+              <div>
+                <span class="eyebrow">Social proof</span>
+                <h2>Collaborateurs</h2>
               </div>
             </div>
-            <div class="sale-info">
-              <span class="sale-name">Loans</span>
-              <div class="sale-meta-row">
-                <span class="sale-rating">4.6 ★ (783)</span>
-                <span class="sale-badge green">+49%</span>
-                <span class="sale-price">$5.75</span>
+            <div class="logo-list" id="collaborators-list"></div>
+          </div>
+        </section>
+
+        <section class="content-section alt">
+          <div class="container section-head">
+            <div>
+              <span class="eyebrow">Réduction</span>
+              <h2>Offres actives à saisir</h2>
+            </div>
+            <a class="section-link" href="catalogue.html?discount=true">Tout voir</a>
+          </div>
+
+          <div class="container">
+            <div class="carousel-shell">
+              <button class="carousel-arrow" type="button" data-carousel-prev="discount-carousel">←</button>
+              <div class="product-carousel three-up" id="discount-carousel"></div>
+              <button class="carousel-arrow" type="button" data-carousel-next="discount-carousel">→</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="proof-strip alt">
+          <div class="container">
+            <div class="section-head compact">
+              <div>
+                <span class="eyebrow">Social proof</span>
+                <h2>Communautés clientes</h2>
               </div>
             </div>
-          </article>
+            <div class="logo-list" id="communities-list"></div>
+          </div>
+        </section>
 
-          <article class="sale-card smug-card">
-            <div class="sale-thumb">
-              <div class="sale-overlay"></div>
-              <div class="sale-title-stack magenta">
-                <span>SMUGGLING</span>
-                <small>- DRUG SMUGGLING</small>
-                <small>- REWARDS AND UPGRADES</small>
-                <small>- DYNAMIC DROP-OFFS</small>
+        <section class="content-section">
+          <div class="container section-head with-actions">
+            <div>
+              <span class="eyebrow">Produit</span>
+              <h2>Par catégorie</h2>
+            </div>
+
+            <div class="inline-actions">
+              <div class="sort-pills">
+                <button class="filter-pill active" type="button" data-sort-mode="popular">Populaire</button>
+                <button class="filter-pill" type="button" data-sort-mode="new">Nouveau</button>
+                <button class="filter-pill" type="button" data-sort-mode="discount">Réduction</button>
               </div>
+              <a class="section-link" href="catalogue.html">Tout voir</a>
             </div>
-            <div class="sale-info">
-              <span class="sale-name">Smuggle System</span>
-              <div class="sale-meta-row">
-                <span class="sale-rating">3.9 ★ (62)</span>
-                <span class="sale-badge green">-50%</span>
-                <span class="sale-price">$3.75</span>
-              </div>
-            </div>
-          </article>
+          </div>
 
-          <article class="sale-card gas-card">
-            <div class="sale-thumb">
-              <div class="sale-overlay"></div>
-              <div class="sale-title-stack green-title">
-                <span>GAS STATIONS</span>
-                <small>VCMOD SUPPORT</small>
-                <small>SYRMOD SUPPORT</small>
-                <small>LVS SUPPORT</small>
-              </div>
-            </div>
-            <div class="sale-info">
-              <span class="sale-name">Gas Stations</span>
-              <div class="sale-meta-row">
-                <span class="sale-rating">4.6 ★ (783)</span>
-                <span class="sale-badge green">-50%</span>
-                <span class="sale-price">$3.15</span>
-              </div>
-            </div>
-          </article>
-        </div>
+          <div class="container category-rows" id="category-showcase"></div>
+        </section>
 
-        <div class="carousel-dots">
-          <span></span>
-          <span></span>
-          <span class="active"></span>
-          <span></span>
-          <span></span>
-        </div>
-      </section>
+        <section class="editorial-section">
+          <div class="container editorial-grid">
+            <article class="editorial-card">
+              <span class="eyebrow">Accompagnement de projet</span>
+              <h2>La base d'un serveur qui dure</h2>
+              <p>
+                Un serveur GMod ne meurt pas par manque d'idées. Il meurt souvent à cause de mauvais choix techniques,
+                d'une économie bancale, d'un gameplay mal équilibré et de mois de développement inutile.
+              </p>
+              <ul>
+                <li>Analyse du plateau de jeu, de l'économie et de la durabilité du concept</li>
+                <li>Optimisation du temps, du budget et de l'énergie</li>
+                <li>Mise en relation avec des prestataires fiables et adaptés</li>
+              </ul>
+            </article>
 
-      <section class="scripts-block">
-        <div class="big-banner">SOCIAL PROOF</div>
+            <article class="editorial-card">
+              <span class="eyebrow">Game design</span>
+              <h2>Transformer un serveur en expérience</h2>
+              <p>
+                GSA intervient sur la rétention des joueurs, l'équilibrage PVP / grind, la lisibilité du gameplay et
+                la réflexion de maps, systèmes et mécaniques.
+              </p>
+              <ul>
+                <li>Moins de frustration</li>
+                <li>Plus d'attachement joueur</li>
+                <li>Un serveur qui donne envie de rester</li>
+              </ul>
+            </article>
 
-        <div class="mini-section-head">
-          <h3>⌘ Scripts</h3>
-          <div class="section-head-actions">
-            <div class="filters">
-              <span class="filter-chip">New</span>
-              <span class="filter-chip">Updated</span>
-              <span class="filter-chip">Trending</span>
-              <span class="filter-chip active">Popular</span>
-            </div>
-            <button class="view-all">View All</button>
+            <article class="editorial-card">
+              <span class="eyebrow">Vente d'assets</span>
+              <h2>Pas une boutique, un standard</h2>
+              <p>
+                Models, maps, particules, animations, interface utilisateur et bien plus à venir. Créés par des
+                prestataires sérieux, testés, documentés et prêts à l'emploi.
+              </p>
+              <ul>
+                <li>Qualité maximale</li>
+                <li>Prix archi compétitif</li>
+                <li>Déploiement rapide</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container footer-grid">
+          <div>
+            <a class="brand footer-brand" href="index.html">
+              <span class="brand-mark">GSA</span>
+              <span class="brand-text">Marketplace</span>
+            </a>
+            <p class="footer-copy">
+              GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré
+              uniquement par Tresingo.
+            </p>
+          </div>
+
+          <div class="footer-column">
+            <h3>Navigation</h3>
+            <a href="catalogue.html">Catalogue</a>
+            <a href="prestation.html">Prestation</a>
+            <a href="about.html">À propos</a>
+            <a href="cart.html">Panier</a>
+          </div>
+
+          <div class="footer-column">
+            <h3>Légal & contact</h3>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Discord Ticket</a>
+            <a href="login.html">Connexion</a>
+            <span>© 2026 GSA</span>
           </div>
         </div>
+      </footer>
+    </div>
 
-        <div class="scripts-grid">
-          <article class="script-card">
-            <div class="script-thumb loan-card"></div>
-            <h4>Loans</h4>
-            <p>Repayment System, Interest, Banker Job & More</p>
-            <div class="script-meta">
-              <span>4.6 ★ (783)</span>
-              <span>$5.75</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb smug-card"></div>
-            <h4>Smuggle System</h4>
-            <p>Drug Smuggling, Rewards, Upgrades & More</p>
-            <div class="script-meta">
-              <span>3.9 ★ (62)</span>
-              <span>$3.75</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb gas-card"></div>
-            <h4>Gas Stations</h4>
-            <p>VCMod, SyrMod & LVS Support</p>
-            <div class="script-meta">
-              <span>4.6 ★ (783)</span>
-              <span>$3.15</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb farm-card"></div>
-            <h4>Farming</h4>
-            <p>Grow Plants, Farming Tools & More</p>
-            <div class="script-meta">
-              <span>3.9 ★ (782)</span>
-              <span>$7.20</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb advanced-card"></div>
-            <h4>Advanced Keys 2</h4>
-            <p>Unlimited Keypairs, Custom Keys & More</p>
-            <div class="script-meta">
-              <span>4.3 ★ (73)</span>
-              <span>$11.70</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb npc-card"></div>
-            <h4>NPC Shops</h4>
-            <p>Job Buying, In-Game Setup, Unlimited Shops</p>
-            <div class="script-meta">
-              <span>4.2 ★ (72)</span>
-              <span>$9.00</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb paramedic"></div>
-            <h4>Paramedic Essentials</h4>
-            <p>Defibrillators, Health Kit, Injuries & More</p>
-            <div class="script-meta">
-              <span>4.6 ★ (139)</span>
-              <span>$11.49</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb notif-card"></div>
-            <h4>Notifications</h4>
-            <p>Custom Themes, In-Game Config, Player UI</p>
-            <div class="script-meta">
-              <span>2.9 ★ (32)</span>
-              <span>$6.30</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb mining-card"></div>
-            <h4>Mining</h4>
-            <p>Mine Minerals, Pickaxes & Upgrades</p>
-            <div class="script-meta">
-              <span>4.6 ★ (783)</span>
-              <span>$9.40</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb bitcoin-card"></div>
-            <h4>Bitminers DLC</h4>
-            <p>Remote Tablet, Power System & More</p>
-            <div class="script-meta">
-              <span>4.6 ★ (783)</span>
-              <span>$7.20</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb bitcoin-card"></div>
-            <h4>Bitminer System</h4>
-            <p>Server Mining Economy, Power Usage</p>
-            <div class="script-meta">
-              <span>4.2 ★ (412)</span>
-              <span>$8.60</span>
-            </div>
-          </article>
-
-          <article class="script-card">
-            <div class="script-thumb tow-truck"></div>
-            <h4>Tow Truck Driver Job 2</h4>
-            <p>Towing System, Service Calls & Custom Models</p>
-            <div class="script-meta">
-              <span>Not yet rated</span>
-              <span>$7.20</span>
-            </div>
-          </article>
-        </div>
-      </section>
-    </section>
-
-    <footer class="site-footer">
-      <p>© 2077 g-store. All rights reserved.</p>
-
-      <div class="footer-brand">
-        <span class="brand-g">g-</span><span class="brand-store">STORE</span>
-      </div>
-
-      <div class="footer-links">
-        <a href="#">Terms of Service</a>
-        <span class="divider">|</span>
-        <a href="#">Privacy Policy</a>
-      </div>
-    </footer>
-  </main>
-
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

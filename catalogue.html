@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalogue — GSA Marketplace</title>
+    <meta
+      name="description"
+      content="Parcourez le catalogue GSA : models, imports, particles, animations, maps et interfaces Garry's Mod."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="catalogue">
+    <div class="site-shell">
+      <header class="site-header">
+        <div class="container header-row">
+          <a class="brand" href="index.html" aria-label="Retour à l'accueil GSA">
+            <span class="brand-mark">GSA</span>
+            <span class="brand-text">Marketplace</span>
+          </a>
+
+          <nav class="main-nav">
+            <a href="catalogue.html">Produit</a>
+            <a href="prestation.html">Prestation</a>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support</a>
+            <a href="about.html">À propos</a>
+          </nav>
+
+          <div class="header-tools">
+            <label class="search-field">
+              <input id="global-search-input" type="search" placeholder="Rechercher un produit, un tag..." />
+              <span>⌕</span>
+            </label>
+            <button id="language-toggle" class="ghost-button" type="button">EN</button>
+            <a class="ghost-button" href="cart.html">Panier <span id="cart-count-badge">0</span></a>
+            <a class="primary-button" href="login.html">Log in / Register</a>
+          </div>
+        </div>
+      </header>
+
+      <main id="page-content">
+        <div id="catalogue-page"></div>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container footer-grid">
+          <div>
+            <a class="brand footer-brand" href="index.html">
+              <span class="brand-mark">GSA</span>
+              <span class="brand-text">Marketplace</span>
+            </a>
+            <p class="footer-copy">
+              GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré
+              uniquement par Tresingo.
+            </p>
+          </div>
+
+          <div class="footer-column">
+            <h3>Navigation</h3>
+            <a href="catalogue.html">Catalogue</a>
+            <a href="prestation.html">Prestation</a>
+            <a href="about.html">À propos</a>
+            <a href="cart.html">Panier</a>
+          </div>
+
+          <div class="footer-column">
+            <h3>Légal & contact</h3>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Discord Ticket</a>
+            <a href="login.html">Connexion</a>
+            <span>© 2026 GSA</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

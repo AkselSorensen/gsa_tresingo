@@ -1,30 +1,1192 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.querySelector(".search input");
-  const navLinks = document.querySelectorAll(".nav a");
-  const buttons = document.querySelectorAll("button");
+const state = {
+  locale: localStorage.getItem("gsa-locale") || "fr",
+  user: null,
+  cart: null,
+  bootstrap: null,
+  categories: [],
+};
 
-  if (searchInput) {
-    searchInput.addEventListener("focus", () => {
-      document.body.classList.add("search-active");
-    });
+const translations = {
+  fr: {
+    languageLabel: "EN",
+    loginCta: "Log in / Register",
+    cart: "Panier",
+    searchPlaceholder: "Rechercher un produit, un tag...",
+    footerText:
+      "GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré uniquement par Tresingo.",
+    addToCart: "Ajouter au panier",
+    description: "Description",
+    install: "Installation",
+    reviews: "Avis",
+    category: "Catégorie",
+    seller: "Vendeur",
+    cartTitle: "Votre panier",
+    total: "Total",
+    quantity: "Quantité",
+    emptyCart: "Votre panier est vide pour le moment.",
+    noResults: "Aucun résultat trouvé.",
+    loginTitle: "Connexion / création de compte",
+    welcome: "Bienvenue",
+    checkout: "Payer avec Stripe",
+    checkoutLoading: "Redirection vers Stripe...",
+    stripeUnavailable: "Stripe n'est pas configuré pour le moment.",
+    checkoutSuccess: "Paiement validé. Merci pour votre commande.",
+    checkoutCancel: "Paiement annulé. Vous pouvez reprendre votre panier.",
+  },
+  en: {
+    languageLabel: "FR",
+    loginCta: "Log in / Register",
+    cart: "Cart",
+    searchPlaceholder: "Search product, tag, category...",
+    footerText:
+      "GSA elevates, structures and professionalizes the work of Garry's Mod creators. Founded and managed only by Tresingo.",
+    addToCart: "Add to cart",
+    description: "Description",
+    install: "Installation",
+    reviews: "Reviews",
+    category: "Category",
+    seller: "Seller",
+    cartTitle: "Your cart",
+    total: "Total",
+    quantity: "Quantity",
+    emptyCart: "Your cart is currently empty.",
+    noResults: "No results found.",
+    loginTitle: "Login / register",
+    welcome: "Welcome",
+    checkout: "Pay with Stripe",
+    checkoutLoading: "Redirecting to Stripe...",
+    stripeUnavailable: "Stripe is not configured right now.",
+    checkoutSuccess: "Payment confirmed. Thank you for your order.",
+    checkoutCancel: "Payment cancelled. You can continue with your cart.",
+  },
+};
 
-    searchInput.addEventListener("blur", () => {
-      document.body.classList.remove("search-active");
-    });
+function t(key) {
+  return translations[state.locale]?.[key] || translations.fr[key] || key;
+}
+
+function currency(value) {
+  return new Intl.NumberFormat(state.locale === "fr" ? "fr-FR" : "en-US", {
+    style: "currency",
+    currency: "EUR",
+  }).format(Number(value || 0));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, "");
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  if (!response.ok) {
+    let message = "Erreur inconnue";
+    try {
+      const payload = await response.json();
+      message = payload.message || message;
+    } catch (_error) {
+      message = response.statusText || message;
+    }
+    throw new Error(message);
   }
 
-  navLinks.forEach((link) => {
-    link.addEventListener("click", (event) => {
-      event.preventDefault();
+  const contentType = response.headers.get("content-type") || "";
+  return contentType.includes("application/json") ? response.json() : response.text();
+}
+
+function getQueryParams() {
+  return new URLSearchParams(window.location.search);
+}
+
+function productCard(product, detailed = false) {
+  const thumb =
+    product.thumbnail ||
+    product.media?.[0]?.thumbnail ||
+    product.media?.[0]?.url ||
+    "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=900&q=80";
+  const oldPrice =
+    Number(product.discountPercent) > 0
+      ? `<span class="old-price">${currency(product.oldPrice)}</span>`
+      : "";
+  const title = escapeHtml(product.title);
+  const category = escapeHtml(product.category || product.categoryName || "");
+  const description = escapeHtml(product.shortDescription || "");
+  const seller = escapeHtml(product.sellerName || "");
+  const compactTags = (product.tags || [])
+    .slice(0, detailed ? 3 : 2)
+    .map((tag) => `<span class="mini-tag">${escapeHtml(tag)}</span>`)
+    .join("");
+
+  return `
+    <article class="product-card ${detailed ? "detailed featured" : ""}">
+      <a class="product-card-media" href="product.html?slug=${encodeURIComponent(product.slug)}">
+        <img src="${escapeHtml(thumb)}" alt="${title}" loading="lazy" />
+      </a>
+      <div class="product-card-body">
+        <div class="product-card-topline">
+          <span class="product-tag">${category}</span>
+          ${Number(product.discountPercent) > 0 ? `<span class="chip chip-discount">-${product.discountPercent}%</span>` : ""}
+        </div>
+        <h3><a href="product.html?slug=${encodeURIComponent(product.slug)}">${title}</a></h3>
+        <p>${description}</p>
+        <div class="product-tags-row">${compactTags}</div>
+        <div class="product-meta">
+          <span>★ ${Number(product.rating || 0).toFixed(1)} <small>(${product.reviewCount || 0})</small></span>
+          <div class="price-cluster">${oldPrice}<strong>${currency(product.price)}</strong></div>
+        </div>
+        ${seller ? `<div class="product-seller-line">${seller}</div>` : ""}
+      </div>
+    </article>
+  `;
+}
+
+function updateHeaderLabels() {
+  const searchInput = document.getElementById("global-search-input");
+  if (searchInput) searchInput.placeholder = t("searchPlaceholder");
+
+  const langButton = document.getElementById("language-toggle");
+  if (langButton) langButton.textContent = t("languageLabel");
+
+  let userMenuWrap = document.getElementById("user-menu-wrap");
+
+  if (state.user) {
+    if (!userMenuWrap) {
+      const loginLink =
+        document.querySelector('.primary-button[href="login.html"]') ||
+        document.querySelector('.primary-button[href="profile.html"]');
+      if (loginLink) {
+        userMenuWrap = document.createElement("div");
+        userMenuWrap.id = "user-menu-wrap";
+        userMenuWrap.innerHTML = `
+          <button class="primary-button" id="user-menu-trigger" type="button">${escapeHtml(t("welcome"))}, ${escapeHtml(state.user.displayName)}</button>
+          <div id="user-menu-dropdown" class="user-menu-dropdown hidden">
+            <a href="profile.html">Mon profil</a>
+            <button type="button" id="user-logout-btn">Se déconnecter</button>
+          </div>
+        `;
+        loginLink.replaceWith(userMenuWrap);
+
+        document.getElementById("user-menu-trigger").addEventListener("click", (e) => {
+          e.stopPropagation();
+          document.getElementById("user-menu-dropdown").classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", () => {
+          document.getElementById("user-menu-dropdown")?.classList.add("hidden");
+        });
+
+        document.getElementById("user-logout-btn").addEventListener("click", async () => {
+          try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
+          state.user = null;
+          state.cart = null;
+          window.location.href = "index.html";
+        });
+      }
+    } else {
+      const trigger = document.getElementById("user-menu-trigger");
+      if (trigger) trigger.textContent = `${t("welcome")}, ${state.user.displayName}`;
+    }
+  } else {
+    if (userMenuWrap) {
+      const loginLink = document.createElement("a");
+      loginLink.className = "primary-button";
+      loginLink.href = "login.html";
+      loginLink.textContent = t("loginCta");
+      userMenuWrap.replaceWith(loginLink);
+    } else {
+      const link =
+        document.querySelector('.primary-button[href="login.html"]') ||
+        document.querySelector('.primary-button[href="profile.html"]');
+      if (link) {
+        link.textContent = t("loginCta");
+        link.setAttribute("href", "login.html");
+      }
+    }
+  }
+
+  const cartLink = document.querySelector('.ghost-button[href="cart.html"]');
+  if (cartLink) {
+    const count = state.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+    cartLink.innerHTML = `${t("cart")} <span id="cart-count-badge">${count}</span>`;
+  }
+
+
+  const footerCopy = document.querySelector(".footer-copy");
+  if (footerCopy) footerCopy.textContent = t("footerText");
+}
+
+function attachLanguageToggle() {
+  const button = document.getElementById("language-toggle");
+  if (!button) return;
+
+  button.addEventListener("click", async () => {
+    state.locale = state.locale === "fr" ? "en" : "fr";
+    localStorage.setItem("gsa-locale", state.locale);
+
+    try {
+      await api("/api/locale", {
+        method: "POST",
+        body: JSON.stringify({ locale: state.locale }),
+      });
+    } catch (_error) {}
+
+    location.reload();
+  });
+}
+
+function attachSearchHandler() {
+  const input = document.getElementById("global-search-input");
+  if (!input) return;
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && input.value.trim()) {
+      window.location.href = `catalogue.html?search=${encodeURIComponent(input.value.trim())}`;
+    }
+  });
+}
+
+async function hydrateSession() {
+  try {
+    const me = await api("/api/me");
+    state.user = me.user;
+    state.cart = me.cart;
+  } catch (_error) {
+    state.user = null;
+    state.cart = null;
+  }
+}
+
+async function loadBootstrap() {
+  state.bootstrap = await api("/api/bootstrap");
+  state.categories = state.bootstrap.categories || [];
+}
+
+function renderHomePage() {
+  if (!state.bootstrap) return;
+
+  const featured = document.getElementById("trending-featured");
+  const carousel = document.getElementById("trending-carousel");
+  const discounts = document.getElementById("discount-carousel");
+  const collaborators = document.getElementById("collaborators-list");
+  const communities = document.getElementById("communities-list");
+  const categoryShowcase = document.getElementById("category-showcase");
+  const heroCount = document.getElementById("hero-products-count");
+
+  if (heroCount) heroCount.textContent = String(state.bootstrap.trending?.length || 0);
+
+  const [first, second, ...rest] = state.bootstrap.trending || [];
+  if (featured) featured.innerHTML = [first, second].filter(Boolean).map((p) => productCard(p, true)).join("");
+  if (carousel) carousel.innerHTML = rest.map((p) => productCard(p)).join("");
+  if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).map((p) => productCard(p)).join("");
+  if (collaborators) {
+    collaborators.innerHTML = (state.bootstrap.collaborators || [])
+      .map((name) => `<span class="logo-pill">${escapeHtml(name)}</span>`)
+      .join("");
+  }
+  if (communities) {
+    communities.innerHTML = (state.bootstrap.communities || [])
+      .map((name) => `<span class="logo-pill">${escapeHtml(name)}</span>`)
+      .join("");
+  }
+
+  if (categoryShowcase) {
+    categoryShowcase.innerHTML = (state.bootstrap.featuredByCategory || [])
+      .map(
+        (group) => `
+        <section class="category-row">
+          <div class="category-row-head">
+            <div>
+              <h3>${escapeHtml(group.categoryName)}</h3>
+              <p>${escapeHtml(
+                state.categories.find((c) => c.slug === group.categorySlug)?.description || ""
+              )}</p>
+            </div>
+            <a class="section-link" href="catalogue.html?category=${encodeURIComponent(group.categorySlug)}">Tout voir</a>
+          </div>
+          <div class="product-carousel static-grid">
+            ${group.products.map((product) => productCard({ ...product, category: group.categoryName })).join("")}
+          </div>
+        </section>
+      `
+      )
+      .join("");
+  }
+
+  document.querySelectorAll("[data-carousel-prev]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document
+        .getElementById(button.dataset.carouselPrev)
+        ?.scrollBy({ left: -320, behavior: "smooth" });
     });
   });
 
-  buttons.forEach((button) => {
+  document.querySelectorAll("[data-carousel-next]").forEach((button) => {
     button.addEventListener("click", () => {
-      button.classList.add("pressed");
-      window.setTimeout(() => {
-        button.classList.remove("pressed");
-      }, 140);
+      document
+        .getElementById(button.dataset.carouselNext)
+        ?.scrollBy({ left: 320, behavior: "smooth" });
     });
+  });
+}
+
+async function renderCataloguePage() {
+  const app = document.getElementById("catalogue-page");
+  if (!app) return;
+
+  const params = getQueryParams();
+  const search = params.get("search") || "";
+  const category = params.get("category") || "";
+  const tag = params.get("tag") || "";
+  const discount = params.get("discount") || "";
+  const sort = params.get("sort") || "popular";
+
+  const data = await api(
+    `/api/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(
+      category
+    )}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}`
+  );
+
+  app.innerHTML = `
+    <section class="page-hero small">
+      <div class="container">
+        <span class="eyebrow">Produit</span>
+        <h1>Catalogue GSA</h1>
+        <p>Parcourez les assets, imports, maps, interfaces et packs premium pensés pour Garry's Mod.</p>
+      </div>
+    </section>
+    <section class="page-section">
+      <div class="container split-layout catalogue-layout">
+        <aside class="catalog-sidebar">
+          <div class="panel filters-panel">
+            <h3>Filtres</h3>
+            <div class="filter-stack">
+              <div class="filter-group">
+                <span class="filter-title">Catégories</span>
+                <div class="filter-list vertical">
+                  <a class="filter-chip ${!category ? "active" : ""}" href="catalogue.html">Toutes</a>
+                  ${state.categories
+                    .map(
+                      (item) =>
+                        `<a class="filter-chip ${item.slug === category ? "active" : ""}" href="catalogue.html?category=${encodeURIComponent(item.slug)}">${escapeHtml(item.name)}</a>`
+                    )
+                    .join("")}
+                </div>
+              </div>
+              <div class="filter-group">
+                <span class="filter-title">Tri</span>
+                <div class="filter-list vertical">
+                  <a class="filter-chip ${sort === "popular" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=popular">Populaire</a>
+                  <a class="filter-chip ${sort === "new" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=new">Nouveau</a>
+                  <a class="filter-chip ${sort === "discount" ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=discount">Réduction</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+        <div class="catalog-main">
+          <div class="catalog-toolbar panel">
+            <div>
+              <strong>${data.total} résultats</strong>
+              <p>Affichage inspiré marketplace sombre, dense et orienté conversion.</p>
+            </div>
+            <div class="tag-list">
+              ${category ? `<span class="product-tag">${escapeHtml(category)}</span>` : ""}
+              ${tag ? `<span class="product-tag">${escapeHtml(tag)}</span>` : ""}
+              ${discount === "true" ? `<span class="product-tag">Réduction</span>` : ""}
+            </div>
+          </div>
+          <div class="catalog-grid">
+            ${
+              data.items.length
+                ? data.items.map((product) => productCard(product)).join("")
+                : `<div class="empty-state"><h3>${t("noResults")}</h3></div>`
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderMainMedia(media) {
+  if (!media) return `<div class="media-fallback">Aucun média</div>`;
+
+  return media.type === "video"
+    ? `<video controls poster="${escapeHtml(media.thumbnail || "")}" src="${escapeHtml(media.url)}"></video>`
+    : `<img src="${escapeHtml(media.url)}" alt="Aperçu produit" />`;
+}
+
+function ensureAuthModal() {
+  let modal = document.getElementById("auth-required-modal");
+  if (modal) return modal;
+
+  modal = document.createElement("div");
+  modal.id = "auth-required-modal";
+  modal.className = "auth-modal hidden";
+  modal.innerHTML = `
+    <div class="auth-modal-backdrop" data-auth-close="true"></div>
+    <div class="auth-modal-panel" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+      <button class="auth-modal-close" type="button" data-auth-close="true" aria-label="Fermer">×</button>
+      <span class="eyebrow">Connexion requise</span>
+      <h2 id="auth-modal-title">Connectez-vous pour continuer</h2>
+      <p>Vous devez être connecté pour ajouter ce produit au panier ou poursuivre vos achats.</p>
+      <div class="auth-modal-actions">
+        <a class="primary-button full" id="auth-modal-steam" href="/auth/steam">Se connecter avec Steam</a>
+        <a class="ghost-button full center" id="auth-modal-login" href="login.html">Se connecter avec email / mot de passe</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelectorAll("[data-auth-close]").forEach((element) => {
+    element.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      document.body.classList.remove("modal-open");
+    });
+  });
+
+  return modal;
+}
+
+function openAuthModal() {
+  const modal = ensureAuthModal();
+  const redirectUrl = window.location.href;
+  const loginLink = modal.querySelector("#auth-modal-login");
+  const steamLink = modal.querySelector("#auth-modal-steam");
+
+  if (loginLink) {
+    loginLink.href = `login.html?redirect=${encodeURIComponent(redirectUrl)}`;
+  }
+
+  if (steamLink) {
+    steamLink.href = "/auth/steam";
+  }
+
+  modal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+}
+
+async function renderProductPage() {
+  const app = document.getElementById("product-page");
+  if (!app) return;
+
+  const slug = getQueryParams().get("slug");
+  if (!slug) {
+    app.innerHTML = `<div class="container empty-state"><h2>Produit introuvable</h2></div>`;
+    return;
+  }
+
+  const product = await api(`/api/products/${encodeURIComponent(slug)}`);
+  const media = product.media || [];
+
+  app.innerHTML = `
+    <section class="page-section product-page-shell">
+      <div class="container product-header product-topbar">
+        <div>
+          <span class="eyebrow">${escapeHtml(product.category)}</span>
+          <h1>${escapeHtml(product.title)}</h1>
+        </div>
+        <div class="product-head-meta">
+          <span>${product.views} vues</span>
+          <span>★ ${Number(product.rating).toFixed(1)} (${product.reviewCount})</span>
+        </div>
+      </div>
+      <div class="container product-layout product-layout-reference">
+        <section class="product-main-panel">
+          <div class="product-main-media" id="main-media-slot">${renderMainMedia(media[0])}</div>
+          <div class="media-thumbs">
+            ${media
+              .map(
+                (item, index) => `
+                <button class="media-thumb ${index === 0 ? "active" : ""}" type="button" data-media-index="${index}">
+                  <img src="${escapeHtml(item.thumbnail || item.url)}" alt="Media ${index + 1}" />
+                </button>
+              `
+              )
+              .join("")}
+          </div>
+          <div class="tabbed-panel">
+            <div class="tab-buttons">
+              <button class="tab-button active" type="button" data-tab="description">${t("description")}</button>
+              <button class="tab-button" type="button" data-tab="installation">${t("install")}</button>
+              <button class="tab-button" type="button" data-tab="reviews">${t("reviews")} (${product.reviewCount || 0})</button>
+            </div>
+            <div class="tab-content active" data-tab-panel="description"><p>${escapeHtml(product.description).replace(/\n/g, "<br />")}</p></div>
+            <div class="tab-content" data-tab-panel="installation"><p>${escapeHtml(product.installation).replace(/\n/g, "<br />")}</p></div>
+            <div class="tab-content" data-tab-panel="reviews">
+              ${
+                (product.reviews || [])
+                  .map(
+                    (review) =>
+                      `<article class="review-card"><div class="review-card-head"><strong>${escapeHtml(review.displayName)}</strong><span>★ ${review.rating}/5</span></div><p>${escapeHtml(review.comment)}</p></article>`
+                  )
+                  .join("") || "<p>Aucun avis pour le moment.</p>"
+              }
+            </div>
+          </div>
+        </section>
+        <aside class="product-sidebar">
+          <div class="panel sticky product-side-panel">
+            <div class="price-panel">
+              <div class="price-cluster large">
+                ${product.discountPercent > 0 ? `<span class="old-price">${currency(product.oldPrice)}</span>` : ""}
+                <strong>${currency(product.price)}</strong>
+              </div>
+              <button class="primary-button full" type="button" id="add-to-cart-button" data-product-id="${product.id}">${t("addToCart")}</button>
+            </div>
+            <div class="seller-panel">
+              <img src="${escapeHtml(product.sellerAvatar || "https://via.placeholder.com/64")}" alt="${escapeHtml(product.sellerName)}" />
+              <div>
+                <span>${t("seller")}</span>
+                <strong>${escapeHtml(product.sellerName)}</strong>
+                <small>Model Creator</small>
+              </div>
+            </div>
+            <ul class="detail-list">
+              <li><span>Mise en ligne</span><strong>${new Date(product.createdAt).toLocaleDateString()}</strong></li>
+              <li><span>Dernière mise à jour</span><strong>${new Date(product.updatedAt).toLocaleDateString()}</strong></li>
+              <li><span>${t("category")}</span><strong>${escapeHtml(product.category)}</strong></li>
+            </ul>
+            <div class="side-section">
+              <span class="side-section-title">Tags</span>
+              <div class="tag-list">
+                ${(product.tags || []).map((tag) => `<a class="filter-chip" href="catalogue.html?tag=${encodeURIComponent(tag)}">${escapeHtml(tag)}</a>`).join("")}
+              </div>
+            </div>
+            <div class="side-section">
+              <span class="side-section-title">Catégories</span>
+              <div class="tag-list">
+                <a class="filter-chip active" href="catalogue.html?category=${encodeURIComponent(product.categorySlug)}">${escapeHtml(product.category)}</a>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  `;
+
+  document.querySelectorAll("[data-media-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.getElementById("main-media-slot").innerHTML = renderMainMedia(
+        media[Number(button.dataset.mediaIndex)]
+      );
+      document.querySelectorAll("[data-media-index]").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+    });
+  });
+
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".tab-button").forEach((item) => item.classList.remove("active"));
+      document.querySelectorAll("[data-tab-panel]").forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      document.querySelector(`[data-tab-panel="${button.dataset.tab}"]`)?.classList.add("active");
+    });
+  });
+
+  document.getElementById("add-to-cart-button")?.addEventListener("click", async (event) => {
+    if (!state.user) {
+      openAuthModal();
+      return;
+    }
+
+    try {
+      state.cart = await api("/api/cart/items", {
+        method: "POST",
+        body: JSON.stringify({
+          productId: Number(event.currentTarget.dataset.productId),
+          quantity: 1,
+        }),
+      });
+      updateHeaderLabels();
+      event.currentTarget.textContent = "Ajouté au panier";
+    } catch (error) {
+      if (error.message === "Authentication required") {
+        openAuthModal();
+        return;
+      }
+      alert(error.message);
+    }
+  });
+}
+
+async function renderLoginPage() {
+  const app = document.getElementById("login-page");
+  if (!app) return;
+
+  app.innerHTML = `
+    <section class="page-hero small">
+      <div class="container">
+        <span class="eyebrow">${t("loginTitle")}</span>
+        <h1>Accédez à votre espace GSA</h1>
+        <p>Connexion locale, inscription persistée en base et option Discord.</p>
+      </div>
+    </section>
+    <section class="page-section">
+      <div class="container auth-grid">
+        <form class="panel form-panel" id="login-form">
+          <h2>Connexion</h2>
+          <label>Email<input name="email" type="email" required placeholder="client@gsa.local" /></label>
+          <label>Mot de passe<input name="password" type="password" required placeholder="••••••••" /></label>
+          <button class="primary-button full" type="submit">Se connecter</button>
+          <div class="social-auth-buttons">
+            <a class="ghost-button center" href="/auth/discord">Connexion Discord</a>
+            <a class="ghost-button center" href="/auth/steam">Connexion Steam</a>
+          </div>
+          <p class="helper-text">Compte démo client : client@gsa.local / Client123!</p>
+          <p class="helper-text">Compte admin : admin@gstore.local / Admin1234!</p>
+        </form>
+        <form class="panel form-panel" id="register-form">
+          <h2>Créer un compte</h2>
+          <label>Nom affiché<input name="displayName" type="text" required placeholder="Votre pseudo" /></label>
+          <label>Email<input name="email" type="email" required placeholder="vous@email.com" /></label>
+          <label>Mot de passe<input name="password" type="password" required placeholder="Minimum recommandé 8 caractères" /></label>
+          <button class="primary-button full" type="submit">Créer mon compte</button>
+        </form>
+      </div>
+    </section>
+  `;
+
+  document.getElementById("login-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: formData.get("email"),
+          password: formData.get("password"),
+        }),
+      });
+
+      state.user = response.user;
+      window.location.href = getQueryParams().get("redirect") || "index.html";
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+
+  document.getElementById("register-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const response = await api("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          displayName: formData.get("displayName"),
+          email: formData.get("email"),
+          password: formData.get("password"),
+          preferredLanguage: state.locale,
+        }),
+      });
+
+      state.user = response.user;
+      window.location.href = "index.html";
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+}
+
+async function getStripeConfig() {
+  try {
+    return await api("/api/stripe/config");
+  } catch (_error) {
+    return { enabled: false, publishableKey: null };
+  }
+}
+
+async function renderCartPage() {
+  const app = document.getElementById("cart-page");
+  if (!app) return;
+
+  if (!state.user) {
+    app.innerHTML = `<section class="page-section"><div class="container"><div class="empty-state"><h2>Connexion requise</h2><p>Connectez-vous pour accéder à votre panier.</p><a class="primary-button" href="login.html?redirect=cart.html">Se connecter</a></div></div></section>`;
+    return;
+  }
+
+  const cart = await api("/api/cart");
+  const stripeConfig = await getStripeConfig();
+  const checkoutState = getQueryParams().get("checkout");
+  state.cart = cart;
+  updateHeaderLabels();
+
+  app.innerHTML = `
+    <section class="page-hero small">
+      <div class="container">
+        <span class="eyebrow">${t("cartTitle")}</span>
+        <h1>Panier</h1>
+        <p>Retrouvez vos assets sélectionnés, ajustez les quantités et finalisez votre commande en quelques secondes.</p>
+      </div>
+    </section>
+    <section class="page-section cart-page-section">
+      <div class="container cart-layout-modern">
+        ${
+          checkoutState === "success"
+            ? `<div class="panel checkout-banner success-banner">${t("checkoutSuccess")}</div>`
+            : checkoutState === "cancel"
+              ? `<div class="panel checkout-banner cancel-banner">${t("checkoutCancel")}</div>`
+              : ""
+        }
+        ${
+          cart.items.length
+            ? `
+              <div class="cart-items-column">
+                <div class="panel cart-list-shell">
+                  <div class="cart-list-head">
+                    <div>
+                      <span class="eyebrow">Votre sélection</span>
+                      <h2>${cart.items.length} article${cart.items.length > 1 ? "s" : ""}</h2>
+                    </div>
+                    <a class="ghost-button" href="catalogue.html">Continuer mes achats</a>
+                  </div>
+                  <div class="cart-list">
+                    ${cart.items
+                      .map(
+                        (item) => `
+                          <article class="cart-item card-cart-row">
+                            <a class="cart-item-media" href="product.html?slug=${encodeURIComponent(item.product.slug)}">
+                              <img src="${escapeHtml(item.product.preview.thumbnail || item.product.preview.url || "https://via.placeholder.com/180")}" alt="${escapeHtml(item.product.title)}" />
+                            </a>
+                            <div class="cart-item-body">
+                              <div class="cart-item-main">
+                                <div>
+                                  <span class="product-tag">${escapeHtml(item.product.category || "Produit")}</span>
+                                  <h3><a href="product.html?slug=${encodeURIComponent(item.product.slug)}">${escapeHtml(item.product.title)}</a></h3>
+                                  <p>${escapeHtml(item.product.shortDescription || "Asset prêt à l'emploi pour votre serveur Garry's Mod.")}</p>
+                                </div>
+                                <div class="cart-item-pricing">
+                                  <span>Prix unitaire</span>
+                                  <strong>${currency(item.product.price)}</strong>
+                                </div>
+                              </div>
+                              <div class="cart-item-footer">
+                                <label class="cart-qty-control">
+                                  <span>${t("quantity")}</span>
+                                  <input type="number" min="1" value="${item.quantity}" data-cart-qty="${item.id}" />
+                                </label>
+                                <div class="cart-item-actions">
+                                  <button class="ghost-button" type="button" data-cart-remove="${item.id}">Supprimer</button>
+                                  <div class="cart-line-total">
+                                    <span>Sous-total</span>
+                                    <strong>${currency(item.subtotal)}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </article>
+                        `
+                      )
+                      .join("")}
+                  </div>
+                </div>
+              </div>
+              <aside class="panel order-summary order-summary-modern">
+                <span class="eyebrow">Checkout</span>
+                <h2>Résumé</h2>
+                <div class="order-summary-lines">
+                  <div class="summary-line"><span>Articles</span><strong>${cart.items.length}</strong></div>
+                  <div class="summary-line"><span>${t("total")}</span><strong>${currency(cart.total)}</strong></div>
+                </div>
+                <button class="primary-button full" type="button" id="stripe-checkout-button" ${!cart.items.length || !stripeConfig.enabled ? "disabled" : ""}>${t("checkout")}</button>
+                ${
+                  stripeConfig.enabled
+                    ? `<p class="helper-text">Checkout Stripe prêt en mode hébergé.</p>`
+                    : `<p class="helper-text">${t("stripeUnavailable")}</p>`
+                }
+                <div class="order-summary-note">
+                  <span class="chip chip-accent">Paiement sécurisé</span>
+                  <p>Vos achats sont liés à votre compte pour simplifier le suivi, la livraison et le support.</p>
+                </div>
+              </aside>
+            `
+            : `<div class="empty-state cart-empty-state"><h3>${t("emptyCart")}</h3><p>Explorez le catalogue pour découvrir les dernières sorties GSA.</p><a class="primary-button" href="catalogue.html">Voir le catalogue</a></div>`
+        }
+      </div>
+    </section>
+  `;
+
+  document.querySelectorAll("[data-cart-qty]").forEach((input) => {
+    input.addEventListener("change", async () => {
+      try {
+        await api(`/api/cart/items/${input.dataset.cartQty}`, {
+          method: "PATCH",
+          body: JSON.stringify({ quantity: Number(input.value) }),
+        });
+        location.reload();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-cart-remove]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await api(`/api/cart/items/${button.dataset.cartRemove}`, { method: "DELETE" });
+        location.reload();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  });
+
+  document.getElementById("stripe-checkout-button")?.addEventListener("click", async (event) => {
+    event.currentTarget.disabled = true;
+    event.currentTarget.textContent = t("checkoutLoading");
+
+    try {
+      const response = await api("/api/checkout/create-session", {
+        method: "POST",
+      });
+
+      if (response.url) {
+        window.location.href = response.url;
+        return;
+      }
+
+      throw new Error("Stripe session URL missing");
+    } catch (error) {
+      alert(error.message);
+      event.currentTarget.disabled = false;
+      event.currentTarget.textContent = t("checkout");
+    }
+  });
+}
+
+function renderPrestationPage() {
+  const app = document.getElementById("prestation-page");
+  if (!app) return;
+
+  app.innerHTML = `
+    <section class="page-hero small"><div class="container"><span class="eyebrow">Prestation</span><h1>Accompagnement de projet et Game Design</h1><p>Une offre pensée pour les petits et moyens serveurs, les projets en préparation de sortie et les refontes complètes.</p></div></section>
+    <section class="page-section"><div class="container editorial-grid">
+      <article class="editorial-card"><h2>Accompagnement de projet</h2><p>GSA aide à éviter les erreurs classiques, optimiser le temps de production et augmenter drastiquement la qualité finale du serveur.</p><ul><li>Analyse du plateau de jeu</li><li>Analyse du système économique</li><li>Analyse de la durabilité du concept</li><li>Analyse de la cohérence globale</li></ul></article>
+      <article class="editorial-card"><h2>Game Design</h2><p>Un serveur qui fonctionne n'est pas juste une somme de scripts : c'est une expérience pensée, lisible et équilibrée.</p><ul><li>Rétention des joueurs</li><li>Équilibrage PVP / grind</li><li>Lisibilité du gameplay</li><li>Réflexion map, systèmes, mécaniques</li></ul></article>
+      <article class="editorial-card"><h2>Mise en relation</h2><p>Quand le concept est clair, GSA relie votre projet aux prestataires fiables et adaptés à votre ambition.</p><a class="primary-button" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Ouvrir un ticket Discord</a></article>
+    </div></section>
+  `;
+}
+
+function renderAboutPage() {
+  const app = document.getElementById("about-page");
+  if (!app) return;
+
+  app.innerHTML = `
+    <section class="page-hero small"><div class="container"><span class="eyebrow">À propos</span><h1>GSA — Pas une boutique, un standard</h1><p>Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.</p></div></section>
+    <section class="page-section"><div class="container prose-panel panel">
+      <p>Des créateurs talentueux perdent du temps en communication, de l'énergie en support, des opportunités à cause d'une mauvaise mise en avant et de l'argent faute de distribution sérieuse.</p>
+      <p>Chez GSA, les prestataires se concentrent uniquement sur leur domaine et nous confient la distribution complète de leurs créations.</p>
+      <h2>Ce que GSA prend en charge</h2>
+      <ul><li>La mise en valeur : graphisme, visuels, montages internes à GSA</li><li>Les explications claires, démonstrations et présentations</li><li>La relation client</li><li>La vente et le suivi</li><li>La diffusion à un large public francophone et international</li></ul>
+      <h2>Pourquoi la non exclusivité n'est pas un frein</h2>
+      <p>Sur GMod, l'exclusivité signifie souvent des mois d'attente, des coûts énormes et un risque de vol très élevé.</p>
+      <ul><li>La non exclusivité permet des retours d'autres utilisateurs</li><li>Une qualité maximale</li><li>Un prix archi compétitif</li><li>Un déploiement rapide</li></ul>
+    </div></section>
+  `;
+}
+
+async function renderProfilePage() {
+  const app = document.getElementById("profile-page");
+  if (!app) return;
+
+  if (!state.user) {
+    app.innerHTML = `<section class="page-section"><div class="container"><div class="empty-state"><h2>Connexion requise</h2><p>Connectez-vous pour accéder à votre profil.</p><a class="primary-button" href="login.html?redirect=profile.html">Se connecter</a></div></div></section>`;
+    return;
+  }
+
+  const cartCount = state.cart?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  const initials = escapeHtml((state.user.displayName || state.user.email || "G").slice(0, 2).toUpperCase());
+
+  app.innerHTML = `
+    <section class="page-hero small">
+      <div class="container">
+        <span class="eyebrow">Profil</span>
+        <h1>Mon espace</h1>
+        <p>Retrouvez vos informations de compte, votre activité récente et vos raccourcis utiles.</p>
+      </div>
+    </section>
+    <section class="page-section">
+      <div class="container profile-layout">
+        <aside class="profile-sidebar">
+          <div class="panel" style="display:grid;gap:18px;padding:24px;">
+            <div class="profile-identity">
+              ${state.user.avatarUrl
+                ? `<img src="${escapeHtml(state.user.avatarUrl)}" class="profile-avatar" style="object-fit:cover;border-radius:50%;" alt="" />`
+                : `<div class="profile-avatar">${initials}</div>`}
+              <div>
+                <span class="eyebrow">Compte GSA</span>
+                <h2 style="margin:4px 0 2px;">${escapeHtml(state.user.displayName || "Utilisateur GSA")}</h2>
+                <p style="margin:0;color:var(--muted);font-size:0.85rem;word-break:break-all;">${escapeHtml(state.user.email || "Adresse email non renseignée")}</p>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <span class="chip chip-accent">${escapeHtml(state.user.role || "client")}</span>
+              ${state.user.discordId ? `<span class="chip" style="background:rgba(255,255,255,0.06);color:var(--muted);">Discord lié</span>` : ""}
+              ${state.user.steamId ? `<span class="chip" style="background:rgba(255,255,255,0.06);color:var(--muted);">Steam lié</span>` : ""}
+            </div>
+            <div style="display:grid;gap:8px;">
+              <a class="ghost-button full" href="cart.html">Voir mon panier</a>
+              <a class="ghost-button full" href="catalogue.html">Explorer le catalogue</a>
+              <a class="ghost-button full" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support Discord</a>
+              ${state.user.role === 'admin' ? `<a class="primary-button full" href="/admin" style="margin-top:4px;">⚙️ Dashboard Admin</a>` : ''}
+            </div>
+          </div>
+        <div class="panel" style="display:grid;gap:14px;padding:24px;">
+          <span class="eyebrow">Modifier le profil</span>
+          <label style="display:grid;gap:6px;font-size:0.88rem;color:var(--muted);">
+            Nom affiché
+            <div style="display:flex;gap:8px;">
+              <input id="profile-input-name" type="text" value="${escapeHtml(state.user.displayName || '')}" style="flex:1;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;padding:8px 12px;color:var(--text);" />
+              <button id="profile-save-name" class="primary-button" style="min-height:36px;padding:0 14px;">✓</button>
+            </div>
+          </label>
+          <label style="display:grid;gap:6px;font-size:0.88rem;color:var(--muted);">
+            Email
+            <div style="display:flex;gap:8px;">
+              <input id="profile-input-email" type="email" value="${escapeHtml(state.user.email || '')}" style="flex:1;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;padding:8px 12px;color:var(--text);" />
+              <button id="profile-save-email" class="primary-button" style="min-height:36px;padding:0 14px;">✓</button>
+            </div>
+          </label>
+          <label style="display:grid;gap:6px;font-size:0.88rem;color:var(--muted);">
+            Photo de profil (URL)
+            <div style="display:flex;gap:8px;">
+              <input id="profile-input-avatar" type="url" value="${escapeHtml(state.user.avatarUrl || '')}" placeholder="https://..." style="flex:1;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;padding:8px 12px;color:var(--text);" />
+              <button id="profile-save-avatar" class="primary-button" style="min-height:36px;padding:0 14px;">✓</button>
+            </div>
+          </label>
+          ${!state.user.discordId ? `<a class="ghost-button full" href="/auth/discord" style="margin-top:4px;text-align:center;">Lier mon compte Discord</a>` : ''}
+        </div>
+        </aside>
+
+        <div class="profile-main">
+          <section class="panel profile-stats-grid">
+            <article class="profile-stat-card">
+              <span>Articles dans le panier</span>
+              <strong>${cartCount}</strong>
+            </article>
+            <article class="profile-stat-card">
+              <span>Langue active</span>
+              <strong>${state.locale.toUpperCase()}</strong>
+            </article>
+            <article class="profile-stat-card">
+              <span>Type de compte</span>
+              <strong>${escapeHtml(state.user.role || "client")}</strong>
+            </article>
+          </section>
+
+          <section class="panel profile-section-card">
+            <div class="profile-section-head">
+              <div>
+                <span class="eyebrow">Informations</span>
+                <h3>Détails du compte</h3>
+              </div>
+            </div>
+            <div class="profile-info-grid">
+              <div class="profile-info-item">
+                <span>Nom affiché</span>
+                <strong>${escapeHtml(state.user.displayName || "Non défini")}</strong>
+              </div>
+              <div class="profile-info-item">
+                <span>Email</span>
+                <strong>${escapeHtml(state.user.email || "Non défini")}</strong>
+              </div>
+              <div class="profile-info-item">
+                <span>Discord ID</span>
+                <strong>${escapeHtml(state.user.discordId || "Non lié")}</strong>
+              </div>
+              <div class="profile-info-item">
+                <span>Steam ID</span>
+                <strong>${escapeHtml(state.user.steamId || "Non lié")}</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel profile-section-card">
+            <div class="profile-section-head">
+              <div>
+                <span class="eyebrow">Activité</span>
+                <h3>Raccourcis utiles</h3>
+              </div>
+            </div>
+            <div class="profile-actions-grid">
+              <a class="profile-action-card" href="cart.html">
+                <span class="product-tag">Panier</span>
+                <strong>Gérer mes achats en cours</strong>
+                <p>Consultez vos produits sélectionnés et finalisez votre commande.</p>
+              </a>
+              <a class="profile-action-card" href="catalogue.html?sort=new">
+                <span class="product-tag">Catalogue</span>
+                <strong>Voir les nouveautés</strong>
+                <p>Accédez rapidement aux derniers assets ajoutés sur la marketplace.</p>
+              </a>
+              <a class="profile-action-card" href="prestation.html">
+                <span class="product-tag">Prestation</span>
+                <strong>Découvrir l'accompagnement GSA</strong>
+                <p>Explorez les services de game design et de structuration de projet.</p>
+              </a>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  `;
+
+  document.getElementById("profile-save-name")?.addEventListener("click", async () => {
+    const input = document.getElementById("profile-input-name");
+    try {
+      const res = await api("/api/profile", { method: "PATCH", body: JSON.stringify({ displayName: input.value }) });
+      state.user = res.user;
+      updateHeaderLabels();
+      input.style.outline = "2px solid var(--accent)";
+      setTimeout(() => { input.style.outline = ""; }, 1200);
+    } catch (err) { alert(err.message); }
+  });
+
+  document.getElementById("profile-save-email")?.addEventListener("click", async () => {
+    const input = document.getElementById("profile-input-email");
+    try {
+      const res = await api("/api/profile", { method: "PATCH", body: JSON.stringify({ email: input.value }) });
+      state.user = res.user;
+      updateHeaderLabels();
+      input.style.outline = "2px solid var(--accent)";
+      setTimeout(() => { input.style.outline = ""; }, 1200);
+    } catch (err) { alert(err.message); }
+  });
+
+  document.getElementById("profile-save-avatar")?.addEventListener("click", async () => {
+    const input = document.getElementById("profile-input-avatar");
+    try {
+      const res = await api("/api/profile", { method: "PATCH", body: JSON.stringify({ avatarUrl: input.value }) });
+      state.user = res.user;
+      updateHeaderLabels();
+      input.style.outline = "2px solid var(--accent)";
+      setTimeout(() => { input.style.outline = ""; }, 1200);
+    } catch (err) { alert(err.message); }
+  });
+}
+
+async function renderAdminPage() {
+  const app = document.getElementById("admin-page");
+  if (!app) return;
+
+  if (!state.user || state.user.role !== "admin") {
+    app.innerHTML = `<section class="page-section"><div class="container empty-state"><h2>Accès administrateur requis</h2><p>Connectez-vous avec le compte admin pour gérer les produits.</p><a class="primary-button" href="login.html?redirect=admin.html">Connexion</a></div></section>`;
+    return;
+  }
+
+  const products = await api("/api/admin/products");
+
+  app.innerHTML = `
+    <section class="page-hero small"><div class="container"><span class="eyebrow">Backoffice</span><h1>Gestion des produits</h1><p>Ajout rapide de produits en base et suppression depuis l'interface.</p></div></section>
+    <section class="page-section"><div class="container split-layout">
+      <form class="panel form-panel" id="admin-product-form">
+        <h2>Nouveau produit</h2>
+        <label>Titre<input name="title" required /></label>
+        <label>Résumé<input name="shortDescription" required /></label>
+        <label>Description<textarea name="description" rows="4" required></textarea></label>
+        <label>Installation<textarea name="installation" rows="4" required></textarea></label>
+        <label>Catégorie<select name="categorySlug">${state.categories.map((category) => `<option value="${category.slug}">${escapeHtml(category.name)}</option>`).join("")}</select></label>
+        <label>Seller slug<input name="sellerSlug" value="tresingo" required /></label>
+        <label>Prix<input name="price" type="number" step="0.01" required /></label>
+        <label>Ancien prix<input name="oldPrice" type="number" step="0.01" /></label>
+        <label>Réduction %<input name="discountPercent" type="number" step="1" /></label>
+        <label>Tags (virgules)<input name="tags" /></label>
+        <label>Image miniature URL<input name="thumbnail" type="url" /></label>
+        <button class="primary-button full" type="submit">Créer le produit</button>
+      </form>
+      <div class="panel">
+        <h2>Produits existants</h2>
+        <div class="admin-products-list">
+          ${products.map((product) => `<article class="admin-product-row"><div><strong>${escapeHtml(product.title)}</strong><p>${escapeHtml(product.category)} • ${currency(product.price)} • -${product.discount_percent}%</p></div><button class="ghost-button" type="button" data-admin-delete="${product.id}">Supprimer</button></article>`).join("")}
+        </div>
+      </div>
+    </div></section>
+  `;
+
+  document.getElementById("admin-product-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      await api("/api/admin/products", {
+        method: "POST",
+        body: JSON.stringify({
+          title: formData.get("title"),
+          shortDescription: formData.get("shortDescription"),
+          description: formData.get("description"),
+          installation: formData.get("installation"),
+          categorySlug: formData.get("categorySlug"),
+          sellerSlug: formData.get("sellerSlug"),
+          price: Number(formData.get("price")),
+          oldPrice: Number(formData.get("oldPrice") || 0),
+          discountPercent: Number(formData.get("discountPercent") || 0),
+          tags: String(formData.get("tags") || "")
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+          thumbnail: formData.get("thumbnail"),
+        }),
+      });
+      location.reload();
+    } catch (error) {
+      alert(error.message);
+    }
+  });
+
+  document.querySelectorAll("[data-admin-delete]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      try {
+        await api(`/api/admin/products/${button.dataset.adminDelete}`, { method: "DELETE" });
+        location.reload();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  });
+}
+
+async function boot() {
+  await hydrateSession();
+  attachSearchHandler();
+  attachLanguageToggle();
+
+  if (
+    document.body.dataset.page === "home" ||
+    document.getElementById("catalogue-page") ||
+    document.getElementById("admin-page")
+  ) {
+    await loadBootstrap();
+  }
+
+  updateHeaderLabels();
+
+  if (document.body.dataset.page === "home") renderHomePage();
+  await renderCataloguePage();
+  await renderProductPage();
+  await renderLoginPage();
+  await renderCartPage();
+  renderPrestationPage();
+  renderAboutPage();
+  await renderProfilePage();
+  await renderAdminPage();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  boot().catch((error) => {
+    console.error(error);
+    const container = document.getElementById("page-content") || document.querySelector("main");
+    if (container) {
+      container.innerHTML = `<section class="page-section"><div class="container empty-state"><h2>Erreur de chargement</h2><p>${escapeHtml(error.message)}</p></div></section>`;
+    }
   });
 });

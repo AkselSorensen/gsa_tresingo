@@ -1967,8 +1967,8 @@ app.post("/api/admin/products", requireAdmin, async (req, res) => {
         String(shortDescription).trim(),
         String(description).trim(),
         String(installation).trim(),
+        (Number(discountPercent || 0) > 0 ? Number(price || 0) * (1 - Number(discountPercent || 0) / 100) : Number(price || 0)),
         Number(price || 0),
-        Number(oldPrice || price || 0),
         Number(discountPercent || 0),
         Array.isArray(tags) ? tags : [],
       ]
@@ -2088,7 +2088,7 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   if (Number.isNaN(productId)) return res.status(400).json({ message: "Invalid product id" });
   const { 
     title, price, discountPercent, isFeatured, isTrending, isNew,
-    shortDescription, description, installation, categorySlug, tags
+    shortDescription, description, installation, categorySlug, tags, isHidden
   } = req.body;
   
   try {
@@ -2102,21 +2102,45 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
       }
     }
 
-    const updates = []; const values = []; let idx = 1;
-    if (title !== undefined) { updates.push(`title = $${idx++}`); values.push(String(title).trim()); }
-    if (shortDescription !== undefined) { updates.push(`short_description = $${idx++}`); values.push(String(shortDescription).trim()); }
-    if (description !== undefined) { updates.push(`description = $${idx++}`); values.push(String(description).trim()); }
-    if (installation !== undefined) { updates.push(`installation = $${idx++}`); values.push(String(installation).trim()); }
-    if (categoryId !== null) { 
-      updates.push(`category_id = $${idx++}`); values.push(categoryId); 
-      updates.push(`category = $${idx++}`); values.push(categoryName); 
-    }
-    if (price !== undefined) { updates.push(`price = $${idx++}`); values.push(Number(price)); }
-    if (discountPercent !== undefined) { updates.push(`discount_percent = $${idx++}`); values.push(Number(discountPercent)); }
-    if (tags !== undefined) { updates.push(`tags = $${idx++}`); values.push(Array.isArray(tags) ? tags : []); }
-    if (isFeatured !== undefined) { updates.push(`is_featured = $${idx++}`); values.push(Boolean(isFeatured)); }
-    if (isTrending !== undefined) { updates.push(`is_trending = $${idx++}`); values.push(Boolean(isTrending)); }
-    if (isNew !== undefined) { updates.push(`is_new = $${idx++}`); values.push(Boolean(isNew)); }
+      const updates = []; const values = []; let idx = 1;
+      if (title !== undefined) { updates.push(`title = $${idx++}`); values.push(String(title).trim()); }
+      if (shortDescription !== undefined) { updates.push(`short_description = $${idx++}`); values.push(String(shortDescription).trim()); }
+      if (description !== undefined) { updates.push(`description = $${idx++}`); values.push(String(description).trim()); }
+      if (installation !== undefined) { updates.push(`installation = $${idx++}`); values.push(String(installation).trim()); }
+      if (categoryId !== null) {
+        updates.push(`category_id = $${idx++}`); values.push(categoryId);
+        updates.push(`category = $${idx++}`); values.push(categoryName);
+      }
+      if (price !== undefined && discountPercent !== undefined) {
+        const basePrice = Number(price);
+        const discount = Number(discountPercent);
+        const newPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+
+        updates.push(`old_price = $${idx++}`); values.push(basePrice);
+        updates.push(`price = $${idx++}`); values.push(newPrice);
+        updates.push(`discount_percent = $${idx++}`); values.push(discount);
+      } else if (price !== undefined) {
+        updates.push(`old_price = $${idx++}`); values.push(Number(price));
+        updates.push(`price = $${idx++}`); values.push(Number(price));
+      } else if (discountPercent !== undefined) {
+        // If only discountPercent is provided, we need to fetch the old_price to calculate the new price
+        const currentProductResult = await pool.query(`SELECT old_price, price FROM products WHERE id = $1`, [productId]);
+        if (currentProductResult.rowCount > 0) {
+            const currentProduct = currentProductResult.rows[0];
+            const basePrice = Number(currentProduct.old_price) > 0 ? Number(currentProduct.old_price) : Number(currentProduct.price);
+            const discount = Number(discountPercent);
+            const newPrice = discount > 0 ? basePrice * (1 - discount / 100) : basePrice;
+
+            updates.push(`old_price = $${idx++}`); values.push(basePrice);
+            updates.push(`price = $${idx++}`); values.push(newPrice);
+            updates.push(`discount_percent = $${idx++}`); values.push(discount);
+        }
+      }
+      if (tags !== undefined) { updates.push(`tags = $${idx++}`); values.push(Array.isArray(tags) ? tags : []); }
+      if (isFeatured !== undefined) { updates.push(`is_featured = $${idx++}`); values.push(Boolean(isFeatured)); }
+      if (isTrending !== undefined) { updates.push(`is_trending = $${idx++}`); values.push(Boolean(isTrending)); }
+      if (isNew !== undefined) { updates.push(`is_new = $${idx++}`); values.push(Boolean(isNew)); }
+      if (isHidden !== undefined) { updates.push(`is_hidden = $${idx++}`); values.push(Boolean(isHidden)); }
     
     if (!updates.length) return res.status(400).json({ message: "Nothing to update" });
     

@@ -468,6 +468,7 @@ s<!DOCTYPE html>
         isFeatured: document.getElementById('em-featured').checked,
         isTrending: document.getElementById('em-trending').checked,
         isNew: document.getElementById('em-new').checked,
+        isHidden: document.getElementById('em-hidden').checked,
       };
 
       try {
@@ -476,7 +477,9 @@ s<!DOCTYPE html>
         await apiFetch(`/api/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
         showMsg(msgEl, '✓ Produit mis à jour avec succès.', true);
         await loadProducts();
-        setTimeout(closeEditModal, 1000);
+        setTimeout(() => {
+          closeEditModal();
+        }, 1000);
       } catch(err) {
         showMsg(msgEl, '✕ ' + err.message, false);
       } finally {
@@ -549,6 +552,8 @@ s<!DOCTYPE html>
       const thumb = document.getElementById('cp-thumb').value.trim();
       const tagsRaw = document.getElementById('cp-tags').value;
       const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+      
+      const isHidden = document.getElementById('cp-hidden').checked;
 
       if (!title || !shortDesc || !desc || !install || !categorySlug || !sellerSlug) {
         showMsg(msgEl, 'Veuillez remplir tous les champs obligatoires.', false);
@@ -560,7 +565,7 @@ s<!DOCTYPE html>
       try {
         await apiFetch('/api/admin/products', {
           method: 'POST',
-          body: JSON.stringify({ title, shortDescription: shortDesc, description: desc, installation: install, categorySlug, sellerSlug, price, oldPrice: price, discountPercent: discount, tags, thumbnail: thumb || undefined }),
+          body: JSON.stringify({ title, shortDescription: shortDesc, description: desc, installation: install, categorySlug, sellerSlug, price, oldPrice: price, discountPercent: discount, isHidden, tags, thumbnail: thumb || undefined }),
         });
         showMsg(msgEl, '✓ Produit créé avec succès.', true);
         ['cp-title','cp-short','cp-desc','cp-install','cp-price','cp-discount','cp-thumb','cp-tags'].forEach(id => {

@@ -134,11 +134,17 @@ select {
   font-weight: 900;
   letter-spacing: 0;
   text-transform: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  line-height: 0.9;
 }
 
 .brand-mark-unified em {
   color: #2f98ff;
   font-style: normal;
+  display: block;
 }
 
 .brand-text {

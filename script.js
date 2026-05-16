@@ -266,21 +266,31 @@ function updateHeaderLabels() {
   let userMenuWrap = document.getElementById("user-menu-wrap");
 
   if (state.user) {
+    // Si on a un bouton "Log in" orphelin (ex: ghost-button au lieu de primary-button), on le supprime pour éviter les doublons
+    const allLoginLinks = document.querySelectorAll('a[href="login.html"]');
+    
     if (!userMenuWrap) {
-      const loginLink =
+      // On cherche d'abord le lien login (celui qui a la classe .primary-button OU .ghost-button)
+      const targetLoginLink = 
         document.querySelector('.primary-button[href="login.html"]') ||
+        document.querySelector('.ghost-button[href="login.html"]') ||
         document.querySelector('.primary-button[href="profile.html"]');
-      if (loginLink) {
+        
+      if (targetLoginLink) {
         userMenuWrap = document.createElement("div");
         userMenuWrap.id = "user-menu-wrap";
         userMenuWrap.innerHTML = `
           <button class="primary-button" id="user-menu-trigger" type="button">${escapeHtml(t("welcome"))}, ${escapeHtml(state.user.displayName)}</button>
           <div id="user-menu-dropdown" class="user-menu-dropdown hidden">
+            ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
             <a href="profile.html">Mon profil</a>
             <button type="button" id="user-logout-btn">Se déconnecter</button>
           </div>
         `;
-        loginLink.replaceWith(userMenuWrap);
+        targetLoginLink.replaceWith(userMenuWrap);
+
+        // Nettoyer les autres liens de login potentiels qui traînent
+        document.querySelectorAll('a[href="login.html"]').forEach(link => link.remove());
 
         document.getElementById("user-menu-trigger").addEventListener("click", (e) => {
           e.stopPropagation();
@@ -301,6 +311,10 @@ function updateHeaderLabels() {
     } else {
       const trigger = document.getElementById("user-menu-trigger");
       if (trigger) trigger.textContent = `${t("welcome")}, ${state.user.displayName}`;
+      // Nettoyer les autres liens de login potentiels qui traînent
+      document.querySelectorAll('a[href="login.html"]').forEach(link => {
+        if(!link.closest('#user-menu-wrap')) link.remove()
+      });
     }
   } else {
     if (userMenuWrap) {

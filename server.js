@@ -123,6 +123,8 @@ function buildWhereClause(query = {}) {
     clauses.push(`p.discount_percent > 0`);
   }
 
+  clauses.push(`p.is_hidden = FALSE`);
+
   return {
     sql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "",
     values,

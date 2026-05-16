@@ -1395,6 +1395,22 @@ app.post("/auth/admin/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid admin credentials" });
   }
 
+  // Si on se connecte en admin avec les credentials hardcodés, on s'assure
+  // de créer ou mettre à jour le compte dans la BDD pour qu'il ait bien le rôle 'admin'.
+  const adminSlug = slugify(ADMIN_EMAIL.split("@")[0] || "admin");
+  await pool.query(
+    `
+      INSERT INTO users (email, password_hash, display_name, slug, role, preferred_language)
+      VALUES ($1, $2, $3, $4, 'admin', 'fr')
+      ON CONFLICT (email) DO UPDATE
+      SET password_hash = EXCLUDED.password_hash,
+          display_name = EXCLUDED.display_name,
+          slug = EXCLUDED.slug,
+          role = 'admin'
+    `,
+    [ADMIN_EMAIL, hashPassword(ADMIN_PASSWORD), "GSA Admin", adminSlug]
+  );
+
   const result = await pool.query(`SELECT * FROM users WHERE email = $1 LIMIT 1`, [ADMIN_EMAIL]);
   req.session.user = sanitizeUser(result.rows[0]);
 

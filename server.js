@@ -429,6 +429,7 @@ async function initializeDatabase() {
       is_trending BOOLEAN NOT NULL DEFAULT FALSE,
       is_featured BOOLEAN NOT NULL DEFAULT FALSE,
       is_new BOOLEAN NOT NULL DEFAULT FALSE,
+      is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
       popularity_score INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -465,6 +466,7 @@ async function initializeDatabase() {
     ALTER TABLE products ADD COLUMN IF NOT EXISTS is_trending BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS is_new BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS popularity_score INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
     ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
@@ -1191,6 +1193,7 @@ app.get("/api/products", async (req, res) => {
           p.is_trending,
           p.is_featured,
           p.is_new,
+          p.is_hidden,
           p.popularity_score,
           p.created_at,
           p.updated_at,

@@ -343,12 +343,18 @@
         ]);
 
         const catSel = document.getElementById('cp-category');
-        catSel.innerHTML = cats.map(c => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('');
+        if (catSel) {
+          catSel.innerHTML = cats.map(c => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('');
+        }
 
         const sellerSel = document.getElementById('cp-seller');
-        const sellers = users.filter(u => u.role === 'seller' || u.role === 'admin');
-        sellerSel.innerHTML = sellers.map(u => `<option value="${esc(u.slug || u.email)}">${esc(u.displayName)}</option>`).join('');
-      } catch(_) {}
+        if (sellerSel && Array.isArray(users)) {
+          const sellers = users.filter(u => u.role === 'seller' || u.role === 'admin');
+          sellerSel.innerHTML = sellers.map(u => `<option value="${esc(u.slug || u.email)}">${esc(u.displayName)}</option>`).join('');
+        }
+      } catch(err) {
+        console.error('Erreur chargement cat/sellers:', err);
+      }
     }
 
     async function createProduct() {

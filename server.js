@@ -1911,7 +1911,7 @@ app.post("/api/admin/products", requireAdmin, async (req, res) => {
 
   try {
     const category = await pool.query(`SELECT id FROM categories WHERE slug = $1 LIMIT 1`, [categorySlug]);
-    const seller = await pool.query(`SELECT id FROM users WHERE slug = $1 LIMIT 1`, [sellerSlug]);
+    const seller = await pool.query(`SELECT id FROM users WHERE slug = $1 OR email = $1 LIMIT 1`, [sellerSlug]);
 
     if (!category.rowCount || !seller.rowCount) {
       return res.status(400).json({ message: "Invalid category or seller" });

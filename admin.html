@@ -40,6 +40,31 @@
     .admin-msg.ok { color:#6ee7b7; }
     .admin-msg.err { color:#fca5a5; }
     .tag-input-hint { font-size:0.78rem; color:var(--muted); margin-top:2px; }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-content {
+      background: #151a23;
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      width: 90%; max-width: 600px; max-height: 90vh;
+      overflow-y: auto; padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { margin: 0; font-size: 1.25rem; }
+    .btn-close { background: none; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+    .btn-close:hover { color: var(--text); }
+    .modal-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--panel-border); }
+    .modal-footer-actions { display: flex; gap: 12px; }
   </style>
 </head>
 <body>
@@ -80,15 +105,12 @@
                     <th>Catégorie</th>
                     <th>Prix (€)</th>
                     <th>Remise %</th>
-                    <th>Mis en avant</th>
-                    <th>Tendance</th>
-                    <th>Nouveau</th>
-                    <th>Créé le</th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="products-tbody">
-                  <tr><td colspan="10" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
+                  <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
                 </tbody>
               </table>
             </div>
@@ -198,6 +220,50 @@
     </div>
   </div>
 
+  <!-- Edit Product Modal -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Modifier le produit <span id="em-id-display" style="color:var(--muted);font-size:1rem;font-weight:normal;"></span></h3>
+        <button class="btn-close" id="btn-close-modal">×</button>
+      </div>
+      <div class="create-form">
+        <input type="hidden" id="em-id" />
+        <label>Titre <input id="em-title" type="text" /></label>
+        <label>Description courte <input id="em-short" type="text" /></label>
+        <label>Description longue <textarea id="em-desc"></textarea></label>
+        <label>Installation <textarea id="em-install"></textarea></label>
+        <div class="form-grid-2">
+          <label>Catégorie <select id="em-category"><option value="">--</option></select></label>
+          <label>Tags <input id="em-tags" type="text" placeholder="tag1, tag2..." /></label>
+        </div>
+        <div class="form-grid-2">
+          <label>Prix (€) <input id="em-price" type="number" min="0" step="0.01" /></label>
+          <label>Remise (%) <input id="em-discount" type="number" min="0" max="100" /></label>
+        </div>
+        <div style="display:flex;gap:20px;padding:10px 0;">
+          <label style="display:flex;align-items:center;gap:6px;flex-direction:row;font-size:0.9rem;">
+            <input type="checkbox" id="em-featured" class="toggle-check" /> Mis en avant
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;flex-direction:row;font-size:0.9rem;">
+            <input type="checkbox" id="em-trending" class="toggle-check" /> Tendance
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;flex-direction:row;font-size:0.9rem;">
+            <input type="checkbox" id="em-new" class="toggle-check" /> Nouveau
+          </label>
+        </div>
+        <div id="edit-modal-msg" class="admin-msg"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="danger-button" id="btn-em-delete">Supprimer ce produit</button>
+        <div class="modal-footer-actions">
+          <button class="ghost-button" id="btn-em-cancel" style="padding:0 16px;border-radius:8px;border:1px solid var(--panel-border);background:transparent;color:var(--text);cursor:pointer;">Annuler</button>
+          <button class="primary-button" id="btn-em-save" style="padding:0 16px;min-height:36px;">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ─── Helpers ──────────────────────────────────────────────
     function esc(v) {
@@ -262,67 +328,129 @@
         allProducts = await apiFetch('/api/admin/products');
         countEl.textContent = `(${allProducts.length})`;
         if (!allProducts.length) {
-          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:32px;">Aucun produit en base.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">Aucun produit en base.</td></tr>';
           return;
         }
-        tbody.innerHTML = allProducts.map(p => `
-          <tr data-product-id="${esc(p.id)}">
-            <td style="color:var(--muted);font-size:0.8rem;">${esc(p.id)}</td>
-            <td>
-              <input class="inline-edit-input" style="width:160px;" data-field="title" value="${esc(p.title)}" />
-            </td>
-            <td style="color:var(--muted);font-size:0.85rem;">${esc(p.category)}</td>
-            <td>
-              <input class="inline-edit-input" data-field="price" type="number" min="0" step="0.01" value="${esc(p.price)}" />
-            </td>
-            <td>
-              <input class="inline-edit-input" data-field="discountPercent" type="number" min="0" max="100" value="${esc(p.discount_percent)}" />
-            </td>
-            <td style="text-align:center;">
-              <input class="toggle-check" type="checkbox" data-field="isFeatured" ${p.is_featured ? 'checked' : ''} title="Mis en avant" />
-            </td>
-            <td style="text-align:center;">
-              <input class="toggle-check" type="checkbox" data-field="isTrending" ${p.is_trending ? 'checked' : ''} title="Tendance" />
-            </td>
-            <td style="text-align:center;">
-              <input class="toggle-check" type="checkbox" data-field="isNew" ${p.is_new ? 'checked' : ''} title="Nouveau" />
-            </td>
-            <td style="color:var(--muted);font-size:0.82rem;white-space:nowrap;">${fmtDate(p.created_at)}</td>
-            <td>
-              <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <button class="save-button" data-action="save-product" data-id="${esc(p.id)}" title="Sauvegarder">✓ Sauvegarder</button>
-                <button class="danger-button" data-action="delete-product" data-id="${esc(p.id)}" title="Supprimer">✕</button>
-              </div>
-            </td>
-          </tr>
-        `).join('');
+        tbody.innerHTML = allProducts.map(p => {
+          const statuses = [];
+          if (p.is_featured) statuses.push('<span style="color:#90cdf4;font-size:0.75rem;">Featured</span>');
+          if (p.is_trending) statuses.push('<span style="color:#fde68a;font-size:0.75rem;">Trending</span>');
+          if (p.is_new) statuses.push('<span style="color:#6ee7b7;font-size:0.75rem;">New</span>');
+          const statusHtml = statuses.join(' • ') || '<span style="color:var(--muted);font-size:0.75rem;">Aucun</span>';
+
+          return `
+            <tr data-product-id="${esc(p.id)}">
+              <td style="color:var(--muted);font-size:0.8rem;">${esc(p.id)}</td>
+              <td><strong>${esc(p.title)}</strong></td>
+              <td style="color:var(--muted);font-size:0.85rem;">${esc(p.category)}</td>
+              <td>${fmtCurrency(p.price)}</td>
+              <td>${p.discount_percent > 0 ? `<span style="color:#fca5a5;">-${p.discount_percent}%</span>` : '0%'}</td>
+              <td>${statusHtml}</td>
+              <td>
+                <button class="save-button" data-action="edit-product" data-id="${esc(p.id)}">✏️ Modifier</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
       } catch(err) {
-        tbody.innerHTML = `<tr><td colspan="10" style="color:#fca5a5;padding:24px;">${esc(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="color:#fca5a5;padding:24px;">${esc(err.message)}</td></tr>`;
       }
     }
 
-    async function saveProduct(id) {
-      const row = document.querySelector(`tr[data-product-id="${id}"]`);
-      if (!row) return;
-      const body = {
-        title: row.querySelector('[data-field="title"]').value,
-        price: Number(row.querySelector('[data-field="price"]').value),
-        discountPercent: Number(row.querySelector('[data-field="discountPercent"]').value),
-        isFeatured: row.querySelector('[data-field="isFeatured"]').checked,
-        isTrending: row.querySelector('[data-field="isTrending"]').checked,
-        isNew: row.querySelector('[data-field="isNew"]').checked,
-      };
-      try {
-        await apiFetch(`/api/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
-        const saveBtn = row.querySelector('[data-action="save-product"]');
-        const orig = saveBtn.textContent;
-        saveBtn.textContent = '✓ Sauvegardé';
-        saveBtn.style.color = '#6ee7b7';
-        setTimeout(() => { saveBtn.textContent = orig; saveBtn.style.color = ''; }, 2000);
-      } catch(err) {
-        alert('Erreur: ' + err.message);
+    // Modal logic
+    const modal = document.getElementById('edit-modal');
+    
+    function openEditModal(productId) {
+      const p = allProducts.find(prod => String(prod.id) === String(productId));
+      if (!p) return;
+      
+      document.getElementById('em-id').value = p.id;
+      document.getElementById('em-id-display').textContent = `#${p.id}`;
+      document.getElementById('em-title').value = p.title || '';
+      document.getElementById('em-short').value = p.short_description || '';
+      document.getElementById('em-desc').value = p.description || '';
+      document.getElementById('em-install').value = p.installation || '';
+      document.getElementById('em-price').value = p.price || 0;
+      document.getElementById('em-discount').value = p.discount_percent || 0;
+      document.getElementById('em-tags').value = (p.tags || []).join(', ');
+      document.getElementById('em-featured').checked = p.is_featured || false;
+      document.getElementById('em-trending').checked = p.is_trending || false;
+      document.getElementById('em-new').checked = p.is_new || false;
+
+      // Set category options
+      const catSel = document.getElementById('em-category');
+      const cpCatSel = document.getElementById('cp-category'); // Copy options from create form
+      if (cpCatSel && catSel) {
+        catSel.innerHTML = cpCatSel.innerHTML;
+        catSel.value = p.category_slug || '';
       }
+
+      document.getElementById('edit-modal-msg').textContent = '';
+      modal.classList.add('active');
     }
+
+    function closeEditModal() {
+      modal.classList.remove('active');
+    }
+
+    document.getElementById('btn-close-modal').addEventListener('click', closeEditModal);
+    document.getElementById('btn-em-cancel').addEventListener('click', closeEditModal);
+    
+    // Close on background click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeEditModal();
+    });
+
+    document.getElementById('btn-em-save').addEventListener('click', async () => {
+      const id = document.getElementById('em-id').value;
+      const msgEl = document.getElementById('edit-modal-msg');
+      const btn = document.getElementById('btn-em-save');
+      
+      const body = {
+        title: document.getElementById('em-title').value.trim(),
+        shortDescription: document.getElementById('em-short').value.trim(),
+        description: document.getElementById('em-desc').value.trim(),
+        installation: document.getElementById('em-install').value.trim(),
+        categorySlug: document.getElementById('em-category').value,
+        price: Number(document.getElementById('em-price').value),
+        discountPercent: Number(document.getElementById('em-discount').value),
+        tags: document.getElementById('em-tags').value.split(',').map(t => t.trim()).filter(Boolean),
+        isFeatured: document.getElementById('em-featured').checked,
+        isTrending: document.getElementById('em-trending').checked,
+        isNew: document.getElementById('em-new').checked,
+      };
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Sauvegarde…';
+        await apiFetch(`/api/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
+        showMsg(msgEl, '✓ Produit mis à jour avec succès.', true);
+        await loadProducts();
+        setTimeout(closeEditModal, 1000);
+      } catch(err) {
+        showMsg(msgEl, '✕ ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sauvegarder';
+      }
+    });
+
+    document.getElementById('btn-em-delete').addEventListener('click', async () => {
+      const id = document.getElementById('em-id').value;
+      if (!confirm(`Supprimer le produit #${id} ? Cette action est irréversible.`)) return;
+      
+      const btn = document.getElementById('btn-em-delete');
+      const msgEl = document.getElementById('edit-modal-msg');
+      try {
+        btn.disabled = true;
+        await apiFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+        await loadProducts();
+        closeEditModal();
+      } catch(err) {
+        showMsg(msgEl, '✕ ' + err.message, false);
+        btn.disabled = false;
+      }
+    });
 
     async function deleteProduct(id) {
       if (!confirm(`Supprimer le produit #${id} ? Cette action est irréversible.`)) return;
@@ -479,8 +607,7 @@
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const id = btn.dataset.id;
-        if (btn.dataset.action === 'save-product') await saveProduct(id);
-        if (btn.dataset.action === 'delete-product') await deleteProduct(id);
+        if (btn.dataset.action === 'edit-product') openEditModal(id);
       });
 
       // Create product

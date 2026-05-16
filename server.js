@@ -1873,12 +1873,24 @@ app.get("/api/admin/products", requireAdmin, async (_req, res) => {
           p.id,
           p.title,
           p.slug,
+          p.short_description,
+          p.description,
+          p.installation,
           p.price,
           p.discount_percent,
+          p.category_id,
+          c.slug AS category_slug,
           c.name AS category,
+          p.seller_id,
+          u.slug AS seller_slug,
+          p.tags,
+          p.is_featured,
+          p.is_trending,
+          p.is_new,
           p.created_at
         FROM products p
         JOIN categories c ON c.id = p.category_id
+        JOIN users u ON u.id = p.seller_id
         ORDER BY p.created_at DESC, p.id DESC
       `
     );
@@ -2069,16 +2081,40 @@ app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
 app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   const productId = Number(req.params.id);
   if (Number.isNaN(productId)) return res.status(400).json({ message: "Invalid product id" });
-  const { title, price, discountPercent, isFeatured, isTrending, isNew } = req.body;
+  const { 
+    title, price, discountPercent, isFeatured, isTrending, isNew,
+    shortDescription, description, installation, categorySlug, tags
+  } = req.body;
+  
   try {
+    let categoryId = null;
+    let categoryName = null;
+    if (categorySlug) {
+      const catResult = await pool.query(`SELECT id, name FROM categories WHERE slug = $1 LIMIT 1`, [categorySlug]);
+      if (catResult.rowCount) {
+        categoryId = catResult.rows[0].id;
+        categoryName = catResult.rows[0].name;
+      }
+    }
+
     const updates = []; const values = []; let idx = 1;
     if (title !== undefined) { updates.push(`title = $${idx++}`); values.push(String(title).trim()); }
+    if (shortDescription !== undefined) { updates.push(`short_description = $${idx++}`); values.push(String(shortDescription).trim()); }
+    if (description !== undefined) { updates.push(`description = $${idx++}`); values.push(String(description).trim()); }
+    if (installation !== undefined) { updates.push(`installation = $${idx++}`); values.push(String(installation).trim()); }
+    if (categoryId !== null) { 
+      updates.push(`category_id = $${idx++}`); values.push(categoryId); 
+      updates.push(`category = $${idx++}`); values.push(categoryName); 
+    }
     if (price !== undefined) { updates.push(`price = $${idx++}`); values.push(Number(price)); }
     if (discountPercent !== undefined) { updates.push(`discount_percent = $${idx++}`); values.push(Number(discountPercent)); }
+    if (tags !== undefined) { updates.push(`tags = $${idx++}`); values.push(Array.isArray(tags) ? tags : []); }
     if (isFeatured !== undefined) { updates.push(`is_featured = $${idx++}`); values.push(Boolean(isFeatured)); }
     if (isTrending !== undefined) { updates.push(`is_trending = $${idx++}`); values.push(Boolean(isTrending)); }
     if (isNew !== undefined) { updates.push(`is_new = $${idx++}`); values.push(Boolean(isNew)); }
+    
     if (!updates.length) return res.status(400).json({ message: "Nothing to update" });
+    
     values.push(productId);
     const result = await pool.query(
       `UPDATE products SET ${updates.join(", ")}, updated_at = NOW() WHERE id = $${idx} RETURNING id, title, slug, price, discount_percent`,

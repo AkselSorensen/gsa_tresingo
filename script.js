@@ -122,6 +122,7 @@ function productCard(product, detailed = false) {
   const category = escapeHtml(product.category || product.categoryName || "");
   const description = escapeHtml(product.shortDescription || "");
   const seller = escapeHtml(product.sellerName || "");
+  const sellerSlug = escapeHtml(product.sellerSlug || "");
   const compactTags = (product.tags || [])
     .slice(0, detailed ? 3 : 2)
     .map((tag) => `<span class="mini-tag">${escapeHtml(tag)}</span>`)
@@ -144,7 +145,7 @@ function productCard(product, detailed = false) {
           <span>★ ${Number(product.rating || 0).toFixed(1)} <small>(${product.reviewCount || 0})</small></span>
           <div class="price-cluster">${oldPrice}<strong>${currency(product.price)}</strong></div>
         </div>
-        ${seller ? `<div class="product-seller-line">${seller}</div>` : ""}
+        ${seller ? `<div class="product-seller-line"><a href="seller.html?id=${encodeURIComponent(sellerSlug)}" style="color:inherit; text-decoration:none;">${seller}</a></div>` : ""}
       </div>
     </article>
   `;
@@ -409,6 +410,30 @@ function renderHomePage() {
   if (carousel) carousel.innerHTML = rest.map((p) => trendingCard(p)).join("");
   if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).slice(0, 3).map((p) => salesCard(p)).join("");
 
+  const landingConfig = state.bootstrap.landingConfig || [];
+  
+  const banners = document.querySelectorAll(".showcase-banner-section");
+  if (banners.length >= 2) {
+    const config1 = landingConfig.find(c => c.section_key === "social_proof_1") || { is_active: true, title: "SOCIAL PROOF" };
+    const config2 = landingConfig.find(c => c.section_key === "social_proof_2") || { is_active: true, title: "SOCIAL PROOF" };
+
+    if (!config1.is_active) {
+      banners[0].style.display = "none";
+    } else {
+      banners[0].style.display = "";
+      const textSpan = banners[0].querySelector("span");
+      if (textSpan) textSpan.textContent = config1.title;
+    }
+
+    if (!config2.is_active) {
+      banners[1].style.display = "none";
+    } else {
+      banners[1].style.display = "";
+      const textSpan = banners[1].querySelector("span");
+      if (textSpan) textSpan.textContent = config2.title;
+    }
+  }
+
   if (categoryShowcase) {
     const scriptPool = [
       ...(state.bootstrap.trending || []),
@@ -523,6 +548,20 @@ async function renderCataloguePage() {
   const tag = params.get("tag") || "";
   const discount = params.get("discount") || "";
   const sort = params.get("sort") || "popular";
+
+  let titleText = "Catalogue";
+  if (search) titleText = `Recherche: ${search} — Catalogue`;
+  else if (category) titleText = `Catégorie: ${category} — Catalogue`;
+  else if (tag) titleText = `Tag: ${tag} — Catalogue`;
+  
+  document.title = `${titleText} — GSA Marketplace`;
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) {
+    metaDesc = document.createElement('meta');
+    metaDesc.name = "description";
+    document.head.appendChild(metaDesc);
+  }
+  metaDesc.content = `Découvrez tous les scripts et ressources pour Garry's Mod. ${search ? `Résultats pour "${search}".` : ''}`;
 
   const data = await api(
     `/api/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(
@@ -646,6 +685,15 @@ async function renderProductPage() {
   const product = await api(`/api/products/${encodeURIComponent(slug)}`);
   const media = product.media || [];
 
+  document.title = `${escapeHtml(product.title)} — GSA Marketplace`;
+  let metaDesc = document.querySelector('meta[name="description"]');
+  if (!metaDesc) {
+    metaDesc = document.createElement('meta');
+    metaDesc.name = "description";
+    document.head.appendChild(metaDesc);
+  }
+  metaDesc.content = escapeHtml(product.shortDescription || product.title);
+
   app.innerHTML = `
     <section class="market-product-page">
       <div class="container market-product-shell">
@@ -708,9 +756,11 @@ async function renderProductPage() {
               <div class="market-side-block">
                 <span class="market-side-label">Author Info</span>
                 <div class="market-author-row">
-                  <img src="${escapeHtml(product.sellerAvatar || "https://via.placeholder.com/64")}" alt="${escapeHtml(product.sellerName)}" />
+                  <a href="seller.html?id=${encodeURIComponent(product.sellerSlug || "")}" style="display:block;">
+                    <img src="${escapeHtml(product.sellerAvatar || "https://via.placeholder.com/64")}" alt="${escapeHtml(product.sellerName)}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;" />
+                  </a>
                   <div>
-                    <strong>${escapeHtml(product.sellerName)}</strong>
+                    <strong><a href="seller.html?id=${encodeURIComponent(product.sellerSlug || "")}" style="color:inherit; text-decoration:none;">${escapeHtml(product.sellerName)}</a></strong>
                     <small>Verified Creator</small>
                   </div>
                 </div>
@@ -1301,8 +1351,71 @@ async function renderAdminPage() {
           ${products.map((product) => `<article class="admin-product-row"><div><strong>${escapeHtml(product.title)}</strong><p>${escapeHtml(product.category)} • ${currency(product.price)} • -${product.discount_percent}%</p></div><button class="ghost-button" type="button" data-admin-delete="${product.id}">Supprimer</button></article>`).join("")}
         </div>
       </div>
-    </div></section>
+    </div>
+    
+    <div class="container" style="margin-top:40px;">
+      <div class="panel">
+        <h2>Configuration Landing Page</h2>
+        <p class="helper-text" style="margin-bottom:20px;">Gérez l'affichage des sections "Social Proof" sur la page d'accueil.</p>
+        <div id="admin-landing-configs">
+          <div class="spinner"></div> Chargement...
+        </div>
+      </div>
+    </div>
+    </section>
   `;
+
+  const loadLandingConfig = async () => {
+    try {
+      const res = await api("/api/admin/settings");
+      const configs = res.landingConfig || [];
+      const defaultSections = [
+        { key: "social_proof_1", title: "SOCIAL PROOF", desc: "Premier bandeau" },
+        { key: "social_proof_2", title: "SOCIAL PROOF", desc: "Deuxième bandeau" }
+      ];
+
+      const container = document.getElementById("admin-landing-configs");
+      if (!container) return;
+
+      container.innerHTML = defaultSections.map(def => {
+        const conf = configs.find(c => c.section_key === def.key) || { is_active: true, title: def.title, description: def.desc };
+        return `
+          <div style="padding:16px; border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <strong>${escapeHtml(def.desc)} (${def.key})</strong>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" data-landing-toggle="${def.key}" ${conf.is_active ? "checked" : ""} /> Visible
+              </label>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <input type="text" data-landing-title="${def.key}" value="${escapeHtml(conf.title)}" placeholder="Texte du bandeau" style="flex:1;" />
+              <button type="button" class="ghost-button" data-landing-save="${def.key}">Enregistrer</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll("[data-landing-save]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const key = btn.dataset.landingSave;
+          const title = document.querySelector(`[data-landing-title="${key}"]`).value;
+          const isActive = document.querySelector(`[data-landing-toggle="${key}"]`).checked;
+          try {
+            await api(`/api/admin/landing-config/${key}`, {
+              method: "PATCH",
+              body: JSON.stringify({ title, isActive })
+            });
+            btn.textContent = "✓ Sauvegardé";
+            setTimeout(() => { btn.textContent = "Enregistrer"; }, 2000);
+          } catch(e) { alert(e.message); }
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  loadLandingConfig();
 
   document.getElementById("admin-product-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -1370,6 +1483,57 @@ async function boot() {
   renderAboutPage();
   await renderProfilePage();
   await renderAdminPage();
+  await renderSellerPage();
+}
+
+async function renderSellerPage() {
+  const app = document.getElementById("seller-page");
+  if (!app) return;
+
+  const slug = getQueryParams().get("id");
+  if (!slug) {
+    app.innerHTML = `<div class="container empty-state"><h2>Vendeur introuvable</h2></div>`;
+    return;
+  }
+
+  try {
+    const data = await api(`/api/sellers/${encodeURIComponent(slug)}`);
+    const seller = data.seller;
+    const products = data.products;
+
+    document.title = `${escapeHtml(seller.displayName)} — Boutique GSA`;
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.content = `Découvrez tous les scripts et ressources Garry's Mod de ${escapeHtml(seller.displayName)}.`;
+    }
+
+    app.innerHTML = `
+      <section class="page-hero small">
+        <div class="container" style="display:flex; align-items:center; gap:24px;">
+          <img src="${escapeHtml(seller.avatarUrl || 'https://via.placeholder.com/120')}" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);" alt="${escapeHtml(seller.displayName)}" />
+          <div>
+            <span class="eyebrow">Créateur Vérifié</span>
+            <h1>${escapeHtml(seller.displayName)}</h1>
+            <p>${products.length} produit${products.length > 1 ? 's' : ''} publié${products.length > 1 ? 's' : ''}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="container">
+          <div class="market-products-grid ${products.length ? "" : "is-empty"}">
+            ${
+              products.length
+                ? products.map((product) => productCard(product)).join("")
+                : `<div class="empty-state"><h3>Aucun produit publié</h3><p>Ce créateur n'a pas encore mis de ressources en ligne.</p></div>`
+            }
+          </div>
+        </div>
+      </section>
+    `;
+  } catch (error) {
+    app.innerHTML = `<div class="container empty-state"><h2>Erreur</h2><p>${escapeHtml(error.message)}</p><a class="primary-button" href="catalogue.html">Retour au catalogue</a></div>`;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {

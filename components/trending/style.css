@@ -194,3 +194,19 @@
     grid-auto-columns: minmax(220px, 1fr);
   }
 }
+
+@media (max-width: 640px) {
+  .trending-carousel-strip {
+    grid-auto-columns: minmax(180px, 1fr);
+  }
+  
+  .trending-title-wrap h2 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .trending-carousel-strip {
+    grid-auto-columns: minmax(140px, 1fr);
+  }
+}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boutique Vendeur — GSA</title>
+    <meta name="description" content="Découvrez les scripts et créations de nos vendeurs partenaires sur GSA." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="seller">
+    <div class="site-shell">
+      <header class="site-header site-header-unified">
+        <div class="container header-row header-row-unified">
+          <a class="brand brand-unified" href="index.html" aria-label="Retour à l'accueil GSA">
+            <span class="brand-mark brand-mark-unified">g-<em>STORE</em></span>
+          </a>
+
+          <nav class="main-nav main-nav-unified">
+            <a href="catalogue.html">Marketplace</a>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support</a>
+            <a href="about.html">About</a>
+          </nav>
+
+          <div class="header-tools header-tools-unified">
+            <button id="language-toggle" class="ghost-button nav-mini-button" type="button">EN</button>
+            <label class="search-field search-field-unified">
+              <input id="global-search-input" type="search" placeholder="Rechercher" />
+              <span>⌕</span>
+            </label>
+            <div id="user-menu-wrap">
+              <a class="ghost-button" href="login.html">Log in</a>
+            </div>
+            <a class="ghost-button" href="cart.html" style="padding:0 8px; font-size:1.1rem; color:white; text-decoration:none;">
+              🛒 <span id="cart-count-badge" style="font-size:0.75rem;">0</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main id="seller-page" style="padding: 40px 0;">
+        <div class="container" style="text-align: center; color: var(--muted); padding: 60px 0;">
+          <div class="spinner"></div> Chargement du profil vendeur...
+        </div>
+      </main>
+      
+      <footer class="site-footer" style="padding:40px 0; border-top:1px solid rgba(255,255,255,0.06); text-align:center;">
+        <p class="footer-copy" style="color:var(--muted); font-size:0.9rem;">GSA — Marketplace Garry's Mod</p>
+      </footer>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

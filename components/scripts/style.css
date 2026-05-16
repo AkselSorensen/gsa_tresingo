@@ -220,12 +220,13 @@
 
 @media (max-width: 900px) {
   .scripts-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .scripts-toolbar {
     grid-template-columns: 1fr;
     display: grid;
+    gap: 8px;
   }
 
   .scripts-footer-links,
@@ -240,6 +241,24 @@
 }
 
 @media (max-width: 640px) {
+  .scripts-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .scripts-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .scripts-filters::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
   .scripts-row {
     grid-template-columns: 1fr;
   }

@@ -28,18 +28,18 @@ const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const STEAM_API_KEY = process.env.STEAM_API_KEY || "";
 const VERCEL_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-const BASE_URL_COMPUTED = VERCEL_URL ? `https://${VERCEL_URL}` : `http://localhost:${port}`;
+const APP_BASE_URL = process.env.APP_BASE_URL || (VERCEL_URL ? `https://${VERCEL_URL}` : (process.env.NODE_ENV === "production" ? "https://gstore-marketplace.com" : `http://localhost:${port}`));
+const BASE_URL_COMPUTED = APP_BASE_URL;
 
 const STEAM_REALM = process.env.STEAM_REALM || BASE_URL_COMPUTED;
-const STEAM_RETURN_URL =
-  process.env.STEAM_RETURN_URL || `${BASE_URL_COMPUTED}/auth/steam/callback`;
+const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL || `${BASE_URL_COMPUTED}/auth/steam/callback`;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY || "";
-const APP_BASE_URL = process.env.APP_BASE_URL || BASE_URL_COMPUTED;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Trust proxy is required if you are behind a reverse proxy like Vercel
 // so that the secure cookies (if enabled) are properly sent.
 app.set("trust proxy", 1);
@@ -513,6 +513,15 @@ async function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_landing_config (
+      id SERIAL PRIMARY KEY,
+      section_key TEXT NOT NULL UNIQUE,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      metadata JSONB DEFAULT '{}'::jsonb
     );
 
     CREATE TABLE IF NOT EXISTS user_sessions (
@@ -1149,6 +1158,7 @@ app.get("/api/bootstrap", async (req, res) => {
         categoryName: row.category_name,
         products: row.products || [],
       })),
+      landingConfig: (await pool.query(`SELECT * FROM admin_landing_config ORDER BY id ASC`)).rows,
       collaborators: ["Tresingo", "Atelier Nova", "Hexa Studio", "Forge 27", "Northline"],
       communities: ["Nexus RP", "Helios City", "Sector 12", "NovaLife", "Blackridge RP"],
       discordInvite,
@@ -1233,6 +1243,83 @@ app.get("/api/products", async (req, res) => {
   } catch (error) {
     console.error("Products list error:", error);
     res.status(500).json({ message: "Unable to fetch products" });
+  }
+});
+
+app.get("/api/sellers/:slug", async (req, res) => {
+  try {
+    const slug = String(req.params.slug);
+    
+    // 1. Check if user is a seller
+    const sellerResult = await pool.query(
+      `SELECT id, display_name, slug, avatar_url, role FROM users WHERE slug = $1 AND role IN ('seller', 'admin') LIMIT 1`,
+      [slug]
+    );
+
+    if (!sellerResult.rowCount) {
+      return res.status(404).json({ message: "Seller not found" });
+    }
+    
+    const seller = sellerResult.rows[0];
+
+    // 2. Fetch seller's products
+    const productsResult = await pool.query(
+      `
+        SELECT
+          p.id,
+          p.slug,
+          p.title,
+          p.short_description,
+          p.price,
+          p.old_price,
+          p.discount_percent,
+          p.rating,
+          p.review_count,
+          p.tags,
+          c.name AS category_name,
+          COALESCE(
+            (
+              SELECT pm.thumbnail_url
+              FROM product_media pm
+              WHERE pm.product_id = p.id
+              ORDER BY pm.sort_order ASC, pm.id ASC
+              LIMIT 1
+            ),
+            ''
+          ) AS thumbnail
+        FROM products p
+        JOIN categories c ON c.id = p.category_id
+        WHERE p.seller_id = $1 AND p.is_hidden = FALSE
+        ORDER BY p.popularity_score DESC, p.created_at DESC
+      `,
+      [seller.id]
+    );
+
+    res.json({
+      seller: {
+        displayName: seller.display_name,
+        slug: seller.slug,
+        avatarUrl: seller.avatar_url
+      },
+      products: productsResult.rows.map(row => ({
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        shortDescription: row.short_description,
+        price: Number(row.price),
+        oldPrice: Number(row.old_price),
+        discountPercent: row.discount_percent,
+        rating: Number(row.rating),
+        reviewCount: row.review_count,
+        tags: row.tags || [],
+        categoryName: row.category_name,
+        thumbnail: row.thumbnail,
+        sellerName: seller.display_name
+      }))
+    });
+  } catch (error) {
+    console.error("Seller products error:", error);
+    res.status(500).json({ message: "Unable to fetch seller details" });
   }
 });
 
@@ -2038,10 +2125,65 @@ app.get("/api/admin/users", requireAdmin, async (_req, res) => {
 app.get("/api/admin/settings", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query(`SELECT value FROM settings WHERE key = 'maintenance_mode'`);
-    res.json({ maintenanceMode: result.rows[0]?.value === "true" });
+    const landingConfig = await pool.query(`SELECT * FROM admin_landing_config ORDER BY id ASC`);
+    res.json({ 
+      maintenanceMode: result.rows[0]?.value === "true",
+      landingConfig: landingConfig.rows
+    });
   } catch (error) {
     console.error("Settings fetch error:", error);
     res.status(500).json({ message: "Unable to fetch settings" });
+  }
+});
+
+// PATCH /api/admin/landing-config/:key — update landing configuration
+app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
+  const sectionKey = String(req.params.key);
+  const { isActive, title, description } = req.body;
+  
+  try {
+    const updates = [];
+    const values = [];
+    let idx = 1;
+
+    if (isActive !== undefined) {
+      updates.push(`is_active = $${idx++}`);
+      values.push(Boolean(isActive));
+    }
+    if (title !== undefined) {
+      updates.push(`title = $${idx++}`);
+      values.push(String(title));
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${idx++}`);
+      values.push(String(description));
+    }
+
+    if (!updates.length) {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    values.push(sectionKey);
+    
+    // Insert if it doesn't exist, otherwise update
+    const existing = await pool.query(`SELECT id FROM admin_landing_config WHERE section_key = $1`, [sectionKey]);
+    
+    if (!existing.rowCount) {
+       await pool.query(
+         `INSERT INTO admin_landing_config (section_key, is_active, title, description) VALUES ($1, $2, $3, $4)`,
+         [sectionKey, isActive !== undefined ? Boolean(isActive) : true, title || sectionKey, description || '']
+       );
+    } else {
+       await pool.query(
+         `UPDATE admin_landing_config SET ${updates.join(", ")} WHERE section_key = $${idx}`,
+         values
+       );
+    }
+    
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Landing config update error:", error);
+    res.status(500).json({ message: "Unable to update landing config" });
   }
 });
 

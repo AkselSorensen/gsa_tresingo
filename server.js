@@ -37,6 +37,10 @@ const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 app.use(cors());
 app.use(express.json());
+// Trust proxy is required if you are behind a reverse proxy like Vercel
+// so that the secure cookies (if enabled) are properly sent.
+app.set("trust proxy", 1);
+
 app.use(
   session({
     store: new pgSession({
@@ -50,7 +54,8 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production" ? true : false,
+      // Force à false pour tester si c'est bien la source du problème (souvent le cas sur les domaines sans SSL explicite en dev)
+      secure: false, 
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 jours
     },
   })

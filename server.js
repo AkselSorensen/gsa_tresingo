@@ -1428,6 +1428,12 @@ app.get("/api/me", async (req, res) => {
   }
 
   try {
+    // Refresh user data from DB to ensure we have the latest fields (like slug)
+    const userResult = await pool.query(`SELECT * FROM users WHERE id = $1 LIMIT 1`, [req.session.user.id]);
+    if (userResult.rowCount) {
+      req.session.user = sanitizeUser(userResult.rows[0]);
+    }
+
     const cart = await getCart(req.session.user.id);
     res.json({
       authenticated: true,

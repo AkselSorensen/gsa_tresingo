@@ -1882,6 +1882,7 @@ app.get("/api/admin/products", requireAdmin, async (_req, res) => {
           p.description,
           p.installation,
           p.price,
+          p.old_price,
           p.discount_percent,
           p.category_id,
           c.slug AS category_slug,

@@ -388,12 +388,15 @@ s<!DOCTYPE html>
           if (p.is_new) statuses.push('<span style="color:#6ee7b7;font-size:0.75rem;">New</span>');
           const statusHtml = statuses.join(' • ') || '<span style="color:var(--muted);font-size:0.75rem;">Aucun</span>';
 
+          // On utilise old_price s'il existe et est supérieur à 0, sinon on utilise le price par défaut pour l'affichage de l'admin
+          const displayPrice = p.old_price > 0 ? p.old_price : p.price;
+
           return `
             <tr data-product-id="${esc(p.id)}">
               <td style="color:var(--muted);font-size:0.8rem;">${esc(p.id)}</td>
               <td><strong>${esc(p.title)}</strong></td>
               <td style="color:var(--muted);font-size:0.85rem;">${esc(p.category)}</td>
-              <td>${fmtCurrency(p.price)}</td>
+              <td>${fmtCurrency(displayPrice)}</td>
               <td>${p.discount_percent > 0 ? `<span style="color:#fca5a5;">-${p.discount_percent}%</span>` : '0%'}</td>
               <td>${statusHtml}</td>
               <td>
@@ -420,7 +423,8 @@ s<!DOCTYPE html>
       document.getElementById('em-short').value = p.short_description || '';
       document.getElementById('em-desc').value = p.description || '';
       document.getElementById('em-install').value = p.installation || '';
-      document.getElementById('em-price').value = p.price || 0;
+      // On utilise old_price pour le formulaire de modification si existant pour que l'admin modifie bien le prix de base
+      document.getElementById('em-price').value = p.old_price > 0 ? p.old_price : (p.price || 0);
       document.getElementById('em-discount').value = p.discount_percent || 0;
       document.getElementById('em-tags').value = (p.tags || []).join(', ');
       document.getElementById('em-featured').checked = p.is_featured || false;

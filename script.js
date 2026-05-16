@@ -1179,6 +1179,7 @@ async function renderProfilePage() {
               <a class="ghost-button full" href="cart.html">Voir mon panier</a>
               <a class="ghost-button full" href="catalogue.html">Explorer le catalogue</a>
               <a class="ghost-button full" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support Discord</a>
+              ${['seller', 'admin'].includes(state.user.role) ? `<a class="ghost-button full" href="seller.html?id=${encodeURIComponent(state.user.slug || '')}" style="margin-top:4px; border-color:var(--accent); color:var(--accent);">Ma vitrine Vendeur</a>` : ''}
               ${state.user.role === 'admin' ? `<a class="primary-button full" href="/admin" style="margin-top:4px;">⚙️ Dashboard Admin</a>` : ''}
             </div>
           </div>

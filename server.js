@@ -85,6 +85,7 @@ function sanitizeUser(row) {
     id: row.id,
     email: row.email,
     displayName: row.display_name,
+    slug: row.slug,
     role: row.role,
     avatarUrl: row.avatar_url,
     preferredLanguage: row.preferred_language,

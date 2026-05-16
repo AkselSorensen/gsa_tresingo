@@ -324,7 +324,8 @@ async function maintenanceMiddleware(req, res, next) {
     "/login.html",
     "/maintenance.html",
     "/style.css",
-    "/script.js"
+    "/script.js",
+    "/admin"
   ];
 
   if (bypassRoutes.some(route => req.path === route || req.path.startsWith(route))) {
@@ -342,7 +343,11 @@ async function maintenanceMiddleware(req, res, next) {
 
     if (isMaintenance) {
       const user = req.session.user;
+      
       // Allow admins to bypass maintenance
+      // Note: we can't always bypass just based on session if the page is requested directly 
+      // without session loaded yet by express, but express-session runs before this middleware,
+      // so req.session.user should be available.
       if (user && user.role === "admin") {
         return next();
       }

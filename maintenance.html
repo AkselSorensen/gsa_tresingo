@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - GSA Tresingo</title>
+  
+  <!-- Polices modernes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =================== RESET & VARIABLES =================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-color: #0B0F19;
+      --text-main: #ffffff;
+      --text-muted: #94a3b8;
+      
+      /* Couleurs mesh/néon */
+      --color-primary: #8b5cf6; /* Violet */
+      --color-secondary: #3b82f6; /* Bleu */
+      --color-accent: #ec4899; /* Touche rosée */
+
+      /* Glassmorphism */
+      --glass-bg: rgba(15, 23, 42, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden; /* Empêche le scroll horizontal et vertical */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed; /* Maintient le body fixe pour éviter le pull-to-refresh / rebond sur mobile */
+      top: 0;
+      left: 0;
+    }
+
+    /* =================== BACKGROUND & MESH =================== */
+    .mesh-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+      background: var(--bg-color);
+    }
+
+    .mesh-blob {
+      position: absolute;
+      filter: blur(90px);
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: float 20s infinite alternate ease-in-out;
+    }
+
+    .blob-1 {
+      top: -10%;
+      left: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: var(--color-primary);
+      animation-duration: 25s;
+    }
+
+    .blob-2 {
+      bottom: -10%;
+      right: -10%;
+      width: 60vw;
+      height: 60vw;
+      background: var(--color-secondary);
+      animation-duration: 30s;
+      animation-delay: -5s;
+    }
+
+    .blob-3 {
+      top: 40%;
+      left: 60%;
+      width: 30vw;
+      height: 30vw;
+      background: var(--color-accent);
+      opacity: 0.3;
+      animation-duration: 22s;
+      animation-delay: -10s;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(5%, 10%) scale(1.1); }
+      66% { transform: translate(-5%, 5%) scale(0.9); }
+      100% { transform: translate(0, -10%) scale(1.05); }
+    }
+
+    /* Noise overlay pour la texture */
+    .noise-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* =================== MAIN LAYOUT =================== */
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      padding: 1rem;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* =================== ANIMATIONS D'APPARITION =================== */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    @keyframes fadeUpAnim {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =================== GLASS CARD =================== */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: var(--glass-shadow);
+      width: 100%;
+      max-height: 95vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* =================== LOGO & TYPO =================== */
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .logo svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+      flex-shrink: 0;
+      
+      /* Gradient text */
+      background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    p.subtitle {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 500px;
+      margin: 0 auto 1.5rem;
+      font-weight: 300;
+      flex-shrink: 0;
+    }
+
+    /* =================== COUNTDOWN =================== */
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+    }
+
+    .time-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .time-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      width: clamp(50px, 10vw, 70px);
+      height: clamp(50px, 10vw, 70px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.25rem;
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+      color: #e2e8f0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .time-value::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 50%;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .time-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* =================== NEWSLETTER FORM =================== */
+    .notify-form {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 450px;
+      width: 100%;
+      margin: 0 auto;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .notify-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .notify-input::placeholder {
+      color: #64748b;
+    }
+
+    .notify-input:focus {
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+
+    .notify-btn {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0 1rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .notify-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(rgba(255,255,255,0.2), rgba(255,255,255,0));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .notify-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+
+    .notify-btn:hover::before {
+      opacity: 1;
+    }
+
+    .notify-btn:active {
+      transform: translateY(0);
+    }
+
+    /* =================== ADMIN & SOCIAL =================== */
+    .footer-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 1.5rem;
+      flex-shrink: 0;
+      width: 100%;
+    }
+
+    .admin-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: color 0.2s;
+      background: rgba(255,255,255,0.03);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .admin-link:hover {
+      color: white;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .social-links {
+      display: flex;
+      gap: 1rem;
+    }
+
+    .social-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+
+    .social-icon:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* =================== LOGIN MODAL =================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .login-modal {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 2.5rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .modal-overlay.active .login-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .close-modal:hover {
+      color: white;
+    }
+
+    .login-modal h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .login-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .login-input:focus {
+      border-color: rgba(139, 92, 246, 0.5);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .login-btn {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .login-error {
+      color: #ef4444;
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    /* =================== RESPONSIVE =================== */
+    @media (max-width: 640px) {
+      .glass-card {
+        padding: 1.5rem;
+        border-radius: 16px;
+      }
+      .countdown {
+        gap: 0.5rem;
+      }
+      .time-value {
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+        border-radius: 8px;
+      }
+      .notify-form {
+        flex-direction: column;
+      }
+      .notify-btn {
+        padding: 0.75rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.5rem;
+      }
+      p.subtitle {
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+      }
+      .logo {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
+      }
+      .logo svg {
+        width: 24px;
+        height: 24px;
+      }
+      .footer-actions {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        gap: 0.75rem;
+      }
+      .social-icon {
+        width: 32px;
+        height: 32px;
+      }
+      .social-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+    
+    @media (max-height: 700px) {
+      .glass-card {
+        padding: 1rem;
+      }
+      .logo {
+        display: none; /* Hide logo on very small screens to save space */
+      }
+      p.subtitle {
+        margin-bottom: 0.5rem;
+      }
+      .countdown {
+        margin-bottom: 0.5rem;
+      }
+      .footer-actions {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Arrière-plan animé -->
+  <div class="mesh-bg">
+    <div class="mesh-blob blob-1"></div>
+    <div class="mesh-blob blob-2"></div>
+    <div class="mesh-blob blob-3"></div>
+  </div>
+  <div class="noise-overlay"></div>
+
+  <div class="container">
+    <div class="glass-card fade-up">
+      
+      <div class="logo fade-up delay-1">
+        <!-- Icône abstraite GSA -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+
+      <h1 class="fade-up delay-1">Nous préparons l'avenir...</h1>
+      
+      <p class="subtitle fade-up delay-2">
+        GSA Tresingo est actuellement en cours de refonte totale pour vous offrir une expérience plus fluide, plus moderne et de nouvelles fonctionnalités exclusives.
+      </p>
+
+      <!-- Compte à rebours -->
+      <div class="countdown fade-up delay-3">
+        <div class="time-box">
+          <div class="time-value" id="days">00</div>
+          <div class="time-label">Jours</div>
+        </div>
+        <div class="time-box">
+          <div class="time-value" id="hours">00</div>
+          <div class="time-label">Heures</div>
+        </div>
+        <div class="time-box">
+          <div class="time-value" id="minutes">00</div>
+          <div class="time-label">Minutes</div>
+        </div>
+        <div class="time-box">
+          <div class="time-value" id="seconds">00</div>
+          <div class="time-label">Secondes</div>
+        </div>
+      </div>
+
+      <!-- Newsletter -->
+      <form class="notify-form fade-up delay-4" onsubmit="event.preventDefault(); alert('Merci ! Vous serez averti du lancement.'); this.reset();">
+        <input type="email" class="notify-input" placeholder="Entrez votre adresse email..." required>
+        <button type="submit" class="notify-btn">M'avertir</button>
+      </form>
+
+      <!-- Footer (Admin & Social) -->
+      <div class="footer-actions fade-up delay-4">
+        
+        <!-- Social Icons -->
+        <div class="social-links">
+          <!-- Discord -->
+          <a href="https://discord.gg/ZbCrwE73uK" class="social-icon" aria-label="Discord" target="_blank" rel="noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/>
+            </svg>
+          </a>
+          <!-- Twitter/X -->
+          <a href="#" class="social-icon" aria-label="Twitter">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.005 4.15H5.059z"/>
+            </svg>
+          </a>
+          <!-- GitHub -->
+          <a href="https://github.com/AkselSorensen/gsa_tresingo" class="social-icon" aria-label="GitHub" target="_blank" rel="noreferrer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Accès staff -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:0.5rem;">
+          <button type="button" id="open-login-btn" class="admin-link">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Accès Staff (Email)
+          </button>
+          <a href="/auth/discord" class="admin-link" style="color:#b39ddb;border-color:rgba(179,157,219,0.2);">
+            Connexion Discord
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modale de connexion Admin -->
+  <div class="modal-overlay" id="login-modal-overlay">
+    <div class="login-modal" id="login-modal-content">
+      <button class="close-modal" id="close-modal-btn">&times;</button>
+      <h2>Connexion Staff</h2>
+      <form class="login-form" id="admin-login-form">
+        <input type="email" id="admin-email" class="login-input" placeholder="Email admin" required>
+        <input type="password" id="admin-password" class="login-input" placeholder="Mot de passe" required>
+        <div class="login-error" id="login-error-msg"></div>
+        <button type="submit" class="login-btn" id="admin-submit-btn">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Configuration du compte à rebours (ex: Dans 14 jours)
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + 14); // Date cible = Aujourd'hui + 14 jours
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const distance = targetDate.getTime() - now;
+
+      if (distance < 0) return;
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById("days").innerText = String(days).padStart(2, '0');
+      document.getElementById("hours").innerText = String(hours).padStart(2, '0');
+      document.getElementById("minutes").innerText = String(minutes).padStart(2, '0');
+      document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
+    }
+
+    // Lancer le compte à rebours
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+
+    // Effet parallax subtil sur la carte en fonction de la souris
+    document.addEventListener('mousemove', (e) => {
+      const card = document.querySelector('.glass-card');
+      const x = (window.innerWidth / 2 - e.pageX) / 50;
+      const y = (window.innerHeight / 2 - e.pageY) / 50;
+      
+      card.style.transform = `translateY(0) perspective(1000px) rotateY(${x}deg) rotateX(${y}deg)`;
+    });
+
+    // Reset l'effet parallax quand la souris quitte
+    document.addEventListener('mouseleave', () => {
+      const card = document.querySelector('.glass-card');
+      card.style.transform = 'translateY(0) perspective(1000px) rotateY(0deg) rotateX(0deg)';
+      card.style.transition = 'transform 0.5s ease';
+      setTimeout(() => card.style.transition = '', 500);
+    });
+
+    // Gestion de la modale de login
+    const overlay = document.getElementById('login-modal-overlay');
+    const openBtn = document.getElementById('open-login-btn');
+    const closeBtn = document.getElementById('close-modal-btn');
+    const modalContent = document.getElementById('login-modal-content');
+    const loginForm = document.getElementById('admin-login-form');
+    const errorMsg = document.getElementById('login-error-msg');
+    const submitBtn = document.getElementById('admin-submit-btn');
+
+    function openModal() {
+      overlay.classList.add('active');
+    }
+
+    function closeModal() {
+      overlay.classList.remove('active');
+      errorMsg.innerText = '';
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    
+    // Fermer si on clique en dehors
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal();
+      }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+      
+      errorMsg.innerText = '';
+      submitBtn.innerText = 'Connexion...';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Identifiants incorrects');
+        }
+
+        const data = await response.json();
+        
+        // Redirection si admin
+        if (data.user && (data.user.role === 'admin' || data.user.role === 'seller')) {
+          submitBtn.innerText = 'Redirection...';
+          window.location.href = '/admin'; // ou index.html selon la préférence
+        } else {
+          // Un client normal n'a pas besoin de passer la maintenance par ici 
+          // ou on peut l'autoriser, ça dépend de votre politique.
+          // Dans le doute, on le redirige vers l'accueil.
+          window.location.href = '/'; 
+        }
+
+      } catch (err) {
+        errorMsg.innerText = err.message;
+        submitBtn.innerText = 'Se connecter';
+        submitBtn.disabled = false;
+      }
+    });
+
+  </script>
+</body>
+</html>

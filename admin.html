@@ -60,6 +60,7 @@
       <div class="admin-tabs">
         <button class="tab-button active" data-tab="products">📦 Produits</button>
         <button class="tab-button" data-tab="users">👥 Utilisateurs</button>
+        <button class="tab-button" data-tab="settings">⚙️ Paramètres</button>
       </div>
 
       <!-- PRODUCTS TAB -->
@@ -127,6 +128,51 @@
           <div style="padding:20px 24px 16px;">
             <h2 style="margin:0;font-size:1.3rem;">Utilisateurs <span id="users-count" style="color:var(--muted);font-size:0.9rem;font-weight:500;"></span></h2>
           </div>
+          <div style="overflow-x:auto;">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nom</th>
+                  <th>Email</th>
+                  <th>Rôle actuel</th>
+                  <th>Discord</th>
+                  <th>Steam</th>
+                  <th>Inscrit le</th>
+                  <th>Changer le rôle</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div class="admin-tab-panel" id="tab-settings">
+        <div class="panel" style="padding:24px;">
+          <h2 style="margin:0 0 18px;font-size:1.3rem;">Paramètres généraux</h2>
+          
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:rgba(255,255,255,0.02);border:1px solid var(--panel-border);border-radius:8px;max-width:600px;">
+            <div>
+              <strong style="display:block;margin-bottom:4px;font-size:1rem;">Mode Maintenance</strong>
+              <span style="color:var(--muted);font-size:0.85rem;">Active une page de maintenance pour tous les utilisateurs (sauf les admins).</span>
+            </div>
+            <label class="switch" style="position:relative;display:inline-block;width:50px;height:24px;">
+              <input type="checkbox" id="setting-maintenance" style="opacity:0;width:0;height:0;">
+              <span class="slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--panel-border);transition:.4s;border-radius:24px;"></span>
+              <span class="slider-dot" style="position:absolute;content:'';height:16px;width:16px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%;"></span>
+            </label>
+            <style>
+              #setting-maintenance:checked + .slider { background-color: #ef4444; }
+              #setting-maintenance:checked ~ .slider-dot { transform: translateX(26px); }
+            </style>
+          </div>
+          
+        </div>
+      </div>
           <div style="overflow-x:auto;">
             <table class="admin-table">
               <thead>
@@ -448,12 +494,41 @@
       });
     }
 
+    // ─── Settings ─────────────────────────────────────────────
+    async function loadSettings() {
+      try {
+        const settings = await apiFetch('/api/admin/settings');
+        document.getElementById('setting-maintenance').checked = settings.maintenanceMode;
+      } catch(err) {
+        console.error("Erreur de chargement des paramètres:", err);
+      }
+    }
+
+    async function toggleMaintenance(e) {
+      const isChecked = e.target.checked;
+      try {
+        await apiFetch('/api/admin/settings', { 
+          method: 'PATCH', 
+          body: JSON.stringify({ maintenanceMode: isChecked }) 
+        });
+      } catch(err) {
+        alert('Erreur: ' + err.message);
+        e.target.checked = !isChecked; // revert
+      }
+    }
+
     // ─── Boot ─────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
       await checkAuth();
       initTabs();
       initEvents();
-      await Promise.all([loadProducts(), loadCategoriesAndSellers(), loadUsers()]);
+      
+      const maintenanceToggle = document.getElementById('setting-maintenance');
+      if (maintenanceToggle) {
+        maintenanceToggle.addEventListener('change', toggleMaintenance);
+      }
+
+      await Promise.all([loadProducts(), loadCategoriesAndSellers(), loadUsers(), loadSettings()]);
     });
   </script>
 </body>

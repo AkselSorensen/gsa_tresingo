@@ -91,6 +91,9 @@ async function api(url, options = {}) {
     try {
       const payload = await response.json();
       message = payload.message || message;
+      if (payload.maintenance) {
+        window.location.href = "/maintenance.html";
+      }
     } catch (_error) {
       message = response.statusText || message;
     }

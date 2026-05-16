@@ -310,6 +310,61 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+async function maintenanceMiddleware(req, res, next) {
+  // Always allow API routes for login, bootstrap (to check session), and admin bypass
+  const bypassRoutes = [
+    "/api/auth/login",
+    "/api/auth/logout",
+    "/auth/admin/login",
+    "/auth/discord",
+    "/auth/discord/callback",
+    "/auth/steam",
+    "/auth/steam/callback",
+    "/api/me",
+    "/login.html",
+    "/maintenance.html",
+    "/style.css",
+    "/script.js"
+  ];
+
+  if (bypassRoutes.some(route => req.path === route || req.path.startsWith(route))) {
+    return next();
+  }
+
+  // Allow static assets
+  if (req.path.startsWith("/asset/") || req.path.startsWith("/components/")) {
+    return next();
+  }
+
+  try {
+    const result = await pool.query(`SELECT value FROM settings WHERE key = 'maintenance_mode'`);
+    const isMaintenance = result.rows[0]?.value === "true";
+
+    if (isMaintenance) {
+      const user = req.session.user;
+      // Allow admins to bypass maintenance
+      if (user && user.role === "admin") {
+        return next();
+      }
+
+      // If it's an API request, return 503
+      if (req.path.startsWith("/api/")) {
+        return res.status(503).json({ message: "Service en maintenance", maintenance: true });
+      }
+
+      // Otherwise redirect to maintenance page
+      return res.redirect("/maintenance.html");
+    }
+
+    next();
+  } catch (error) {
+    console.error("Maintenance check error:", error);
+    next(); // Fail open if DB is down? Or fail closed? Usually fail open is safer to avoid full lockout.
+  }
+}
+
+app.use(maintenanceMiddleware);
+
 async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -431,7 +486,20 @@ async function initializeDatabase() {
       quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
       UNIQUE(cart_id, product_id)
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
+
+  await pool.query(
+    `
+      INSERT INTO settings (key, value)
+      VALUES ('maintenance_mode', 'false')
+      ON CONFLICT (key) DO NOTHING
+    `
+  );
 
   const adminSlug = slugify(ADMIN_EMAIL.split("@")[0] || "admin");
   await pool.query(
@@ -1905,6 +1973,34 @@ app.get("/api/admin/users", requireAdmin, async (_req, res) => {
   }
 });
 
+// GET /api/admin/settings — get maintenance mode
+app.get("/api/admin/settings", requireAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(`SELECT value FROM settings WHERE key = 'maintenance_mode'`);
+    res.json({ maintenanceMode: result.rows[0]?.value === "true" });
+  } catch (error) {
+    console.error("Settings fetch error:", error);
+    res.status(500).json({ message: "Unable to fetch settings" });
+  }
+});
+
+// PATCH /api/admin/settings — update maintenance mode
+app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
+  const { maintenanceMode } = req.body;
+  if (maintenanceMode === undefined) return res.status(400).json({ message: "maintenanceMode is required" });
+
+  try {
+    await pool.query(
+      `UPDATE settings SET value = $1 WHERE key = 'maintenance_mode'`,
+      [maintenanceMode ? "true" : "false"]
+    );
+    res.json({ ok: true, maintenanceMode: Boolean(maintenanceMode) });
+  } catch (error) {
+    console.error("Settings update error:", error);
+    res.status(500).json({ message: "Unable to update settings" });
+  }
+});
+
 // PATCH /api/admin/users/:id/role — update user role
 app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
@@ -1955,11 +2051,19 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
 
 initializeDatabase()
   .then(() => {
-    app.listen(port, () => {
-      console.log(`Server running on http://localhost:${port}`);
-    });
+    // Ne démarrer app.listen que si on n'est PAS sur Vercel
+    if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+      app.listen(port, () => {
+        console.log(`Server running on http://localhost:${port}`);
+      });
+    }
   })
   .catch((error) => {
     console.error("Database initialization failed:", error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== "production") {
+      process.exit(1);
+    }
   });
+
+// Export pour Vercel Serverless
+module.exports = app;

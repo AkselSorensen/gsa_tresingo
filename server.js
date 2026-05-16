@@ -27,12 +27,15 @@ const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const STEAM_API_KEY = process.env.STEAM_API_KEY || "";
-const STEAM_REALM = process.env.STEAM_REALM || `http://localhost:${port}`;
+const VERCEL_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+const BASE_URL_COMPUTED = VERCEL_URL ? `https://${VERCEL_URL}` : `http://localhost:${port}`;
+
+const STEAM_REALM = process.env.STEAM_REALM || BASE_URL_COMPUTED;
 const STEAM_RETURN_URL =
-  process.env.STEAM_RETURN_URL || `http://localhost:${port}/auth/steam/callback`;
+  process.env.STEAM_RETURN_URL || `${BASE_URL_COMPUTED}/auth/steam/callback`;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY || "";
-const APP_BASE_URL = process.env.APP_BASE_URL || `http://localhost:${port}`;
+const APP_BASE_URL = process.env.APP_BASE_URL || BASE_URL_COMPUTED;
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
 
 app.use(cors());

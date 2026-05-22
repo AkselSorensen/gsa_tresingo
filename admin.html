@@ -67,10 +67,41 @@
       overflow: hidden;
       border: 1px solid var(--panel-border);
     }
-    .image-preview-container img {
+    .image-preview-container img, .image-preview-container video {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .media-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .media-item {
+      position: relative;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--panel-border);
+      background: #000;
+    }
+    .media-item img, .media-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .media-badge {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
     }
     .remove-image {
       position: absolute;
@@ -426,8 +457,10 @@
     let currentBase64 = null;
     let editBase64 = null;
 
-    function handleFile(file, isEdit = false) {
-      if (!file) return;
+    function handleFiles(files, isEdit = false) {
+      if (!files || !files.length) return;
+      const file = files[0]; // On ne prend que la première image pour le thumbnail
+      
       if (!file.type.startsWith('image/')) {
         alert('Veuillez sélectionner une image valide.');
         return;
@@ -878,12 +911,11 @@
       zone.addEventListener('drop', (e) => {
         e.preventDefault();
         zone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
       });
       fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+        if (e.target.files) handleFiles(e.target.files);
       });
-      document.getElementById('btn-remove-cp-img').addEventListener('click', () => resetImageUpload(false));
 
       // Edit product upload
       const eZone = document.getElementById('em-upload-zone');
@@ -894,12 +926,21 @@
       eZone.addEventListener('drop', (e) => {
         e.preventDefault();
         eZone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], true);
+        if (e.dataTransfer.files) handleFiles(e.dataTransfer.files, true);
       });
       eFileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0], true);
+        if (e.target.files) handleFiles(e.target.files, true);
       });
-      document.getElementById('btn-remove-em-img').addEventListener('click', () => resetImageUpload(true));
+
+      // Remove image buttons
+      document.getElementById('btn-remove-cp-img').addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetImageUpload(false);
+      });
+      document.getElementById('btn-remove-em-img').addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetImageUpload(true);
+      });
 
       // Products table actions
       document.getElementById('products-tbody').addEventListener('click', async e => {

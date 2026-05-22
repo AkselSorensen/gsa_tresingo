@@ -28,7 +28,7 @@ const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
 const STEAM_API_KEY = process.env.STEAM_API_KEY || "";
 const VERCEL_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
-const APP_BASE_URL = process.env.APP_BASE_URL || (VERCEL_URL ? `https://${VERCEL_URL}` : (process.env.NODE_ENV === "production" ? "https://gstore-marketplace.com" : `http://localhost:${port}`));
+const APP_BASE_URL = process.env.APP_BASE_URL || (VERCEL_URL ? `https://${VERCEL_URL}` : (process.env.NODE_ENV === "production" ? "https://gsa-tresingo.vercel.app" : `http://localhost:${port}`));
 const BASE_URL_COMPUTED = APP_BASE_URL;
 
 const STEAM_REALM = process.env.STEAM_REALM || BASE_URL_COMPUTED;
@@ -1624,7 +1624,7 @@ app.get("/auth/steam/callback", async (req, res) => {
       );
       const updated = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.session.user.id]);
       req.session.user = sanitizeUser(updated.rows[0]);
-      return res.redirect("/profile.html");
+      return res.redirect(`${APP_BASE_URL}/profile.html`);
     }
 
     const existing = await pool.query(`SELECT * FROM users WHERE steam_id = $1 OR email = $2 LIMIT 1`, [
@@ -1660,10 +1660,10 @@ app.get("/auth/steam/callback", async (req, res) => {
     }
 
     req.session.user = sanitizeUser(userRow);
-    res.redirect("/");
+    res.redirect(`${APP_BASE_URL}/`);
   } catch (error) {
     console.error("Steam auth error:", error);
-    res.redirect("/login.html?error=steam_auth_failed");
+    res.redirect(`${APP_BASE_URL}/login.html?error=steam_auth_failed`);
   }
 });
 
@@ -1730,7 +1730,7 @@ app.get("/auth/discord/callback", async (req, res) => {
       );
       const updated = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.session.user.id]);
       req.session.user = sanitizeUser(updated.rows[0]);
-      return res.redirect("/profile.html");
+      return res.redirect(`${APP_BASE_URL}/profile.html`);
     }
 
     const existing = await pool.query(`SELECT * FROM users WHERE discord_id = $1 OR email = $2 LIMIT 1`, [
@@ -1766,10 +1766,10 @@ app.get("/auth/discord/callback", async (req, res) => {
     }
 
     req.session.user = sanitizeUser(userRow);
-    res.redirect("/");
+    res.redirect(`${APP_BASE_URL}/`);
   } catch (error) {
     console.error("Discord auth error:", error);
-    res.redirect("/login.html?error=discord_auth_failed");
+    res.redirect(`${APP_BASE_URL}/login.html?error=discord_auth_failed`);
   }
 });
 

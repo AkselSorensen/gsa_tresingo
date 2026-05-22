@@ -1,4 +1,4 @@
-s<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
@@ -40,6 +40,21 @@ s<!DOCTYPE html>
     .admin-msg.ok { color:#6ee7b7; }
     .admin-msg.err { color:#fca5a5; }
     .tag-input-hint { font-size:0.78rem; color:var(--muted); margin-top:2px; }
+    .settings-stack { display:grid; gap:22px; max-width:900px; }
+    .settings-block { padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--panel-border); border-radius:10px; }
+    .settings-block-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+    .settings-block-head strong { display:block; margin-bottom:4px; font-size:1rem; }
+    .settings-block-head span, .settings-helper { color:var(--muted); font-size:0.85rem; line-height:1.45; }
+    .social-proof-grid { display:grid; gap:14px; }
+    .social-proof-card { padding:16px; border:1px solid rgba(255,255,255,0.08); border-radius:10px; background:rgba(0,0,0,0.12); }
+    .social-proof-card-top { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:12px; flex-wrap:wrap; }
+    .social-proof-card-title { display:flex; flex-direction:column; gap:3px; }
+    .social-proof-card-title strong { font-size:0.95rem; }
+    .social-proof-card-title span { color:var(--muted); font-size:0.78rem; }
+    .social-proof-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; align-items:center; }
+    .social-proof-row input { width:100%; border-radius:10px; border:1px solid var(--panel-border); background:#0e131b; padding:10px 14px; color:var(--text); font:inherit; box-sizing:border-box; }
+    .social-proof-visible { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:0.88rem; cursor:pointer; }
+    @media (max-width: 700px) { .social-proof-row { grid-template-columns:1fr; } .social-proof-row .save-button { min-height:38px; } }
 
     /* Modal Styles */
     .modal-overlay {
@@ -222,43 +237,38 @@ s<!DOCTYPE html>
       <div class="admin-tab-panel" id="tab-settings">
         <div class="panel" style="padding:24px;">
           <h2 style="margin:0 0 18px;font-size:1.3rem;">Paramètres généraux</h2>
-          
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:rgba(255,255,255,0.02);border:1px solid var(--panel-border);border-radius:8px;max-width:600px;">
-            <div>
-              <strong style="display:block;margin-bottom:4px;font-size:1rem;">Mode Maintenance</strong>
-              <span style="color:var(--muted);font-size:0.85rem;">Active une page de maintenance pour tous les utilisateurs (sauf les admins).</span>
+
+          <div class="settings-stack">
+            <div class="settings-block">
+              <div class="settings-block-head" style="margin-bottom:0;">
+                <div>
+                  <strong>Mode Maintenance</strong>
+                  <span>Active une page de maintenance pour tous les utilisateurs (sauf les admins).</span>
+                </div>
+                <label class="switch" style="position:relative;display:inline-block;width:50px;height:24px;flex-shrink:0;">
+                  <input type="checkbox" id="setting-maintenance" style="opacity:0;width:0;height:0;">
+                  <span class="slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--panel-border);transition:.4s;border-radius:24px;"></span>
+                  <span class="slider-dot" style="position:absolute;content:'';height:16px;width:16px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%;"></span>
+                </label>
+                <style>
+                  #setting-maintenance:checked + .slider { background-color: #ef4444; }
+                  #setting-maintenance:checked ~ .slider-dot { transform: translateX(26px); }
+                </style>
+              </div>
             </div>
-            <label class="switch" style="position:relative;display:inline-block;width:50px;height:24px;">
-              <input type="checkbox" id="setting-maintenance" style="opacity:0;width:0;height:0;">
-              <span class="slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--panel-border);transition:.4s;border-radius:24px;"></span>
-              <span class="slider-dot" style="position:absolute;content:'';height:16px;width:16px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%;"></span>
-            </label>
-            <style>
-              #setting-maintenance:checked + .slider { background-color: #ef4444; }
-              #setting-maintenance:checked ~ .slider-dot { transform: translateX(26px); }
-            </style>
-          </div>
-          
-        </div>
-      </div>
-          <div style="overflow-x:auto;">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Nom</th>
-                  <th>Email</th>
-                  <th>Rôle actuel</th>
-                  <th>Discord</th>
-                  <th>Steam</th>
-                  <th>Inscrit le</th>
-                  <th>Changer le rôle</th>
-                </tr>
-              </thead>
-              <tbody id="users-tbody">
-                <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
-              </tbody>
-            </table>
+
+            <div class="settings-block">
+              <div class="settings-block-head">
+                <div>
+                  <strong>Social Proof — Page principale</strong>
+                  <span>Modifiez le texte affiché dans les bandeaux “SOCIAL PROOF” de la page d’accueil.</span>
+                </div>
+              </div>
+              <div id="social-proof-configs" class="social-proof-grid">
+                <div style="color:var(--muted);font-size:0.9rem;">Chargement…</div>
+              </div>
+              <div id="social-proof-msg" class="admin-msg" style="margin-top:10px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -340,6 +350,11 @@ s<!DOCTYPE html>
       el.className = 'admin-msg ' + (isOk ? 'ok' : 'err');
       setTimeout(() => { el.textContent = ''; el.className = 'admin-msg'; }, 3500);
     }
+
+    const socialProofSections = [
+      { key: 'social_proof_1', label: 'Premier bandeau', fallback: 'SOCIAL PROOF' },
+      { key: 'social_proof_2', label: 'Deuxième bandeau', fallback: 'SOCIAL PROOF' },
+    ];
 
     async function apiFetch(url, opts = {}) {
       const res = await fetch(url, {
@@ -646,6 +661,63 @@ s<!DOCTYPE html>
       }
     }
 
+    function renderSocialProofSettings(configs = []) {
+      const container = document.getElementById('social-proof-configs');
+      if (!container) return;
+
+      container.innerHTML = socialProofSections.map(section => {
+        const config = configs.find(item => item.section_key === section.key) || {};
+        const title = String(config.title || section.fallback).trim() || section.fallback;
+        const isActive = config.is_active !== false;
+
+        return `
+          <div class="social-proof-card" data-social-proof-card="${esc(section.key)}">
+            <div class="social-proof-card-top">
+              <div class="social-proof-card-title">
+                <strong>${esc(section.label)}</strong>
+                <span>${esc(section.key)}</span>
+              </div>
+              <label class="social-proof-visible">
+                <input type="checkbox" class="toggle-check" data-social-proof-visible="${esc(section.key)}" ${isActive ? 'checked' : ''} />
+                Visible sur l'accueil
+              </label>
+            </div>
+            <div class="social-proof-row">
+              <input type="text" data-social-proof-title="${esc(section.key)}" value="${esc(title)}" placeholder="Texte du bandeau" maxlength="80" />
+              <button class="save-button" type="button" data-action="save-social-proof" data-key="${esc(section.key)}">✓ Enregistrer</button>
+            </div>
+            <div class="settings-helper" style="margin-top:8px;">Ce texte remplace “SOCIAL PROOF” sur la page principale.</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function saveSocialProofConfig(sectionKey) {
+      const input = document.querySelector(`[data-social-proof-title="${sectionKey}"]`);
+      const toggle = document.querySelector(`[data-social-proof-visible="${sectionKey}"]`);
+      const msgEl = document.getElementById('social-proof-msg');
+      const btn = document.querySelector(`[data-action="save-social-proof"][data-key="${sectionKey}"]`);
+      if (!input || !toggle || !msgEl || !btn) return;
+
+      const title = input.value.trim() || 'SOCIAL PROOF';
+      input.value = title;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Sauvegarde…';
+        await apiFetch(`/api/admin/landing-config/${encodeURIComponent(sectionKey)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ title, isActive: toggle.checked })
+        });
+        showMsg(msgEl, '✓ Social Proof sauvegardé. La page principale affichera ce texte.', true);
+      } catch(err) {
+        showMsg(msgEl, '✕ ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✓ Enregistrer';
+      }
+    }
+
     // ─── Tab switching ────────────────────────────────────────
     function initTabs() {
       document.querySelectorAll('.admin-tabs .tab-button').forEach(btn => {
@@ -679,6 +751,16 @@ s<!DOCTYPE html>
         await saveUserRole(btn.dataset.id);
       });
 
+      // Social proof settings actions
+      const socialProofContainer = document.getElementById('social-proof-configs');
+      if (socialProofContainer) {
+        socialProofContainer.addEventListener('click', async e => {
+          const btn = e.target.closest('[data-action="save-social-proof"]');
+          if (!btn) return;
+          await saveSocialProofConfig(btn.dataset.key);
+        });
+      }
+
       // Logout
       document.getElementById('btn-logout').addEventListener('click', async () => {
         try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch(_) {}
@@ -691,8 +773,10 @@ s<!DOCTYPE html>
       try {
         const settings = await apiFetch('/api/admin/settings');
         document.getElementById('setting-maintenance').checked = settings.maintenanceMode;
+        renderSocialProofSettings(settings.landingConfig || []);
       } catch(err) {
         console.error("Erreur de chargement des paramètres:", err);
+        renderSocialProofSettings([]);
       }
     }
 

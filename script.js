@@ -411,6 +411,11 @@ function renderHomePage() {
   if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).slice(0, 3).map((p) => salesCard(p)).join("");
 
   const landingConfig = state.bootstrap.landingConfig || [];
+
+  const getBannerTitle = (config) => {
+    const title = String(config?.title || "").trim();
+    return title || "SOCIAL PROOF";
+  };
   
   const banners = document.querySelectorAll(".showcase-banner-section");
   if (banners.length >= 2) {
@@ -422,7 +427,7 @@ function renderHomePage() {
     } else {
       banners[0].style.display = "";
       const textSpan = banners[0].querySelector("span");
-      if (textSpan) textSpan.textContent = config1.title;
+      if (textSpan) textSpan.textContent = getBannerTitle(config1);
     }
 
     if (!config2.is_active) {
@@ -430,7 +435,7 @@ function renderHomePage() {
     } else {
       banners[1].style.display = "";
       const textSpan = banners[1].querySelector("span");
-      if (textSpan) textSpan.textContent = config2.title;
+      if (textSpan) textSpan.textContent = getBannerTitle(config2);
     }
   }
 

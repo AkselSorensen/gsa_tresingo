@@ -2013,6 +2013,7 @@ app.post("/api/admin/products", requireAdmin, async (req, res) => {
     price,
     oldPrice,
     discountPercent,
+    isHidden,
     tags,
     thumbnail,
   } = req.body;
@@ -2046,10 +2047,11 @@ app.post("/api/admin/products", requireAdmin, async (req, res) => {
           discount_percent,
           tags,
           is_new,
+          is_hidden,
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, TRUE, $14, NOW(), NOW())
         RETURNING id, slug
       `,
       [
@@ -2066,10 +2068,12 @@ app.post("/api/admin/products", requireAdmin, async (req, res) => {
         Number(price || 0),
         Number(discountPercent || 0),
         Array.isArray(tags) ? tags : [],
+        !!isHidden,
       ]
     );
 
     if (thumbnail) {
+      // thumbnail est maintenant une chaîne Base64
       await pool.query(
         `
           INSERT INTO product_media (product_id, media_type, url, thumbnail_url, sort_order)
@@ -2238,7 +2242,8 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   if (Number.isNaN(productId)) return res.status(400).json({ message: "Invalid product id" });
   const { 
     title, price, discountPercent, isFeatured, isTrending, isNew,
-    shortDescription, description, installation, categorySlug, tags, isHidden
+    shortDescription, description, installation, categorySlug, tags, isHidden,
+    thumbnail
   } = req.body;
   
   try {
@@ -2300,6 +2305,17 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
       values
     );
     if (!result.rowCount) return res.status(404).json({ message: "Product not found" });
+
+    if (thumbnail) {
+      // Update or insert the main thumbnail (sort_order = 0)
+      await pool.query(`DELETE FROM product_media WHERE product_id = $1 AND sort_order = 0`, [productId]);
+      await pool.query(
+        `INSERT INTO product_media (product_id, media_type, url, thumbnail_url, sort_order)
+         VALUES ($1, 'image', $2, $2, 0)`,
+        [productId, String(thumbnail)]
+      );
+    }
+
     res.json({ ok: true, product: result.rows[0] });
   } catch (error) {
     console.error("Admin product update error:", error);

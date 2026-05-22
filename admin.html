@@ -40,6 +40,55 @@
     .admin-msg.ok { color:#6ee7b7; }
     .admin-msg.err { color:#fca5a5; }
     .tag-input-hint { font-size:0.78rem; color:var(--muted); margin-top:2px; }
+
+    /* Image Upload Styles */
+    .image-upload-zone {
+      border: 2px dashed var(--panel-border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.02);
+      position: relative;
+    }
+    .image-upload-zone:hover, .image-upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .image-upload-zone p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .image-preview-container {
+      margin-top: 12px;
+      display: none;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--panel-border);
+    }
+    .image-preview-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .remove-image {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(239, 68, 68, 0.8);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
     .settings-stack { display:grid; gap:22px; max-width:900px; }
     .settings-block { padding:16px; background:rgba(255,255,255,0.02); border:1px solid var(--panel-border); border-radius:10px; }
     .settings-block-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
@@ -188,7 +237,18 @@
                 <label>Prix (€) <input id="cp-price" type="number" min="0" step="0.01" value="0" /></label>
                 <label>Remise (%) <input id="cp-discount" type="number" min="0" max="100" value="0" /></label>
               </div>
-              <label>Thumbnail URL <input id="cp-thumb" type="url" placeholder="https://..." /></label>
+              
+              <label>Image du produit (Thumbnail)</label>
+              <div class="image-upload-zone" id="cp-upload-zone">
+                <input type="file" id="cp-file-input" accept="image/*" style="display: none;" />
+                <p>Cliquez ou glissez une image ici</p>
+                <span style="font-size: 0.75rem; color: var(--muted);">PNG, JPG (Max 2Mo)</span>
+              </div>
+              <div class="image-preview-container" id="cp-preview-cont">
+                <img id="cp-preview-img" src="" alt="Preview" />
+                <button class="remove-image" id="btn-remove-cp-img">×</button>
+              </div>
+
               <label>
                 Tags
                 <input id="cp-tags" type="text" placeholder="tag1, tag2, tag3" />
@@ -308,6 +368,17 @@
             <input type="checkbox" id="em-new" class="toggle-check" style="margin:0;" /> Nouveau
           </label>
         </div>
+        <label>Image du produit (Thumbnail)</label>
+        <div class="image-upload-zone" id="em-upload-zone">
+          <input type="file" id="em-file-input" accept="image/*" style="display: none;" />
+          <p>Cliquez ou glissez une image ici pour changer l'image</p>
+          <span style="font-size: 0.75rem; color: var(--muted);">PNG, JPG (Max 2Mo)</span>
+        </div>
+        <div class="image-preview-container" id="em-preview-cont">
+          <img id="em-preview-img" src="" alt="Preview" />
+          <button class="remove-image" id="btn-remove-em-img">×</button>
+        </div>
+
         <label style="display:flex;align-items:center;gap:12px;flex-direction:row;justify-content:flex-start;font-size:0.95rem;margin:8px 0;padding:16px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;color:#fca5a5;cursor:pointer;">
           <input type="checkbox" id="em-hidden" class="toggle-check" style="width:20px;height:20px;flex-shrink:0;margin:0;" /> 
           <span style="line-height:1.4;">Cacher ce produit sur le catalogue</span>
@@ -349,6 +420,54 @@
       el.textContent = text;
       el.className = 'admin-msg ' + (isOk ? 'ok' : 'err');
       setTimeout(() => { el.textContent = ''; el.className = 'admin-msg'; }, 3500);
+    }
+
+    // --- Image Upload Helpers ---
+    let currentBase64 = null;
+    let editBase64 = null;
+
+    function handleFile(file, isEdit = false) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner une image valide.');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert('L\'image est trop lourde (max 2Mo).');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (isEdit) {
+          editBase64 = e.target.result;
+          document.getElementById('em-preview-img').src = editBase64;
+          document.getElementById('em-preview-cont').style.display = 'block';
+          document.getElementById('em-upload-zone').style.display = 'none';
+        } else {
+          currentBase64 = e.target.result;
+          document.getElementById('cp-preview-img').src = currentBase64;
+          document.getElementById('cp-preview-cont').style.display = 'block';
+          document.getElementById('cp-upload-zone').style.display = 'none';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetImageUpload(isEdit = false) {
+      if (isEdit) {
+        editBase64 = null;
+        document.getElementById('em-file-input').value = '';
+        document.getElementById('em-preview-img').src = '';
+        document.getElementById('em-preview-cont').style.display = 'none';
+        document.getElementById('em-upload-zone').style.display = 'block';
+      } else {
+        currentBase64 = null;
+        document.getElementById('cp-file-input').value = '';
+        document.getElementById('cp-preview-img').src = '';
+        document.getElementById('cp-preview-cont').style.display = 'none';
+        document.getElementById('cp-upload-zone').style.display = 'block';
+      }
     }
 
     const socialProofSections = [
@@ -428,7 +547,7 @@
     // Modal logic
     const modal = document.getElementById('edit-modal');
     
-    function openEditModal(productId) {
+    async function openEditModal(productId) {
       const p = allProducts.find(prod => String(prod.id) === String(productId));
       if (!p) return;
       
@@ -445,6 +564,22 @@
       document.getElementById('em-featured').checked = p.is_featured || false;
       document.getElementById('em-trending').checked = p.is_trending || false;
       document.getElementById('em-new').checked = p.is_new || false;
+      document.getElementById('em-hidden').checked = p.is_hidden || false;
+
+      // Handle current image
+      resetImageUpload(true);
+      if (p.id) {
+        try {
+          const fullP = await apiFetch(`/api/products/${p.slug}`);
+          const thumb = fullP.media?.find(m => m.sortOrder === 0);
+          if (thumb && thumb.url) {
+            editBase64 = thumb.url;
+            document.getElementById('em-preview-img').src = editBase64;
+            document.getElementById('em-preview-cont').style.display = 'block';
+            document.getElementById('em-upload-zone').style.display = 'none';
+          }
+        } catch(e) { console.error("Error loading product media", e); }
+      }
 
       // Set category options
       const catSel = document.getElementById('em-category');
@@ -488,6 +623,7 @@
         isTrending: document.getElementById('em-trending').checked,
         isNew: document.getElementById('em-new').checked,
         isHidden: document.getElementById('em-hidden').checked,
+        thumbnail: editBase64
       };
 
       try {
@@ -568,7 +704,6 @@
       const sellerSlug = document.getElementById('cp-seller').value;
       const price = Number(document.getElementById('cp-price').value);
       const discount = Number(document.getElementById('cp-discount').value);
-      const thumb = document.getElementById('cp-thumb').value.trim();
       const tagsRaw = document.getElementById('cp-tags').value;
       const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
       
@@ -584,13 +719,14 @@
       try {
         await apiFetch('/api/admin/products', {
           method: 'POST',
-          body: JSON.stringify({ title, shortDescription: shortDesc, description: desc, installation: install, categorySlug, sellerSlug, price, oldPrice: price, discountPercent: discount, isHidden, tags, thumbnail: thumb || undefined }),
+          body: JSON.stringify({ title, shortDescription: shortDesc, description: desc, installation: install, categorySlug, sellerSlug, price, oldPrice: price, discountPercent: discount, isHidden, tags, thumbnail: currentBase64 || undefined }),
         });
         showMsg(msgEl, '✓ Produit créé avec succès.', true);
-        ['cp-title','cp-short','cp-desc','cp-install','cp-price','cp-discount','cp-thumb','cp-tags'].forEach(id => {
+        ['cp-title','cp-short','cp-desc','cp-install','cp-price','cp-discount','cp-tags'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = el.type === 'number' ? '0' : '';
         });
+        resetImageUpload();
         await loadProducts();
       } catch(err) {
         showMsg(msgEl, '✕ ' + err.message, false);
@@ -733,6 +869,38 @@
 
     // ─── Event delegation ────────────────────────────────────
     function initEvents() {
+      // Create product upload
+      const zone = document.getElementById('cp-upload-zone');
+      const fileInput = document.getElementById('cp-file-input');
+      zone.addEventListener('click', () => fileInput.click());
+      zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => { zone.classList.remove('dragover'); });
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+      });
+      document.getElementById('btn-remove-cp-img').addEventListener('click', () => resetImageUpload(false));
+
+      // Edit product upload
+      const eZone = document.getElementById('em-upload-zone');
+      const eFileInput = document.getElementById('em-file-input');
+      eZone.addEventListener('click', () => eFileInput.click());
+      eZone.addEventListener('dragover', (e) => { e.preventDefault(); eZone.classList.add('dragover'); });
+      eZone.addEventListener('dragleave', () => { eZone.classList.remove('dragover'); });
+      eZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        eZone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], true);
+      });
+      eFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0], true);
+      });
+      document.getElementById('btn-remove-em-img').addEventListener('click', () => resetImageUpload(true));
+
       // Products table actions
       document.getElementById('products-tbody').addEventListener('click', async e => {
         const btn = e.target.closest('[data-action]');

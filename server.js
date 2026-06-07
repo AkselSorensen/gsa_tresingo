@@ -36,6 +36,10 @@ const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL || `${BASE_URL_COMPUTED}/a
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY || "";
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+const PLATFORM_COMMISSION_PERCENT = Math.min(
+  100,
+  Math.max(0, Number(process.env.PLATFORM_COMMISSION_PERCENT || 15))
+);
 
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
@@ -552,8 +556,27 @@ async function initializeDatabase() {
       seller_id INTEGER NOT NULL REFERENCES users(id),
       price NUMERIC(10, 2) NOT NULL,
       quantity INTEGER NOT NULL DEFAULT 1,
-      customer_email TEXT
+      customer_email TEXT,
+      platform_fee_percent NUMERIC(5, 2) NOT NULL DEFAULT 15,
+      platform_fee_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      seller_net_amount NUMERIC(10, 2) NOT NULL DEFAULT 0
     );
+
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS platform_fee_percent NUMERIC(5, 2) NOT NULL DEFAULT 15;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS platform_fee_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS seller_net_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+
+    UPDATE order_items
+    SET
+      platform_fee_percent = COALESCE(NULLIF(platform_fee_percent, 0), 15),
+      platform_fee_amount = CASE
+        WHEN platform_fee_amount = 0 THEN ROUND((price * quantity * COALESCE(NULLIF(platform_fee_percent, 0), 15) / 100)::numeric, 2)
+        ELSE platform_fee_amount
+      END,
+      seller_net_amount = CASE
+        WHEN seller_net_amount = 0 THEN ROUND((price * quantity * (1 - COALESCE(NULLIF(platform_fee_percent, 0), 15) / 100))::numeric, 2)
+        ELSE seller_net_amount
+      END;
   `);
 
   await pool.query(
@@ -1289,6 +1312,8 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
       SELECT 
         COALESCE(SUM(oi.quantity), 0) as units_sold,
         COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
+        COALESCE(SUM(oi.platform_fee_amount), 0) as platform_fees,
+        COALESCE(SUM(oi.seller_net_amount), 0) as seller_net_revenue,
         (SELECT COUNT(*) FROM products WHERE seller_id = $1 AND is_hidden = FALSE) as active_products
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
@@ -1320,7 +1345,11 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
         o.created_at as date,
         p.title as product_title,
         oi.customer_email as client,
-        oi.price as price
+        oi.price as price,
+        oi.quantity as quantity,
+        oi.platform_fee_percent as platform_fee_percent,
+        oi.platform_fee_amount as platform_fee_amount,
+        oi.seller_net_amount as seller_net_amount
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN products p ON p.id = oi.product_id
@@ -1340,6 +1369,9 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
       stats: {
         unitsSold: parseInt(statsResult.rows[0].units_sold || 0),
         totalRevenue: parseFloat(statsResult.rows[0].total_revenue || 0),
+        platformFees: parseFloat(statsResult.rows[0].platform_fees || 0),
+        sellerNetRevenue: parseFloat(statsResult.rows[0].seller_net_revenue || 0),
+        platformCommissionPercent: PLATFORM_COMMISSION_PERCENT,
         activeProducts: parseInt(statsResult.rows[0].active_products || 0),
         unitsPerArticle: unitsPerArticleResult.rows
       },
@@ -1404,7 +1436,8 @@ app.get("/api/sellers/:slug", async (req, res) => {
       `
       SELECT 
         COALESCE(SUM(oi.quantity), 0) as units_sold,
-        COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue
+        COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
+        COALESCE(SUM(oi.seller_net_amount), 0) as seller_net_revenue
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       WHERE oi.seller_id = $1 AND o.status = 'completed'
@@ -1420,7 +1453,8 @@ app.get("/api/sellers/:slug", async (req, res) => {
         discordLinked: !!seller.discord_id,
         joinedAt: seller.created_at,
         totalUnitsSold: parseInt(publicStatsResult.rows[0].units_sold || 0),
-        totalRevenue: parseFloat(publicStatsResult.rows[0].total_revenue || 0)
+        totalRevenue: parseFloat(publicStatsResult.rows[0].total_revenue || 0),
+        sellerNetRevenue: parseFloat(publicStatsResult.rows[0].seller_net_revenue || 0)
       },
       products: productsResult.rows.map(row => ({
         id: row.id,
@@ -2019,7 +2053,7 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       payment_method_types: ["card"],
       customer_email: req.session.user.email,
       line_items: lineItems,
-      success_url: `${APP_BASE_URL}/cart.html?checkout=success`,
+      success_url: `${APP_BASE_URL}/cart.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_BASE_URL}/cart.html?checkout=cancel`,
       metadata: {
         userId: String(req.session.user.id),
@@ -2036,6 +2070,103 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("Stripe checkout error:", error);
     res.status(500).json({ message: "Impossible de créer la session Stripe." });
+  }
+});
+
+app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ message: "Stripe n'est pas configuré." });
+  }
+
+  const sessionId = String(req.body.sessionId || "").trim();
+  if (!sessionId) {
+    return res.status(400).json({ message: "Session Stripe manquante." });
+  }
+
+  const client = await pool.connect();
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (String(session.metadata?.userId || "") !== String(req.session.user.id)) {
+      return res.status(403).json({ message: "Cette session Stripe ne correspond pas à votre compte." });
+    }
+
+    if (session.payment_status !== "paid") {
+      return res.status(400).json({ message: "Paiement Stripe non validé." });
+    }
+
+    const existingOrder = await pool.query(`SELECT id FROM orders WHERE stripe_session_id = $1 LIMIT 1`, [session.id]);
+    if (existingOrder.rowCount) {
+      return res.json({ ok: true, orderId: existingOrder.rows[0].id, alreadyConfirmed: true });
+    }
+
+    const cartId = Number(session.metadata?.cartId || 0);
+    if (!cartId) {
+      return res.status(400).json({ message: "Panier Stripe introuvable." });
+    }
+
+    await client.query("BEGIN");
+
+    const orderInsert = await client.query(
+      `
+        INSERT INTO orders (user_id, stripe_session_id, total_amount, status)
+        VALUES ($1, $2, $3, 'completed')
+        RETURNING id
+      `,
+      [req.session.user.id, session.id, Number(session.amount_total || 0) / 100]
+    );
+
+    const orderId = orderInsert.rows[0].id;
+
+    const itemsInsert = await client.query(
+      `
+        INSERT INTO order_items (
+          order_id,
+          product_id,
+          seller_id,
+          price,
+          quantity,
+          customer_email,
+          platform_fee_percent,
+          platform_fee_amount,
+          seller_net_amount
+        )
+        SELECT
+          $1,
+          p.id,
+          p.seller_id,
+          p.price,
+          ci.quantity,
+          $2,
+          $4,
+          ROUND((p.price * ci.quantity * $4 / 100)::numeric, 2),
+          ROUND((p.price * ci.quantity * (1 - $4 / 100))::numeric, 2)
+        FROM cart_items ci
+        JOIN products p ON p.id = ci.product_id
+        WHERE ci.cart_id = $3
+        RETURNING id
+      `,
+      [orderId, req.session.user.email || session.customer_email || null, cartId, PLATFORM_COMMISSION_PERCENT]
+    );
+
+    if (!itemsInsert.rowCount) {
+      throw new Error("Aucun article à enregistrer pour cette commande.");
+    }
+
+    await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cartId]);
+    await client.query("COMMIT");
+
+    res.status(201).json({ ok: true, orderId, alreadyConfirmed: false });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (_rollbackError) {
+      // Ignore rollback failures.
+    }
+    console.error("Stripe confirm session error:", error);
+    res.status(500).json({ message: "Impossible de confirmer la commande Stripe." });
+  } finally {
+    client.release();
   }
 });
 

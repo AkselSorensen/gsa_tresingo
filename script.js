@@ -960,9 +960,23 @@ async function renderCartPage() {
     return;
   }
 
+  const checkoutState = getQueryParams().get("checkout");
+  const checkoutSessionId = getQueryParams().get("session_id");
+  let checkoutConfirmationError = "";
+
+  if (checkoutState === "success" && checkoutSessionId) {
+    try {
+      await api("/api/checkout/confirm-session", {
+        method: "POST",
+        body: JSON.stringify({ sessionId: checkoutSessionId }),
+      });
+    } catch (error) {
+      checkoutConfirmationError = error.message;
+    }
+  }
+
   const cart = await api("/api/cart");
   const stripeConfig = await getStripeConfig();
-  const checkoutState = getQueryParams().get("checkout");
   state.cart = cart;
   updateHeaderLabels();
 
@@ -977,8 +991,10 @@ async function renderCartPage() {
     <section class="page-section cart-page-section">
       <div class="container cart-layout-modern">
         ${
-          checkoutState === "success"
-            ? `<div class="panel checkout-banner success-banner">${t("checkoutSuccess")}</div>`
+          checkoutConfirmationError
+            ? `<div class="panel checkout-banner cancel-banner">Paiement validé côté Stripe, mais l'enregistrement de la commande a échoué : ${escapeHtml(checkoutConfirmationError)}</div>`
+            : checkoutState === "success"
+              ? `<div class="panel checkout-banner success-banner">${t("checkoutSuccess")}</div>`
             : checkoutState === "cancel"
               ? `<div class="panel checkout-banner cancel-banner">${t("checkoutCancel")}</div>`
               : ""
@@ -1513,6 +1529,9 @@ async function renderSellerPage() {
     if (isOwner) {
       try {
         const dashboardData = await api("/api/seller/dashboard");
+        const linkedBadge = (linked, label = "Lié") => linked
+          ? `<span class="chip chip-accent" style="color:#4ade80;border-color:rgba(74,222,128,0.35);background:rgba(74,222,128,0.08);">${label}</span>`
+          : `<span class="chip" style="color:#f87171;border-color:rgba(248,113,113,0.35);background:rgba(248,113,113,0.08);">Non lié</span>`;
         dashboardHtml = `
           <div class="seller-dashboard-wrap" style="margin-top: 40px;">
             <div class="section-head">
@@ -1524,15 +1543,24 @@ async function renderSellerPage() {
             
             <div class="profile-stats-grid" style="margin-bottom: 30px;">
               <article class="profile-stat-card">
-                <span>Chiffre d'affaire total</span>
+                <span>CA brut encaissé</span>
                 <strong>${currency(dashboardData.stats.totalRevenue)}</strong>
               </article>
               <article class="profile-stat-card">
-                <span>Nombre de produits vendus</span>
+                <span>Commission Tresingo / GSA</span>
+                <strong>${currency(dashboardData.stats.platformFees)}</strong>
+                <small style="color:var(--muted);">${Number(dashboardData.stats.platformCommissionPercent || 0)}% appliqué</small>
+              </article>
+              <article class="profile-stat-card">
+                <span>Revenu net vendeur</span>
+                <strong>${currency(dashboardData.stats.sellerNetRevenue)}</strong>
+              </article>
+              <article class="profile-stat-card">
+                <span>Produits vendus</span>
                 <strong>${dashboardData.stats.unitsSold}</strong>
               </article>
               <article class="profile-stat-card">
-                <span>Nombre de produits en vente</span>
+                <span>Produits en vente</span>
                 <strong>${dashboardData.stats.activeProducts}</strong>
               </article>
             </div>
@@ -1551,13 +1579,11 @@ async function renderSellerPage() {
                 </div>
                 <div class="profile-info-item">
                   <span>Compte Discord lié</span>
-                  <strong>${dashboardData.discordLinked ? `<span style="color:#4ade80">Lié (${dashboardData.discordId || 'V'})</span>` 
-: '<span style="color:#f87171">Non lié</span>'}</strong>
+                  <strong>${linkedBadge(dashboardData.discordLinked, dashboardData.discordId ? `Lié (${escapeHtml(dashboardData.discordId)})` : "Lié")}</strong>
                 </div>
                 <div class="profile-info-item">
                   <span>Compte Stripe lié</span>
-                  <strong>${dashboardData.stripeLinked ? '<span style="color:#4ade80">Lié V</span>' : 
-'<span style="color:#f87171">Non lié</span>'}</strong>
+                  <strong>${linkedBadge(dashboardData.stripeLinked)}</strong>
                 </div>
               </div>
             </div>
@@ -1574,7 +1600,7 @@ async function renderSellerPage() {
                   <thead>
                     <tr style="text-align:left; border-bottom:1px solid var(--panel-border);">
                       <th style="padding:12px;">Produit</th>
-                      <th style="padding:12px; text-align:right;">Ventes</th>
+                      <th style="padding:12px; text-align:right;">Unités vendues</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1585,7 +1611,7 @@ async function renderSellerPage() {
                           <td style="padding:12px; text-align:right; font-weight:600; color:var(--accent);">${item.units}</td>
                         </tr>
                       `).join("")
-                      : '<tr><td colspan="2" style="padding:30px; text-align:center; color:var(--muted);">Aucun produit en ligne.</td></tr>'
+                      : '<tr><td colspan="2" style="padding:30px; text-align:center; color:var(--muted);">Aucune vente enregistrée pour le moment.</td></tr>'
                     }
                   </tbody>
                 </table>
@@ -1606,7 +1632,9 @@ async function renderSellerPage() {
                       <th style="padding:12px;">Date</th>
                       <th style="padding:12px;">Produit</th>
                       <th style="padding:12px;">Client</th>
-                      <th style="padding:12px;">Prix</th>
+                      <th style="padding:12px;">Prix brut</th>
+                      <th style="padding:12px;">Commission</th>
+                      <th style="padding:12px;">Net vendeur</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1617,9 +1645,11 @@ async function renderSellerPage() {
                           <td style="padding:12px; font-weight:500;">${escapeHtml(sale.product_title)}</td>
                           <td style="padding:12px; color:var(--muted); font-size:0.85rem;">${escapeHtml(sale.client)}</td>
                           <td style="padding:12px; font-weight:600; color:var(--accent);">${currency(sale.price)}</td>
+                          <td style="padding:12px; font-weight:600; color:#fbbf24;">${currency(sale.platform_fee_amount)}</td>
+                          <td style="padding:12px; font-weight:600; color:#4ade80;">${currency(sale.seller_net_amount)}</td>
                         </tr>
                       `).join("")
-                      : '<tr><td colspan="4" style="padding:30px; text-align:center; color:var(--muted);">Aucune vente enregistrée pour le moment.</td></tr>'
+                      : '<tr><td colspan="6" style="padding:30px; text-align:center; color:var(--muted);">Aucune vente enregistrée pour le moment.</td></tr>'
                     }
                   </tbody>
                 </table>
@@ -1646,6 +1676,11 @@ async function renderSellerPage() {
             <span class="eyebrow">${isOwner ? "Mon Espace" : "Créateur Vérifié"}</span>
             <h1>${escapeHtml(seller.displayName)}</h1>
             <p>Membre de la communauté GSA depuis le ${new Date(seller.joinedAt || Date.now()).toLocaleDateString("fr-FR")}.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+              <span class="chip chip-accent">${products.length} produit${products.length > 1 ? "s" : ""} en vente</span>
+              <span class="chip">${Number(seller.totalUnitsSold || 0)} unité${Number(seller.totalUnitsSold || 0) > 1 ? "s" : ""} vendue${Number(seller.totalUnitsSold || 0) > 1 ? "s" : ""}</span>
+              <span class="chip">Discord ${seller.discordLinked ? "lié" : "non lié"}</span>
+            </div>
           </div>
         </div>
       </section>

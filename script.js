@@ -838,6 +838,7 @@ async function renderProductPage() {
   });
 
   document.getElementById("add-to-cart-button")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
     if (!state.user) {
       openAuthModal();
       return;
@@ -847,12 +848,12 @@ async function renderProductPage() {
       state.cart = await api("/api/cart/items", {
         method: "POST",
         body: JSON.stringify({
-          productId: Number(event.currentTarget.dataset.productId),
+          productId: Number(button.dataset.productId),
           quantity: 1,
         }),
       });
       updateHeaderLabels();
-      event.currentTarget.textContent = "Ajouté au panier";
+      button.textContent = "Ajouté au panier";
     } catch (error) {
       if (error.message === "Authentication required") {
         openAuthModal();
@@ -1149,8 +1150,9 @@ async function renderCartPage() {
   });
 
   document.getElementById("stripe-checkout-button")?.addEventListener("click", async (event) => {
-    event.currentTarget.disabled = true;
-    event.currentTarget.textContent = t("checkoutLoading");
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = t("checkoutLoading");
 
     try {
       const response = await api("/api/checkout/create-session", {
@@ -1166,8 +1168,8 @@ async function renderCartPage() {
       throw new Error("Stripe session URL missing");
     } catch (error) {
       alert(error.message);
-      event.currentTarget.disabled = false;
-      event.currentTarget.textContent = t("checkout");
+      button.disabled = false;
+      button.textContent = t("checkout");
     }
   });
 }

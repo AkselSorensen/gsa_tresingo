@@ -1312,14 +1312,14 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
       SELECT 
         COALESCE(SUM(oi.quantity), 0) as units_sold,
         COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
-        COALESCE(SUM(oi.platform_fee_amount), 0) as platform_fees,
-        COALESCE(SUM(oi.seller_net_amount), 0) as seller_net_revenue,
+        COALESCE(SUM(ROUND((oi.price * oi.quantity * $2 / 100)::numeric, 2)), 0) as platform_fees,
+        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2)), 0) as seller_net_revenue,
         (SELECT COUNT(*) FROM products WHERE seller_id = $1 AND is_hidden = FALSE) as active_products
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       WHERE oi.seller_id = $1 AND o.status = 'completed'
       `,
-      [sellerId]
+      [sellerId, PLATFORM_COMMISSION_PERCENT]
     );
 
     // 3. Units per article
@@ -1347,9 +1347,9 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
         oi.customer_email as client,
         oi.price as price,
         oi.quantity as quantity,
-        oi.platform_fee_percent as platform_fee_percent,
-        oi.platform_fee_amount as platform_fee_amount,
-        oi.seller_net_amount as seller_net_amount
+        $2::numeric as platform_fee_percent,
+        ROUND((oi.price * oi.quantity * $2 / 100)::numeric, 2) as platform_fee_amount,
+        ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2) as seller_net_amount
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN products p ON p.id = oi.product_id
@@ -1357,7 +1357,7 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
       ORDER BY o.created_at DESC
       LIMIT 50
       `,
-      [sellerId]
+      [sellerId, PLATFORM_COMMISSION_PERCENT]
     );
 
     res.json({
@@ -1437,12 +1437,12 @@ app.get("/api/sellers/:slug", async (req, res) => {
       SELECT 
         COALESCE(SUM(oi.quantity), 0) as units_sold,
         COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
-        COALESCE(SUM(oi.seller_net_amount), 0) as seller_net_revenue
+        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2)), 0) as seller_net_revenue
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       WHERE oi.seller_id = $1 AND o.status = 'completed'
       `,
-      [seller.id]
+      [seller.id, PLATFORM_COMMISSION_PERCENT]
     );
 
     res.json({

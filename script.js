@@ -265,6 +265,53 @@ function updateHeaderLabels() {
   if (langButton) langButton.textContent = t("languageLabel");
 
   let userMenuWrap = document.getElementById("user-menu-wrap");
+  const headerTools = document.querySelector(".header-tools");
+
+  const attachUserMenuEvents = () => {
+    const trigger = document.getElementById("user-menu-trigger");
+    const dropdown = document.getElementById("user-menu-dropdown");
+    const logoutBtn = document.getElementById("user-logout-btn");
+
+    if (trigger && !trigger.dataset.bound) {
+      trigger.dataset.bound = "true";
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdown?.classList.toggle("hidden");
+      });
+    }
+
+    if (dropdown && !dropdown.dataset.bound) {
+      dropdown.dataset.bound = "true";
+      document.addEventListener("click", () => {
+        dropdown.classList.add("hidden");
+      });
+    }
+
+    if (logoutBtn && !logoutBtn.dataset.bound) {
+      logoutBtn.dataset.bound = "true";
+      logoutBtn.addEventListener("click", async () => {
+        try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
+        state.user = null;
+        state.cart = null;
+        window.location.href = "index.html";
+      });
+    }
+  };
+
+  const createUserMenu = () => {
+    const wrap = document.createElement("div");
+    wrap.id = "user-menu-wrap";
+    wrap.innerHTML = `
+      <button class="primary-button" id="user-menu-trigger" type="button">${escapeHtml(t("welcome"))}, ${escapeHtml(state.user.displayName)}</button>
+      <div id="user-menu-dropdown" class="user-menu-dropdown hidden">
+        ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
+        <a href="profile.html">Mon profil</a>
+        ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">Profil vendeur</a>` : ''}
+        <button type="button" id="user-logout-btn">Se déconnecter</button>
+      </div>
+    `;
+    return wrap;
+  };
 
   if (state.user) {
     // Si on a un bouton "Log in" orphelin (ex: ghost-button au lieu de primary-button), on le supprime pour éviter les doublons
@@ -278,40 +325,30 @@ function updateHeaderLabels() {
         document.querySelector('.primary-button[href="profile.html"]');
         
       if (targetLoginLink) {
-        userMenuWrap = document.createElement("div");
-        userMenuWrap.id = "user-menu-wrap";
-        userMenuWrap.innerHTML = `
-          <button class="primary-button" id="user-menu-trigger" type="button">${escapeHtml(t("welcome"))}, ${escapeHtml(state.user.displayName)}</button>
-          <div id="user-menu-dropdown" class="user-menu-dropdown hidden">
-            ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
-            <a href="profile.html">Mon profil</a>
-            <button type="button" id="user-logout-btn">Se déconnecter</button>
-          </div>
-        `;
+        userMenuWrap = createUserMenu();
         targetLoginLink.replaceWith(userMenuWrap);
 
         // Nettoyer les autres liens de login potentiels qui traînent
         document.querySelectorAll('a[href="login.html"]').forEach(link => link.remove());
-
-        document.getElementById("user-menu-trigger").addEventListener("click", (e) => {
-          e.stopPropagation();
-          document.getElementById("user-menu-dropdown").classList.toggle("hidden");
-        });
-
-        document.addEventListener("click", () => {
-          document.getElementById("user-menu-dropdown")?.classList.add("hidden");
-        });
-
-        document.getElementById("user-logout-btn").addEventListener("click", async () => {
-          try { await api("/api/auth/logout", { method: "POST" }); } catch (_) {}
-          state.user = null;
-          state.cart = null;
-          window.location.href = "index.html";
-        });
+        attachUserMenuEvents();
+      } else if (headerTools) {
+        userMenuWrap = createUserMenu();
+        headerTools.appendChild(userMenuWrap);
+        attachUserMenuEvents();
       }
     } else {
       const trigger = document.getElementById("user-menu-trigger");
       if (trigger) trigger.textContent = `${t("welcome")}, ${state.user.displayName}`;
+      const dropdown = document.getElementById("user-menu-dropdown");
+      if (dropdown) {
+        dropdown.innerHTML = `
+          ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
+          <a href="profile.html">Mon profil</a>
+          ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">Profil vendeur</a>` : ''}
+          <button type="button" id="user-logout-btn">Se déconnecter</button>
+        `;
+      }
+      attachUserMenuEvents();
       // Nettoyer les autres liens de login potentiels qui traînent
       document.querySelectorAll('a[href="login.html"]').forEach(link => {
         if(!link.closest('#user-menu-wrap')) link.remove()

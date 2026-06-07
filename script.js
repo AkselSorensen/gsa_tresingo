@@ -1504,8 +1504,133 @@ async function renderSellerPage() {
 
   try {
     const data = await api(`/api/sellers/${encodeURIComponent(slug)}`);
-    const seller = data.seller;
-    const products = data.products;
+    const { seller, products } = data;
+
+    // Déterminer si l'utilisateur connecté regarde son propre profil vendeur
+    const isOwner = state.user && state.user.slug === seller.slug;
+
+    let dashboardHtml = "";
+    if (isOwner) {
+      try {
+        const dashboardData = await api("/api/seller/dashboard");
+        dashboardHtml = `
+          <div class="seller-dashboard-wrap" style="margin-top: 40px;">
+            <div class="section-head">
+              <div>
+                <span class="eyebrow">Tableau de bord</span>
+                <h2>Statistiques Vendeur</h2>
+              </div>
+            </div>
+            
+            <div class="profile-stats-grid" style="margin-bottom: 30px;">
+              <article class="profile-stat-card">
+                <span>Chiffre d'affaire total</span>
+                <strong>${currency(dashboardData.stats.totalRevenue)}</strong>
+              </article>
+              <article class="profile-stat-card">
+                <span>Nombre de produits vendus</span>
+                <strong>${dashboardData.stats.unitsSold}</strong>
+              </article>
+              <article class="profile-stat-card">
+                <span>Nombre de produits en vente</span>
+                <strong>${dashboardData.stats.activeProducts}</strong>
+              </article>
+            </div>
+
+            <div class="panel" style="margin-bottom: 30px;">
+              <div class="profile-section-head">
+                <div>
+                  <span class="eyebrow">Profil vendeur</span>
+                  <h3>Informations de compte</h3>
+                </div>
+              </div>
+              <div class="profile-info-grid">
+                <div class="profile-info-item">
+                  <span>Date d'arrivée vendeur</span>
+                  <strong>${new Date(dashboardData.joinedAt).toLocaleDateString("fr-FR")}</strong>
+                </div>
+                <div class="profile-info-item">
+                  <span>Compte Discord lié</span>
+                  <strong>${dashboardData.discordLinked ? `<span style="color:#4ade80">Lié (${dashboardData.discordId || 'V'})</span>` 
+: '<span style="color:#f87171">Non lié</span>'}</strong>
+                </div>
+                <div class="profile-info-item">
+                  <span>Compte Stripe lié</span>
+                  <strong>${dashboardData.stripeLinked ? '<span style="color:#4ade80">Lié V</span>' : 
+'<span style="color:#f87171">Non lié</span>'}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" style="margin-bottom: 30px;">
+              <div class="profile-section-head">
+                <div>
+                  <span class="eyebrow">Performance</span>
+                  <h3>Unités par article</h3>
+                </div>
+              </div>
+              <div style="overflow-x: auto;">
+                <table class="admin-table" style="width:100%; border-collapse:collapse; margin-top:15px;">
+                  <thead>
+                    <tr style="text-align:left; border-bottom:1px solid var(--panel-border);">
+                      <th style="padding:12px;">Produit</th>
+                      <th style="padding:12px; text-align:right;">Ventes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${dashboardData.stats.unitsPerArticle.length > 0 
+                      ? dashboardData.stats.unitsPerArticle.map(item => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                          <td style="padding:12px; font-weight:500;">${escapeHtml(item.title)}</td>
+                          <td style="padding:12px; text-align:right; font-weight:600; color:var(--accent);">${item.units}</td>
+                        </tr>
+                      `).join("")
+                      : '<tr><td colspan="2" style="padding:30px; text-align:center; color:var(--muted);">Aucun produit en ligne.</td></tr>'
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="profile-section-head">
+                <div>
+                  <span class="eyebrow">Historique</span>
+                  <h3>Suivis des ventes</h3>
+                </div>
+              </div>
+              <div style="overflow-x: auto;">
+                <table class="admin-table" style="width:100%; border-collapse:collapse; margin-top:15px;">
+                  <thead>
+                    <tr style="text-align:left; border-bottom:1px solid var(--panel-border);">
+                      <th style="padding:12px;">Date</th>
+                      <th style="padding:12px;">Produit</th>
+                      <th style="padding:12px;">Client</th>
+                      <th style="padding:12px;">Prix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${dashboardData.sales.length > 0 
+                      ? dashboardData.sales.map(sale => `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                          <td style="padding:12px; font-size:0.9rem;">${new Date(sale.date).toLocaleDateString("fr-FR")}</td>
+                          <td style="padding:12px; font-weight:500;">${escapeHtml(sale.product_title)}</td>
+                          <td style="padding:12px; color:var(--muted); font-size:0.85rem;">${escapeHtml(sale.client)}</td>
+                          <td style="padding:12px; font-weight:600; color:var(--accent);">${currency(sale.price)}</td>
+                        </tr>
+                      `).join("")
+                      : '<tr><td colspan="4" style="padding:30px; text-align:center; color:var(--muted);">Aucune vente enregistrée pour le moment.</td></tr>'
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (dashError) {
+        console.error("Dashboard load error:", dashError);
+      }
+    }
 
     document.title = `${escapeHtml(seller.displayName)} — Boutique GSA`;
     let metaDesc = document.querySelector('meta[name="description"]');
@@ -1518,15 +1643,25 @@ async function renderSellerPage() {
         <div class="container" style="display:flex; align-items:center; gap:24px;">
           <img src="${escapeHtml(seller.avatarUrl || 'https://via.placeholder.com/120')}" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid var(--accent);" alt="${escapeHtml(seller.displayName)}" />
           <div>
-            <span class="eyebrow">Créateur Vérifié</span>
+            <span class="eyebrow">${isOwner ? "Mon Espace" : "Créateur Vérifié"}</span>
             <h1>${escapeHtml(seller.displayName)}</h1>
-            <p>${products.length} produit${products.length > 1 ? 's' : ''} publié${products.length > 1 ? 's' : ''}</p>
+            <p>Membre de la communauté GSA depuis le ${new Date(seller.joinedAt || Date.now()).toLocaleDateString("fr-FR")}.</p>
           </div>
         </div>
       </section>
 
       <section class="page-section">
         <div class="container">
+          ${dashboardHtml}
+
+          <div class="section-head" style="${isOwner ? 'margin-top: 60px;' : ''}">
+            <div>
+              <span class="eyebrow">Catalogue</span>
+              <h2>${isOwner ? "Mes Réalisations" : `Réalisations de ${escapeHtml(seller.displayName)}`}</h2>
+            </div>
+            <span class="badge">${products.length} produits</span>
+          </div>
+
           <div class="market-products-grid ${products.length ? "" : "is-empty"}">
             ${
               products.length

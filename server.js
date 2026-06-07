@@ -91,6 +91,7 @@ function sanitizeUser(row) {
     preferredLanguage: row.preferred_language,
     discordId: row.discord_id || null,
     steamId: row.steam_id || null,
+    stripeAccountId: row.stripe_account_id || null,
     createdAt: row.created_at,
   };
 }
@@ -399,6 +400,7 @@ async function initializeDatabase() {
       avatar_url TEXT,
       discord_id TEXT UNIQUE,
       steam_id TEXT UNIQUE,
+      stripe_account_id TEXT,
       preferred_language TEXT NOT NULL DEFAULT 'fr',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -474,6 +476,7 @@ async function initializeDatabase() {
 
     ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT UNIQUE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_id TEXT UNIQUE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id TEXT;
 
     CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_unique_idx ON users(discord_id) WHERE discord_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS users_steam_id_unique_idx ON users(steam_id) WHERE steam_id IS NOT NULL;
@@ -532,6 +535,25 @@ async function initializeDatabase() {
       CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
     );
     CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON user_sessions ("expire");
+
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      stripe_session_id TEXT UNIQUE,
+      total_amount NUMERIC(10, 2) NOT NULL,
+      status TEXT NOT NULL DEFAULT 'completed',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS order_items (
+      id SERIAL PRIMARY KEY,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      product_id INTEGER NOT NULL REFERENCES products(id),
+      seller_id INTEGER NOT NULL REFERENCES users(id),
+      price NUMERIC(10, 2) NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 1,
+      customer_email TEXT
+    );
   `);
 
   await pool.query(
@@ -1247,13 +1269,95 @@ app.get("/api/products", async (req, res) => {
   }
 });
 
+app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
+  if (req.session.user.role !== "seller" && req.session.user.role !== "admin") {
+    return res.status(403).json({ message: "Seller access required" });
+  }
+
+  try {
+    const sellerId = req.session.user.id;
+
+    // 1. Seller Info (Discord, Stripe, Date d'arrivée)
+    const sellerInfo = await pool.query(
+      `SELECT discord_id, stripe_account_id, created_at FROM users WHERE id = $1`,
+      [sellerId]
+    );
+
+    // 2. Stats
+    const statsResult = await pool.query(
+      `
+      SELECT 
+        COALESCE(SUM(oi.quantity), 0) as units_sold,
+        COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
+        (SELECT COUNT(*) FROM products WHERE seller_id = $1 AND is_hidden = FALSE) as active_products
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE oi.seller_id = $1 AND o.status = 'completed'
+      `,
+      [sellerId]
+    );
+
+    // 3. Units per article
+    const unitsPerArticleResult = await pool.query(
+      `
+      SELECT 
+        p.title,
+        COALESCE(SUM(oi.quantity), 0) as units
+      FROM products p
+      LEFT JOIN order_items oi ON p.id = oi.product_id
+      LEFT JOIN orders o ON o.id = oi.order_id AND o.status = 'completed'
+      WHERE p.seller_id = $1 AND p.is_hidden = FALSE
+      GROUP BY p.id, p.title
+      ORDER BY units DESC
+      `,
+      [sellerId]
+    );
+
+    // 4. Sales History
+    const salesResult = await pool.query(
+      `
+      SELECT 
+        o.created_at as date,
+        p.title as product_title,
+        oi.customer_email as client,
+        oi.price as price
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      JOIN products p ON p.id = oi.product_id
+      WHERE oi.seller_id = $1 AND o.status = 'completed'
+      ORDER BY o.created_at DESC
+      LIMIT 50
+      `,
+      [sellerId]
+    );
+
+    res.json({
+      discordLinked: !!sellerInfo.rows[0].discord_id,
+      discordId: sellerInfo.rows[0].discord_id,
+      stripeLinked: !!sellerInfo.rows[0].stripe_account_id,
+      stripeAccountId: sellerInfo.rows[0].stripe_account_id,
+      joinedAt: sellerInfo.rows[0].created_at,
+      stats: {
+        unitsSold: parseInt(statsResult.rows[0].units_sold || 0),
+        totalRevenue: parseFloat(statsResult.rows[0].total_revenue || 0),
+        activeProducts: parseInt(statsResult.rows[0].active_products || 0),
+        unitsPerArticle: unitsPerArticleResult.rows
+      },
+      sales: salesResult.rows
+    });
+  } catch (error) {
+    console.error("Seller dashboard error:", error);
+    res.status(500).json({ message: "Unable to fetch dashboard data" });
+  }
+});
+
 app.get("/api/sellers/:slug", async (req, res) => {
   try {
     const slug = String(req.params.slug);
     
     // 1. Check if user is a seller
     const sellerResult = await pool.query(
-      `SELECT id, display_name, slug, avatar_url, role FROM users WHERE slug = $1 AND role IN ('seller', 'admin') LIMIT 1`,
+      `SELECT id, display_name, slug, avatar_url, role, discord_id, created_at FROM users WHERE slug = $1 AND role IN ('seller', 'admin') LIMIT 1`,
       [slug]
     );
 
@@ -1296,11 +1400,27 @@ app.get("/api/sellers/:slug", async (req, res) => {
       [seller.id]
     );
 
+    const publicStatsResult = await pool.query(
+      `
+      SELECT 
+        COALESCE(SUM(oi.quantity), 0) as units_sold,
+        COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE oi.seller_id = $1 AND o.status = 'completed'
+      `,
+      [seller.id]
+    );
+
     res.json({
       seller: {
         displayName: seller.display_name,
         slug: seller.slug,
-        avatarUrl: seller.avatar_url
+        avatarUrl: seller.avatar_url,
+        discordLinked: !!seller.discord_id,
+        joinedAt: seller.created_at,
+        totalUnitsSold: parseInt(publicStatsResult.rows[0].units_sold || 0),
+        totalRevenue: parseFloat(publicStatsResult.rows[0].total_revenue || 0)
       },
       products: productsResult.rows.map(row => ({
         id: row.id,

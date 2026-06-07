@@ -1,0 +1,97 @@
+Nom du GPE,Vision,Mission,Statut,Idée,Titre,Description,Valeur d'usage (/5),Valeur business (/5),Coût d'impact (/10),Complexité (/5),Temps (/5),Coût d'effort (/10),Personas,Screenshot (optionnel)
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Prête à être développée",1,"Création d’un jumeau numérique unique","Quoi ?
+Créer un identifiant numérique unique pour chaque boîte de médicament.
+
+Pourquoi ?
+Aujourd’hui, une boîte perd sa traçabilité après sa sortie du laboratoire, ce qui empêche un suivi fiable de son cycle de vie.
+
+Comment ?
+Associer à chaque boîte un identifiant unique relié à son historique complet dans la plateforme.",5,5,10,3,3,6,"Laboratoire, Pharmacien, Utilisateur Sophie",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Prête à être développée",2,"Génération d’un QR code unique","Quoi ?
+Générer un QR code unique lié au jumeau numérique du médicament.
+
+Pourquoi ?
+Les acteurs ont besoin d’un moyen simple, rapide et fiable pour identifier un médicament et accéder à son historique.
+
+Comment ?
+Créer automatiquement un QR code lors de la création du médicament, lisible depuis l’interface web et l’application mobile.",5,4,9,2,2,4,"Laboratoire, Pharmacien, Utilisateur Sophie",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","En développement",3,"Enregistrement des événements sur blockchain privée","Quoi ?
+Enregistrer les événements clés du cycle de vie du médicament dans une blockchain privée.
+
+Pourquoi ?
+La blockchain permet de garantir l’intégrité, la transparence et la fiabilité des informations de traçabilité.
+
+Comment ?
+Utiliser une blockchain privée en Proof of Authority pour stocker les événements de création, transfert, retour, recyclage et réception.",5,5,10,5,5,10,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Prête à être développée",4,"Suivi des transferts logistiques","Quoi ?
+Permettre l’enregistrement et le suivi des transferts du médicament entre les différents acteurs.
+
+Pourquoi ?
+La chaîne logistique actuelle manque de visibilité, ce qui rend difficile la traçabilité complète du produit.
+
+Comment ?
+Ajouter un événement de transfert à chaque changement de possession entre laboratoire, grossiste, pharmacie et association.",5,5,10,3,3,6,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Prête à être développée",5,"Vérification d’authenticité par le pharmacien","Quoi ?
+Permettre au pharmacien de vérifier instantanément l’authenticité d’un médicament.
+
+Pourquoi ?
+Le pharmacien doit pouvoir identifier rapidement un produit suspect avant délivrance ou recyclage.
+
+Comment ?
+Utiliser le scan du QR code pour consulter l’historique et confirmer la cohérence du parcours du médicament.",5,5,10,3,2,5,"Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Nouvelle idée",6,"Retour citoyen du médicament","Quoi ?
+Permettre à l’utilisateur d’enregistrer le retour d’un médicament.
+
+Pourquoi ?
+Le grand public manque souvent d’information et de solutions simples pour participer au retour ou au recyclage des médicaments.
+
+Comment ?
+Ajouter un parcours de retour via l’application mobile ou directement en pharmacie avec scan du produit.",4,4,8,3,3,6,"Utilisateur Sophie, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Prête à être développée",7,"Gestion du recyclage en pharmacie","Quoi ?
+Permettre à la pharmacie d’enregistrer le recyclage d’un médicament retourné.
+
+Pourquoi ?
+Une partie importante des médicaments est détruite sans traçabilité précise, ce qui limite la transparence et le suivi.
+
+Comment ?
+Ajouter un statut de recyclage dans le cycle de vie du médicament et l’enregistrer dans le système.",4,4,8,2,2,4,"Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Nouvelle idée",8,"Réception et confirmation par l’association","Quoi ?
+Permettre à l’organisation partenaire de confirmer la réception d’un médicament donné.
+
+Pourquoi ?
+La traçabilité doit être maintenue jusqu’à la destination finale pour assurer la confiance dans le circuit de don.
+
+Comment ?
+Ajouter une étape de réception et de validation dans le système avec mise à jour de l’historique du produit.",4,4,8,2,2,4,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Nouvelle idée",9,"Tableau de bord métier","Quoi ?
+Créer des tableaux de bord pour visualiser les flux, retours, recyclages et dons.
+
+Pourquoi ?
+Les acteurs ont besoin d’indicateurs pour piloter l’activité et mesurer l’impact du projet.
+
+Comment ?
+Développer des vues adaptées à chaque rôle avec statistiques, volumes et indicateurs clés.",4,5,9,3,3,6,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Nouvelle idée",10,"Gestion des lots et dates de péremption","Quoi ?
+Intégrer le suivi des lots et des dates de péremption dans la plateforme.
+
+Pourquoi ?
+Ces informations sont essentielles pour renforcer la sécurité sanitaire et améliorer le contrôle qualité.
+
+Comment ?
+Ajouter les données de lot et de péremption dans le modèle métier, les interfaces et les règles de suivi.",4,5,9,3,3,6,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","Nouvelle idée",11,"Alertes sur médicaments suspects","Quoi ?
+Générer des alertes lorsqu’un médicament présente une incohérence de traçabilité.
+
+Pourquoi ?
+Il est nécessaire de détecter rapidement les anomalies pouvant indiquer une contrefaçon ou une erreur logistique.
+
+Comment ?
+Définir des règles d’alerte basées sur les événements enregistrés et signaler automatiquement les anomalies.",5,5,10,4,3,7,"Laboratoire, Pharmacien",""
+MediTrack,"Révolutionner le cycle du médicament en rendant chaque boîte traçable, sécurisée et intégrée dans une logique de recyclage ou de don.","Sécuriser l’origine et le parcours du médicament grâce à une traçabilité fiable ; réduire le gaspillage médicamenteux ; connecter Aksel, Thanina et Ulrich dans une plateforme numérique transparente.","En développement",12,"Application mobile avec scan QR","Quoi ?
+Développer une application mobile permettant de scanner les médicaments et de consulter leur historique.
+
+Pourquoi ?
+Le scan mobile facilite l’usage terrain pour les pharmaciens et les utilisateurs.
+
+Comment ?
+Développer l’application en Flutter avec lecture du QR code, accès à l’API et visualisation des informations de traçabilité.",5,4,9,4,4,8,"Utilisateur Sophie, Pharmacien",""

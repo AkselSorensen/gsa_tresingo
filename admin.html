@@ -222,6 +222,7 @@
       <div class="admin-tabs">
         <button class="tab-button active" data-tab="products">📦 Produits</button>
         <button class="tab-button" data-tab="users">👥 Utilisateurs</button>
+        <button class="tab-button" data-tab="ambassadors">🎁 Ambassadeurs</button>
         <button class="tab-button" data-tab="settings">⚙️ Paramètres</button>
       </div>
 
@@ -320,6 +321,64 @@
                 <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AMBASSADORS TAB -->
+      <div class="admin-tab-panel" id="tab-ambassadors">
+        <div class="products-panel-layout">
+          <div class="panel" style="padding:0;overflow:hidden;">
+            <div style="padding:20px 24px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+              <div>
+                <h2 style="margin:0;font-size:1.3rem;">Système ambassadeur <span id="ambassadors-count" style="color:var(--muted);font-size:0.9rem;font-weight:500;"></span></h2>
+                <p style="margin:6px 0 0;color:var(--muted);font-size:0.9rem;">Générez un code, les clients l’utilisent, l’ambassadeur gagne des points échangeables en promotions ou cartes cadeaux.</p>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Ambassadeur</th>
+                    <th>Réduction</th>
+                    <th>Clients</th>
+                    <th>CA envoyé</th>
+                    <th>Points</th>
+                    <th>Récompense</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ambassadors-tbody">
+                  <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Chargement…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel" style="padding:24px;">
+            <h2 style="margin:0 0 18px;font-size:1.1rem;">Créer un code ambassadeur</h2>
+            <div class="create-form">
+              <label>Nom de l’ambassadeur <input id="amb-name" type="text" placeholder="Ex: Jean / Serveur RP..." /></label>
+              <label>Contact (Discord, email...) <input id="amb-contact" type="text" placeholder="Ex: @pseudo Discord" /></label>
+              <label>Code personnalisé (optionnel) <input id="amb-code" type="text" placeholder="Ex: JEAN10" /></label>
+              <div class="form-grid-2">
+                <label>Type de réduction
+                  <select id="amb-discount-type">
+                    <option value="percent">Pourcentage (%)</option>
+                    <option value="fixed">Montant fixe (€)</option>
+                  </select>
+                </label>
+                <label>Valeur réduction <input id="amb-discount-value" type="number" min="0" step="0.01" value="10" /></label>
+              </div>
+              <div class="form-grid-2">
+                <label>Points par client <input id="amb-points" type="number" min="0" step="1" value="1" /></label>
+                <label>Limite utilisations <input id="amb-max" type="number" min="0" step="1" placeholder="Illimité" /></label>
+              </div>
+              <label>Expiration (optionnel) <input id="amb-expires" type="date" /></label>
+              <label>Récompense / note <textarea id="amb-reward" placeholder="Ex: 10 pts = carte cadeau 10€, 25 pts = promo spéciale..."></textarea></label>
+              <button class="primary-button full" id="btn-create-ambassador" style="min-height:42px;">Générer le code</button>
+              <div id="ambassador-msg" class="admin-msg"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -830,6 +889,92 @@
       }
     }
 
+    // ─── Ambassadors / promo codes ───────────────────────────
+    async function loadAmbassadors() {
+      const tbody = document.getElementById('ambassadors-tbody');
+      const countEl = document.getElementById('ambassadors-count');
+      if (!tbody) return;
+      try {
+        const data = await apiFetch('/api/admin/promo-codes');
+        const items = data.items || [];
+        if (countEl) countEl.textContent = `(${items.length})`;
+
+        if (!items.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">Aucun code ambassadeur.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = items.map(item => {
+          const discount = item.discountType === 'fixed' ? fmtCurrency(item.discountValue) : `${item.discountValue}%`;
+          const status = item.isActive ? '<span style="color:#6ee7b7;">Actif</span>' : '<span style="color:#fca5a5;">Inactif</span>';
+          const pointsText = `${item.pointsBalance || 0} dispo / ${item.totalPointsAwarded || 0} gagnés`;
+          return `
+            <tr data-ambassador-id="${esc(item.id)}">
+              <td><strong>${esc(item.code)}</strong><br><span style="color:var(--muted);font-size:0.76rem;">${status}</span></td>
+              <td><strong>${esc(item.ambassadorName || '—')}</strong><br><span style="color:var(--muted);font-size:0.78rem;">${esc(item.ambassadorContact || 'Contact non renseigné')}</span></td>
+              <td>${discount}<br><span style="color:var(--muted);font-size:0.76rem;">${item.pointsPerRedemption || 0} pt/client</span></td>
+              <td>${item.redeemedCount || 0}${item.maxRedemptions ? ` / ${esc(item.maxRedemptions)}` : ''}</td>
+              <td>${fmtCurrency(item.totalOrderAmount || 0)}<br><span style="color:var(--muted);font-size:0.76rem;">Remises: ${fmtCurrency(item.totalDiscountAmount || 0)}</span></td>
+              <td><strong>${esc(pointsText)}</strong><br><span style="color:var(--muted);font-size:0.76rem;">${item.pointsRedeemed || 0} échangés</span></td>
+              <td style="min-width:190px;"><input class="inline-edit-input" style="width:180px;" data-amb-reward="${esc(item.id)}" value="${esc(item.rewardNote || '')}" placeholder="Récompense / note" /></td>
+              <td>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <button class="save-button" data-action="save-ambassador" data-id="${esc(item.id)}">✓ Note</button>
+                  <button class="save-button" data-action="toggle-ambassador" data-id="${esc(item.id)}" data-active="${item.isActive ? 'false' : 'true'}">${item.isActive ? 'Désactiver' : 'Activer'}</button>
+                  <input class="inline-edit-input" data-amb-redeem="${esc(item.id)}" type="number" min="0" step="1" placeholder="pts" />
+                  <button class="save-button" data-action="redeem-ambassador" data-id="${esc(item.id)}">Échanger</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch(err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="color:#fca5a5;padding:24px;">${esc(err.message)}</td></tr>`;
+      }
+    }
+
+    async function createAmbassadorCode() {
+      const msgEl = document.getElementById('ambassador-msg');
+      const btn = document.getElementById('btn-create-ambassador');
+      const body = {
+        ambassadorName: document.getElementById('amb-name').value.trim(),
+        ambassadorContact: document.getElementById('amb-contact').value.trim(),
+        code: document.getElementById('amb-code').value.trim(),
+        discountType: document.getElementById('amb-discount-type').value,
+        discountValue: Number(document.getElementById('amb-discount-value').value || 0),
+        pointsPerRedemption: Number(document.getElementById('amb-points').value || 1),
+        maxRedemptions: document.getElementById('amb-max').value ? Number(document.getElementById('amb-max').value) : null,
+        expiresAt: document.getElementById('amb-expires').value || null,
+        rewardNote: document.getElementById('amb-reward').value.trim(),
+      };
+
+      if (!body.ambassadorName || !body.discountValue) {
+        showMsg(msgEl, 'Nom ambassadeur et réduction obligatoires.', false);
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Génération…';
+        const result = await apiFetch('/api/admin/promo-codes', { method: 'POST', body: JSON.stringify(body) });
+        showMsg(msgEl, `✓ Code généré : ${result.code}`, true);
+        ['amb-name','amb-contact','amb-code','amb-max','amb-expires','amb-reward'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('amb-discount-value').value = '10';
+        document.getElementById('amb-points').value = '1';
+        await loadAmbassadors();
+      } catch(err) {
+        showMsg(msgEl, '✕ ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Générer le code';
+      }
+    }
+
+    async function updateAmbassador(id, patch) {
+      await apiFetch(`/api/admin/promo-codes/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+      await loadAmbassadors();
+    }
+
     function renderSocialProofSettings(configs = []) {
       const container = document.getElementById('social-proof-configs');
       if (!container) return;
@@ -960,6 +1105,39 @@
         await saveUserRole(btn.dataset.id);
       });
 
+      // Ambassador promo code actions
+      const ambassadorsTbody = document.getElementById('ambassadors-tbody');
+      if (ambassadorsTbody) {
+        ambassadorsTbody.addEventListener('click', async e => {
+          const btn = e.target.closest('[data-action]');
+          if (!btn) return;
+          const id = btn.dataset.id;
+          try {
+            btn.disabled = true;
+            if (btn.dataset.action === 'save-ambassador') {
+              const input = document.querySelector(`[data-amb-reward="${id}"]`);
+              await updateAmbassador(id, { rewardNote: input ? input.value.trim() : '' });
+            } else if (btn.dataset.action === 'toggle-ambassador') {
+              await updateAmbassador(id, { isActive: btn.dataset.active === 'true' });
+            } else if (btn.dataset.action === 'redeem-ambassador') {
+              const input = document.querySelector(`[data-amb-redeem="${id}"]`);
+              const points = Number(input ? input.value : 0);
+              if (!points || points < 0) return alert('Indiquez un nombre de points à échanger.');
+              await updateAmbassador(id, { redeemPoints: points });
+            }
+          } catch(err) {
+            alert('Erreur: ' + err.message);
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      }
+
+      const createAmbassadorBtn = document.getElementById('btn-create-ambassador');
+      if (createAmbassadorBtn) {
+        createAmbassadorBtn.addEventListener('click', createAmbassadorCode);
+      }
+
       // Social proof settings actions
       const socialProofContainer = document.getElementById('social-proof-configs');
       if (socialProofContainer) {
@@ -1013,7 +1191,7 @@
         maintenanceToggle.addEventListener('change', toggleMaintenance);
       }
 
-      await Promise.all([loadProducts(), loadCategoriesAndSellers(), loadUsers(), loadSettings()]);
+      await Promise.all([loadProducts(), loadCategoriesAndSellers(), loadUsers(), loadAmbassadors(), loadSettings()]);
     });
   </script>
 </body>

@@ -620,8 +620,13 @@ async function initializeDatabase() {
       code TEXT NOT NULL UNIQUE,
       label TEXT NOT NULL DEFAULT '',
       ambassador_name TEXT NOT NULL DEFAULT '',
+      ambassador_contact TEXT NOT NULL DEFAULT '',
       discount_type TEXT NOT NULL DEFAULT 'percent' CHECK (discount_type IN ('percent', 'fixed')),
       discount_value NUMERIC(10, 2) NOT NULL CHECK (discount_value >= 0),
+      points_per_redemption INTEGER NOT NULL DEFAULT 1,
+      points_balance INTEGER NOT NULL DEFAULT 0,
+      points_redeemed INTEGER NOT NULL DEFAULT 0,
+      reward_note TEXT NOT NULL DEFAULT '',
       max_redemptions INTEGER,
       redeemed_count INTEGER NOT NULL DEFAULT 0,
       is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -637,8 +642,18 @@ async function initializeDatabase() {
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
       discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      order_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      points_awarded INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS ambassador_contact TEXT NOT NULL DEFAULT '';
+    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS points_per_redemption INTEGER NOT NULL DEFAULT 1;
+    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS points_balance INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS points_redeemed INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS reward_note TEXT NOT NULL DEFAULT '';
+    ALTER TABLE promo_redemptions ADD COLUMN IF NOT EXISTS order_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+    ALTER TABLE promo_redemptions ADD COLUMN IF NOT EXISTS points_awarded INTEGER NOT NULL DEFAULT 0;
 
     CREATE INDEX IF NOT EXISTS promo_codes_code_idx ON promo_codes(code);
     CREATE INDEX IF NOT EXISTS promo_redemptions_promo_code_id_idx ON promo_redemptions(promo_code_id);
@@ -2308,10 +2323,24 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
     }
 
     if (promoCodeId) {
-      await client.query(`UPDATE promo_codes SET redeemed_count = redeemed_count + 1 WHERE id = $1`, [promoCodeId]);
+      const promoUpdate = await client.query(
+        `
+          UPDATE promo_codes
+          SET
+            redeemed_count = redeemed_count + 1,
+            points_balance = points_balance + GREATEST(points_per_redemption, 0)
+          WHERE id = $1
+          RETURNING points_per_redemption
+        `,
+        [promoCodeId]
+      );
+      const pointsAwarded = Math.max(0, Number(promoUpdate.rows[0]?.points_per_redemption || 0));
       await client.query(
-        `INSERT INTO promo_redemptions (promo_code_id, user_id, order_id, discount_amount) VALUES ($1, $2, $3, $4)`,
-        [promoCodeId, req.session.user.id, orderId, discountAmount]
+        `
+          INSERT INTO promo_redemptions (promo_code_id, user_id, order_id, discount_amount, order_amount, points_awarded)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [promoCodeId, req.session.user.id, orderId, discountAmount, Number(session.amount_total || 0) / 100, pointsAwarded]
       );
     }
 
@@ -2551,7 +2580,10 @@ app.get("/api/admin/promo-codes", requireAdmin, async (_req, res) => {
       `
         SELECT
           pc.*,
-          COALESCE(SUM(pr.discount_amount), 0) AS total_discount_amount
+          COALESCE(SUM(pr.discount_amount), 0) AS total_discount_amount,
+          COALESCE(SUM(pr.order_amount), 0) AS total_order_amount,
+          COALESCE(SUM(pr.points_awarded), 0) AS total_points_awarded,
+          COUNT(pr.id)::int AS referral_count
         FROM promo_codes pc
         LEFT JOIN promo_redemptions pr ON pr.promo_code_id = pc.id
         GROUP BY pc.id
@@ -2565,14 +2597,22 @@ app.get("/api/admin/promo-codes", requireAdmin, async (_req, res) => {
         code: row.code,
         label: row.label,
         ambassadorName: row.ambassador_name,
+        ambassadorContact: row.ambassador_contact,
         discountType: row.discount_type,
         discountValue: Number(row.discount_value),
+        pointsPerRedemption: Number(row.points_per_redemption || 0),
+        pointsBalance: Number(row.points_balance || 0),
+        pointsRedeemed: Number(row.points_redeemed || 0),
+        rewardNote: row.reward_note || "",
         maxRedemptions: row.max_redemptions,
         redeemedCount: row.redeemed_count,
+        referralCount: Number(row.referral_count || 0),
         isActive: row.is_active,
         expiresAt: row.expires_at,
         createdAt: row.created_at,
         totalDiscountAmount: Number(row.total_discount_amount || 0),
+        totalOrderAmount: Number(row.total_order_amount || 0),
+        totalPointsAwarded: Number(row.total_points_awarded || 0),
       })),
     });
   } catch (error) {
@@ -2583,8 +2623,11 @@ app.get("/api/admin/promo-codes", requireAdmin, async (_req, res) => {
 
 app.post("/api/admin/promo-codes", requireAdmin, async (req, res) => {
   const ambassadorName = String(req.body.ambassadorName || "").trim();
+  const ambassadorContact = String(req.body.ambassadorContact || "").trim();
   const discountType = req.body.discountType === "fixed" ? "fixed" : "percent";
   const discountValue = Number(req.body.discountValue || 0);
+  const pointsPerRedemption = Math.max(0, Number(req.body.pointsPerRedemption || 1));
+  const rewardNote = String(req.body.rewardNote || "").trim();
   const maxRedemptions = req.body.maxRedemptions ? Number(req.body.maxRedemptions) : null;
   const expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
   const requestedCode = normalizePromoCode(req.body.code);
@@ -2601,21 +2644,27 @@ app.post("/api/admin/promo-codes", requireAdmin, async (req, res) => {
           code,
           label,
           ambassador_name,
+          ambassador_contact,
           discount_type,
           discount_value,
+          points_per_redemption,
+          reward_note,
           max_redemptions,
           expires_at,
           created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `,
       [
         code,
         String(req.body.label || `Code ambassadeur ${ambassadorName}`).trim(),
         ambassadorName,
+        ambassadorContact,
         discountType,
         discountValue,
+        pointsPerRedemption,
+        rewardNote,
         maxRedemptions,
         expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
         req.session.user.id,
@@ -2629,6 +2678,37 @@ app.post("/api/admin/promo-codes", requireAdmin, async (req, res) => {
     }
     console.error("Admin create promo code error:", error);
     res.status(500).json({ message: "Unable to create promo code" });
+  }
+});
+
+app.patch("/api/admin/promo-codes/:id", requireAdmin, async (req, res) => {
+  const promoCodeId = Number(req.params.id);
+  if (Number.isNaN(promoCodeId)) return res.status(400).json({ message: "Invalid promo code id" });
+
+  const updates = [];
+  const values = [];
+  let idx = 1;
+
+  if (req.body.isActive !== undefined) { updates.push(`is_active = $${idx++}`); values.push(Boolean(req.body.isActive)); }
+  if (req.body.rewardNote !== undefined) { updates.push(`reward_note = $${idx++}`); values.push(String(req.body.rewardNote || "").trim()); }
+  if (req.body.ambassadorContact !== undefined) { updates.push(`ambassador_contact = $${idx++}`); values.push(String(req.body.ambassadorContact || "").trim()); }
+  if (req.body.pointsPerRedemption !== undefined) { updates.push(`points_per_redemption = $${idx++}`); values.push(Math.max(0, Number(req.body.pointsPerRedemption || 0))); }
+  if (req.body.redeemPoints !== undefined) {
+    const redeemPoints = Math.max(0, Number(req.body.redeemPoints || 0));
+    updates.push(`points_balance = GREATEST(points_balance - $${idx}, 0)`); values.push(redeemPoints); idx += 1;
+    updates.push(`points_redeemed = points_redeemed + $${idx}`); values.push(redeemPoints); idx += 1;
+  }
+
+  if (!updates.length) return res.status(400).json({ message: "Nothing to update" });
+
+  try {
+    values.push(promoCodeId);
+    const result = await pool.query(`UPDATE promo_codes SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`, values);
+    if (!result.rowCount) return res.status(404).json({ message: "Code ambassadeur introuvable." });
+    res.json({ ok: true, promoCode: result.rows[0] });
+  } catch (error) {
+    console.error("Admin update promo code error:", error);
+    res.status(500).json({ message: "Unable to update promo code" });
   }
 });
 

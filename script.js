@@ -977,6 +977,20 @@ async function renderCartPage() {
 
   const cart = await api("/api/cart");
   const stripeConfig = await getStripeConfig();
+  const savedPromoCode = sessionStorage.getItem("gsaPromoCode") || "";
+  let appliedPromo = null;
+
+  if (savedPromoCode && cart.items.length) {
+    try {
+      appliedPromo = await api("/api/promo/validate", {
+        method: "POST",
+        body: JSON.stringify({ code: savedPromoCode }),
+      });
+    } catch (_error) {
+      sessionStorage.removeItem("gsaPromoCode");
+    }
+  }
+
   state.cart = cart;
   updateHeaderLabels();
 
@@ -1057,8 +1071,16 @@ async function renderCartPage() {
                 <h2>Résumé</h2>
                 <div class="order-summary-lines">
                   <div class="summary-line"><span>Articles</span><strong>${cart.items.length}</strong></div>
-                  <div class="summary-line"><span>${t("total")}</span><strong>${currency(cart.total)}</strong></div>
+                  <div class="summary-line"><span>Sous-total</span><strong>${currency(cart.total)}</strong></div>
+                  ${appliedPromo ? `<div class="summary-line"><span>Code ${escapeHtml(appliedPromo.code)}</span><strong>- ${currency(appliedPromo.discountAmount)}</strong></div>` : ""}
+                  <div class="summary-line"><span>${t("total")}</span><strong>${currency(appliedPromo ? appliedPromo.finalTotal : cart.total)}</strong></div>
                 </div>
+                <form class="promo-form" id="promo-form" style="display:flex; gap:8px; margin:16px 0;">
+                  <input id="promo-code-input" type="text" placeholder="Code ambassadeur" value="${escapeHtml(appliedPromo?.code || savedPromoCode)}" style="flex:1;" />
+                  <button class="ghost-button" type="submit">Appliquer</button>
+                </form>
+                <p class="helper-text" id="promo-message">${appliedPromo ? `Code ${escapeHtml(appliedPromo.code)} appliqué.` : ""}</p>
+                ${appliedPromo ? `<button class="ghost-button full" type="button" id="promo-remove-button" style="margin-bottom:12px;">Retirer le code</button>` : ""}
                 <button class="primary-button full" type="button" id="stripe-checkout-button" ${!cart.items.length || !stripeConfig.enabled ? "disabled" : ""}>${t("checkout")}</button>
                 ${
                   stripeConfig.enabled
@@ -1102,6 +1124,30 @@ async function renderCartPage() {
     });
   });
 
+  document.getElementById("promo-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const input = document.getElementById("promo-code-input");
+    const message = document.getElementById("promo-message");
+    const code = input?.value?.trim() || "";
+    if (!code) return;
+
+    try {
+      const promo = await api("/api/promo/validate", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+      sessionStorage.setItem("gsaPromoCode", promo.code);
+      location.reload();
+    } catch (error) {
+      if (message) message.textContent = error.message;
+    }
+  });
+
+  document.getElementById("promo-remove-button")?.addEventListener("click", () => {
+    sessionStorage.removeItem("gsaPromoCode");
+    location.reload();
+  });
+
   document.getElementById("stripe-checkout-button")?.addEventListener("click", async (event) => {
     event.currentTarget.disabled = true;
     event.currentTarget.textContent = t("checkoutLoading");
@@ -1109,6 +1155,7 @@ async function renderCartPage() {
     try {
       const response = await api("/api/checkout/create-session", {
         method: "POST",
+        body: JSON.stringify({ promoCode: sessionStorage.getItem("gsaPromoCode") || "" }),
       });
 
       if (response.url) {
@@ -1384,8 +1431,67 @@ async function renderAdminPage() {
         </div>
       </div>
     </div>
+    <div class="container" style="margin-top:40px;">
+      <div class="panel">
+        <h2>Codes ambassadeur</h2>
+        <p class="helper-text" style="margin-bottom:20px;">Générez des codes promotionnels utilisables dans le panier.</p>
+        <form id="admin-promo-form" class="form-panel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;">
+          <label>Ambassadeur<input name="ambassadorName" required placeholder="Nom ambassadeur" /></label>
+          <label>Code personnalisé<input name="code" placeholder="Optionnel" /></label>
+          <label>Type<select name="discountType"><option value="percent">Pourcentage</option><option value="fixed">Montant fixe</option></select></label>
+          <label>Réduction<input name="discountValue" type="number" min="0" step="0.01" value="10" required /></label>
+          <label>Utilisations max<input name="maxRedemptions" type="number" min="1" placeholder="Illimité" /></label>
+          <label>Expiration<input name="expiresAt" type="date" /></label>
+          <button class="primary-button full" type="submit" style="align-self:end;">Générer</button>
+        </form>
+        <div id="admin-promo-message" class="helper-text" style="margin-bottom:14px;"></div>
+        <div id="admin-promo-codes"><div class="spinner"></div> Chargement...</div>
+      </div>
+    </div>
     </section>
   `;
+
+  const loadPromoCodes = async () => {
+    const container = document.getElementById("admin-promo-codes");
+    if (!container) return;
+
+    try {
+      const data = await api("/api/admin/promo-codes");
+      const items = data.items || [];
+      container.innerHTML = items.length
+        ? `
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr style="text-align:left;border-bottom:1px solid var(--panel-border);">
+                  <th style="padding:12px;">Code</th>
+                  <th style="padding:12px;">Ambassadeur</th>
+                  <th style="padding:12px;">Réduction</th>
+                  <th style="padding:12px;">Utilisations</th>
+                  <th style="padding:12px;">Expiration</th>
+                  <th style="padding:12px;">Remises totales</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((promo) => `
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+                    <td style="padding:12px;"><strong>${escapeHtml(promo.code)}</strong></td>
+                    <td style="padding:12px;">${escapeHtml(promo.ambassadorName || "-")}</td>
+                    <td style="padding:12px;">${promo.discountType === "percent" ? `${Number(promo.discountValue)}%` : currency(promo.discountValue)}</td>
+                    <td style="padding:12px;">${promo.redeemedCount}${promo.maxRedemptions ? ` / ${promo.maxRedemptions}` : " / ∞"}</td>
+                    <td style="padding:12px;">${promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString("fr-FR") : "Aucune"}</td>
+                    <td style="padding:12px;">${currency(promo.totalDiscountAmount)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `
+        : `<div class="empty-state"><h3>Aucun code ambassadeur</h3><p>Créez un premier code avec le formulaire ci-dessus.</p></div>`;
+    } catch (error) {
+      container.innerHTML = `<p class="helper-text">${escapeHtml(error.message)}</p>`;
+    }
+  };
 
   const loadLandingConfig = async () => {
     try {
@@ -1438,6 +1544,32 @@ async function renderAdminPage() {
   };
 
   loadLandingConfig();
+  loadPromoCodes();
+
+  document.getElementById("admin-promo-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const message = document.getElementById("admin-promo-message");
+
+    try {
+      const response = await api("/api/admin/promo-codes", {
+        method: "POST",
+        body: JSON.stringify({
+          ambassadorName: formData.get("ambassadorName"),
+          code: formData.get("code"),
+          discountType: formData.get("discountType"),
+          discountValue: Number(formData.get("discountValue") || 0),
+          maxRedemptions: formData.get("maxRedemptions") ? Number(formData.get("maxRedemptions")) : null,
+          expiresAt: formData.get("expiresAt") || null,
+        }),
+      });
+      if (message) message.textContent = `Code généré : ${response.code}`;
+      event.currentTarget.reset();
+      await loadPromoCodes();
+    } catch (error) {
+      if (message) message.textContent = error.message;
+    }
+  });
 
   document.getElementById("admin-product-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();

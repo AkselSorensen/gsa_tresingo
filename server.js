@@ -316,6 +316,65 @@ async function getCart(userId) {
   };
 }
 
+function normalizePromoCode(code) {
+  return String(code || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_-]/g, "")
+    .slice(0, 40);
+}
+
+function generatePromoCode(prefix = "AMB") {
+  const safePrefix = normalizePromoCode(prefix).slice(0, 12) || "AMB";
+  return `${safePrefix}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+}
+
+function calculatePromoDiscount(cartTotal, promo) {
+  const total = Math.max(0, Number(cartTotal || 0));
+  if (!promo || total <= 0) {
+    return 0;
+  }
+
+  const value = Math.max(0, Number(promo.discount_value || 0));
+  const rawDiscount = promo.discount_type === "fixed" ? value : total * (Math.min(100, value) / 100);
+  return Math.min(total, Math.round(rawDiscount * 100) / 100);
+}
+
+async function getValidPromoForCart(code, cartTotal) {
+  const normalizedCode = normalizePromoCode(code);
+  if (!normalizedCode) {
+    return { promo: null, discountAmount: 0, finalTotal: Number(cartTotal || 0) };
+  }
+
+  const promoResult = await pool.query(
+    `
+      SELECT *
+      FROM promo_codes
+      WHERE code = $1
+        AND is_active = TRUE
+        AND (starts_at IS NULL OR starts_at <= NOW())
+        AND (expires_at IS NULL OR expires_at >= NOW())
+        AND (max_redemptions IS NULL OR redeemed_count < max_redemptions)
+      LIMIT 1
+    `,
+    [normalizedCode]
+  );
+
+  if (!promoResult.rowCount) {
+    return null;
+  }
+
+  const promo = promoResult.rows[0];
+  const discountAmount = calculatePromoDiscount(cartTotal, promo);
+  const finalTotal = Math.max(0, Number(cartTotal || 0) - discountAmount);
+
+  return {
+    promo,
+    discountAmount,
+    finalTotal: Math.round(finalTotal * 100) / 100,
+  };
+}
+
 function requireAuth(req, res, next) {
   if (!req.session.user?.id) {
     return res.status(401).json({ message: "Authentication required" });
@@ -545,9 +604,44 @@ async function initializeDatabase() {
       user_id INTEGER NOT NULL REFERENCES users(id),
       stripe_session_id TEXT UNIQUE,
       total_amount NUMERIC(10, 2) NOT NULL,
+      subtotal_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      promo_code_id INTEGER,
       status TEXT NOT NULL DEFAULT 'completed',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code_id INTEGER;
+
+    CREATE TABLE IF NOT EXISTS promo_codes (
+      id SERIAL PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE,
+      label TEXT NOT NULL DEFAULT '',
+      ambassador_name TEXT NOT NULL DEFAULT '',
+      discount_type TEXT NOT NULL DEFAULT 'percent' CHECK (discount_type IN ('percent', 'fixed')),
+      discount_value NUMERIC(10, 2) NOT NULL CHECK (discount_value >= 0),
+      max_redemptions INTEGER,
+      redeemed_count INTEGER NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      starts_at TIMESTAMPTZ,
+      expires_at TIMESTAMPTZ,
+      created_by INTEGER REFERENCES users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+      id SERIAL PRIMARY KEY,
+      promo_code_id INTEGER NOT NULL REFERENCES promo_codes(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+      discount_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS promo_codes_code_idx ON promo_codes(code);
+    CREATE INDEX IF NOT EXISTS promo_redemptions_promo_code_id_idx ON promo_redemptions(promo_code_id);
 
     CREATE TABLE IF NOT EXISTS order_items (
       id SERIAL PRIMARY KEY,
@@ -2015,6 +2109,32 @@ app.delete("/api/cart/items/:id", requireAuth, async (req, res) => {
   }
 });
 
+app.post("/api/promo/validate", requireAuth, async (req, res) => {
+  try {
+    const cart = await getCart(req.session.user.id);
+    const promoState = await getValidPromoForCart(req.body.code, cart.total);
+
+    if (!promoState?.promo) {
+      return res.status(404).json({ message: "Code promotionnel invalide, expiré ou déjà utilisé au maximum." });
+    }
+
+    res.json({
+      ok: true,
+      code: promoState.promo.code,
+      label: promoState.promo.label,
+      ambassadorName: promoState.promo.ambassador_name,
+      discountType: promoState.promo.discount_type,
+      discountValue: Number(promoState.promo.discount_value),
+      subtotal: cart.total,
+      discountAmount: promoState.discountAmount,
+      finalTotal: promoState.finalTotal,
+    });
+  } catch (error) {
+    console.error("Promo validate error:", error);
+    res.status(500).json({ message: "Impossible de vérifier le code promo." });
+  }
+});
+
 app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
   if (!stripe || !STRIPE_PUBLIC_KEY) {
     return res.status(503).json({
@@ -2027,6 +2147,31 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
 
     if (!cart.items.length) {
       return res.status(400).json({ message: "Votre panier est vide." });
+    }
+
+    const promoCode = normalizePromoCode(req.body?.promoCode);
+    const promoState = promoCode ? await getValidPromoForCart(promoCode, cart.total) : null;
+    if (promoCode && !promoState?.promo) {
+      return res.status(400).json({ message: "Code promotionnel invalide, expiré ou déjà utilisé au maximum." });
+    }
+
+    let stripeDiscounts = undefined;
+    if (promoState?.promo && promoState.discountAmount > 0) {
+      const couponPayload =
+        promoState.promo.discount_type === "percent"
+          ? {
+              percent_off: Math.min(100, Number(promoState.promo.discount_value)),
+              duration: "once",
+              name: promoState.promo.code,
+            }
+          : {
+              amount_off: Math.round(promoState.discountAmount * 100),
+              currency: "eur",
+              duration: "once",
+              name: promoState.promo.code,
+            };
+      const coupon = await stripe.coupons.create(couponPayload);
+      stripeDiscounts = [{ coupon: coupon.id }];
     }
 
     const lineItems = cart.items.map((item) => ({
@@ -2053,11 +2198,16 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       payment_method_types: ["card"],
       customer_email: req.session.user.email,
       line_items: lineItems,
+      discounts: stripeDiscounts,
       success_url: `${APP_BASE_URL}/cart.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_BASE_URL}/cart.html?checkout=cancel`,
       metadata: {
         userId: String(req.session.user.id),
         cartId: String(cart.id),
+        promoCodeId: promoState?.promo ? String(promoState.promo.id) : "",
+        promoCode: promoState?.promo?.code || "",
+        subtotalAmount: String(Math.round(Number(cart.total || 0) * 100) / 100),
+        discountAmount: String(promoState?.discountAmount || 0),
       },
     });
 
@@ -2107,13 +2257,17 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
 
     await client.query("BEGIN");
 
+    const subtotalAmount = Number(session.metadata?.subtotalAmount || 0) || Number(session.amount_subtotal || 0) / 100;
+    const discountAmount = Number(session.metadata?.discountAmount || 0) || Number(session.total_details?.amount_discount || 0) / 100;
+    const promoCodeId = Number(session.metadata?.promoCodeId || 0) || null;
+
     const orderInsert = await client.query(
       `
-        INSERT INTO orders (user_id, stripe_session_id, total_amount, status)
-        VALUES ($1, $2, $3, 'completed')
+        INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, discount_amount, promo_code_id, status)
+        VALUES ($1, $2, $3, $4, $5, $6, 'completed')
         RETURNING id
       `,
-      [req.session.user.id, session.id, Number(session.amount_total || 0) / 100]
+      [req.session.user.id, session.id, Number(session.amount_total || 0) / 100, subtotalAmount, discountAmount, promoCodeId]
     );
 
     const orderId = orderInsert.rows[0].id;
@@ -2151,6 +2305,14 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
 
     if (!itemsInsert.rowCount) {
       throw new Error("Aucun article à enregistrer pour cette commande.");
+    }
+
+    if (promoCodeId) {
+      await client.query(`UPDATE promo_codes SET redeemed_count = redeemed_count + 1 WHERE id = $1`, [promoCodeId]);
+      await client.query(
+        `INSERT INTO promo_redemptions (promo_code_id, user_id, order_id, discount_amount) VALUES ($1, $2, $3, $4)`,
+        [promoCodeId, req.session.user.id, orderId, discountAmount]
+      );
     }
 
     await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cartId]);
@@ -2380,6 +2542,93 @@ app.get("/api/admin/users", requireAdmin, async (_req, res) => {
   } catch (error) {
     console.error("Admin users error:", error);
     res.status(500).json({ message: "Unable to fetch users" });
+  }
+});
+
+app.get("/api/admin/promo-codes", requireAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `
+        SELECT
+          pc.*,
+          COALESCE(SUM(pr.discount_amount), 0) AS total_discount_amount
+        FROM promo_codes pc
+        LEFT JOIN promo_redemptions pr ON pr.promo_code_id = pc.id
+        GROUP BY pc.id
+        ORDER BY pc.created_at DESC, pc.id DESC
+      `
+    );
+
+    res.json({
+      items: result.rows.map((row) => ({
+        id: row.id,
+        code: row.code,
+        label: row.label,
+        ambassadorName: row.ambassador_name,
+        discountType: row.discount_type,
+        discountValue: Number(row.discount_value),
+        maxRedemptions: row.max_redemptions,
+        redeemedCount: row.redeemed_count,
+        isActive: row.is_active,
+        expiresAt: row.expires_at,
+        createdAt: row.created_at,
+        totalDiscountAmount: Number(row.total_discount_amount || 0),
+      })),
+    });
+  } catch (error) {
+    console.error("Admin promo codes error:", error);
+    res.status(500).json({ message: "Unable to fetch promo codes" });
+  }
+});
+
+app.post("/api/admin/promo-codes", requireAdmin, async (req, res) => {
+  const ambassadorName = String(req.body.ambassadorName || "").trim();
+  const discountType = req.body.discountType === "fixed" ? "fixed" : "percent";
+  const discountValue = Number(req.body.discountValue || 0);
+  const maxRedemptions = req.body.maxRedemptions ? Number(req.body.maxRedemptions) : null;
+  const expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+  const requestedCode = normalizePromoCode(req.body.code);
+  const code = requestedCode || generatePromoCode(ambassadorName || "AMB");
+
+  if (!ambassadorName || !discountValue || discountValue <= 0 || (discountType === "percent" && discountValue > 100)) {
+    return res.status(400).json({ message: "Ambassadeur et réduction valide requis." });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+        INSERT INTO promo_codes (
+          code,
+          label,
+          ambassador_name,
+          discount_type,
+          discount_value,
+          max_redemptions,
+          expires_at,
+          created_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *
+      `,
+      [
+        code,
+        String(req.body.label || `Code ambassadeur ${ambassadorName}`).trim(),
+        ambassadorName,
+        discountType,
+        discountValue,
+        maxRedemptions,
+        expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
+        req.session.user.id,
+      ]
+    );
+
+    res.status(201).json({ ok: true, code: result.rows[0].code, promoCode: result.rows[0] });
+  } catch (error) {
+    if (error.code === "23505") {
+      return res.status(409).json({ message: "Ce code promo existe déjà." });
+    }
+    console.error("Admin create promo code error:", error);
+    res.status(500).json({ message: "Unable to create promo code" });
   }
 });
 

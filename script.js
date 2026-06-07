@@ -429,6 +429,57 @@ async function loadBootstrap() {
   state.categories = state.bootstrap.categories || [];
 }
 
+function applyNavigationConfig(configs = []) {
+  const defaults = {
+    nav_marketplace: { title: "Marketplace", url: "catalogue.html" },
+    nav_support: { title: "Support", url: "https://discord.gg/ZbCrwE73uK" },
+    nav_about: { title: "About", url: "about.html" },
+  };
+
+  const findNavLink = (nav, key) => {
+    const links = Array.from(nav.querySelectorAll("a"));
+    if (key === "nav_marketplace") {
+      return links.find((link) => /catalogue\.html(?:$|[?#])/i.test(link.getAttribute("href") || ""));
+    }
+    if (key === "nav_support") {
+      return links.find((link) => /discord\.gg|discord\.com/i.test(link.getAttribute("href") || ""));
+    }
+    if (key === "nav_about") {
+      return links.find((link) => /about\.html(?:$|[?#])/i.test(link.getAttribute("href") || ""));
+    }
+    return null;
+  };
+
+  document.querySelectorAll(".main-nav").forEach((nav) => {
+    ["nav_marketplace", "nav_support", "nav_about"].forEach((key) => {
+      const link = findNavLink(nav, key);
+      if (!link) return;
+
+      const fallback = defaults[key];
+      const config = configs.find((item) => item.section_key === key) || {};
+      const title = String(config.title || fallback.title).trim() || fallback.title;
+      const url = String(config.metadata?.url || fallback.url).trim() || fallback.url;
+
+      if (config.is_active === false) {
+        link.style.display = "none";
+        return;
+      }
+
+      link.style.display = "";
+      link.textContent = title;
+      link.href = url;
+
+      if (/^https?:\/\//i.test(url)) {
+        link.target = "_blank";
+        link.rel = "noreferrer";
+      } else {
+        link.removeAttribute("target");
+        link.removeAttribute("rel");
+      }
+    });
+  });
+}
+
 function renderHomePage() {
   if (!state.bootstrap) return;
 
@@ -1660,9 +1711,15 @@ async function boot() {
   if (
     document.body.dataset.page === "home" ||
     document.getElementById("catalogue-page") ||
-    document.getElementById("admin-page")
+    document.getElementById("seller-page") ||
+    document.getElementById("admin-page") ||
+    document.querySelector(".main-nav")
   ) {
     await loadBootstrap();
+  }
+
+  if (state.bootstrap?.landingConfig) {
+    applyNavigationConfig(state.bootstrap.landingConfig || []);
   }
 
   updateHeaderLabels();

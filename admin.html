@@ -419,6 +419,19 @@
               </div>
               <div id="social-proof-msg" class="admin-msg" style="margin-top:10px;"></div>
             </div>
+
+            <div class="settings-block">
+              <div class="settings-block-head">
+                <div>
+                  <strong>Menu de navigation</strong>
+                  <span>Personnalisez les liens du header affichés sur le site.</span>
+                </div>
+              </div>
+              <div id="nav-link-configs" class="social-proof-grid">
+                <div style="color:var(--muted);font-size:0.9rem;">Chargement…</div>
+              </div>
+              <div id="nav-link-msg" class="admin-msg" style="margin-top:10px;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -565,6 +578,12 @@
     const socialProofSections = [
       { key: 'social_proof_1', label: 'Premier bandeau', fallback: 'SOCIAL PROOF' },
       { key: 'social_proof_2', label: 'Deuxième bandeau', fallback: 'SOCIAL PROOF' },
+    ];
+
+    const navLinkSections = [
+      { key: 'nav_marketplace', label: 'Lien 1', fallback: 'Marketplace', fallbackUrl: 'catalogue.html', external: false },
+      { key: 'nav_support', label: 'Lien 2', fallback: 'Support', fallbackUrl: 'https://discord.gg/ZbCrwE73uK', external: true },
+      { key: 'nav_about', label: 'Lien 3', fallback: 'About', fallbackUrl: 'about.html', external: false },
     ];
 
     async function apiFetch(url, opts = {}) {
@@ -1032,6 +1051,70 @@
       }
     }
 
+    function renderNavLinkSettings(configs = []) {
+      const container = document.getElementById('nav-link-configs');
+      if (!container) return;
+
+      container.innerHTML = navLinkSections.map(section => {
+        const config = configs.find(item => item.section_key === section.key) || {};
+        const title = String(config.title || section.fallback).trim() || section.fallback;
+        const metadata = config.metadata || {};
+        const url = String(metadata.url || section.fallbackUrl).trim() || section.fallbackUrl;
+        const isActive = config.is_active !== false;
+
+        return `
+          <div class="social-proof-card" data-nav-link-card="${esc(section.key)}">
+            <div class="social-proof-card-top">
+              <div class="social-proof-card-title">
+                <strong>${esc(section.label)} — ${esc(section.fallback)}</strong>
+                <span>${esc(section.key)}</span>
+              </div>
+              <label class="social-proof-visible">
+                <input type="checkbox" class="toggle-check" data-nav-link-visible="${esc(section.key)}" ${isActive ? 'checked' : ''} />
+                Visible dans le header
+              </label>
+            </div>
+            <div class="social-proof-row" style="grid-template-columns:minmax(160px,0.8fr) minmax(220px,1.2fr) auto;">
+              <input type="text" data-nav-link-title="${esc(section.key)}" value="${esc(title)}" placeholder="Texte" maxlength="40" />
+              <input type="text" data-nav-link-url="${esc(section.key)}" value="${esc(url)}" placeholder="URL ou page HTML" maxlength="220" />
+              <button class="save-button" type="button" data-action="save-nav-link" data-key="${esc(section.key)}">✓ Enregistrer</button>
+            </div>
+            <div class="settings-helper" style="margin-top:8px;">Exemple : <strong>${esc(title)}</strong> → ${esc(url)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function saveNavLinkConfig(sectionKey) {
+      const section = navLinkSections.find(item => item.key === sectionKey);
+      const input = document.querySelector(`[data-nav-link-title="${sectionKey}"]`);
+      const urlInput = document.querySelector(`[data-nav-link-url="${sectionKey}"]`);
+      const toggle = document.querySelector(`[data-nav-link-visible="${sectionKey}"]`);
+      const msgEl = document.getElementById('nav-link-msg');
+      const btn = document.querySelector(`[data-action="save-nav-link"][data-key="${sectionKey}"]`);
+      if (!section || !input || !urlInput || !toggle || !msgEl || !btn) return;
+
+      const title = input.value.trim() || section.fallback;
+      const url = urlInput.value.trim() || section.fallbackUrl;
+      input.value = title;
+      urlInput.value = url;
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Sauvegarde…';
+        await apiFetch(`/api/admin/landing-config/${encodeURIComponent(sectionKey)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ title, isActive: toggle.checked, metadata: { url } })
+        });
+        showMsg(msgEl, '✓ Menu de navigation sauvegardé.', true);
+      } catch(err) {
+        showMsg(msgEl, '✕ ' + err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✓ Enregistrer';
+      }
+    }
+
     // ─── Tab switching ────────────────────────────────────────
     function initTabs() {
       document.querySelectorAll('.admin-tabs .tab-button').forEach(btn => {
@@ -1148,6 +1231,15 @@
         });
       }
 
+      const navLinkContainer = document.getElementById('nav-link-configs');
+      if (navLinkContainer) {
+        navLinkContainer.addEventListener('click', async e => {
+          const btn = e.target.closest('[data-action="save-nav-link"]');
+          if (!btn) return;
+          await saveNavLinkConfig(btn.dataset.key);
+        });
+      }
+
       // Logout
       document.getElementById('btn-logout').addEventListener('click', async () => {
         try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch(_) {}
@@ -1159,9 +1251,11 @@
     async function loadSettings() {
       try {
         const settings = await apiFetch('/api/admin/settings');
+        renderNavLinkSettings(settings.landingConfig || []);
         document.getElementById('setting-maintenance').checked = settings.maintenanceMode;
         renderSocialProofSettings(settings.landingConfig || []);
       } catch(err) {
+        renderNavLinkSettings([]);
         console.error("Erreur de chargement des paramètres:", err);
         renderSocialProofSettings([]);
       }

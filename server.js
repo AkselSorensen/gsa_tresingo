@@ -2730,7 +2730,7 @@ app.get("/api/admin/settings", requireAdmin, async (_req, res) => {
 // PATCH /api/admin/landing-config/:key — update landing configuration
 app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
   const sectionKey = String(req.params.key);
-  const { isActive, title, description } = req.body;
+  const { isActive, title, description, metadata } = req.body;
   
   try {
     const updates = [];
@@ -2749,6 +2749,10 @@ app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
       updates.push(`description = $${idx++}`);
       values.push(String(description));
     }
+    if (metadata !== undefined) {
+      updates.push(`metadata = $${idx++}`);
+      values.push(metadata && typeof metadata === "object" ? metadata : {});
+    }
 
     if (!updates.length) {
       return res.status(400).json({ message: "Nothing to update" });
@@ -2764,6 +2768,12 @@ app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
          `INSERT INTO admin_landing_config (section_key, is_active, title, description) VALUES ($1, $2, $3, $4)`,
          [sectionKey, isActive !== undefined ? Boolean(isActive) : true, title || sectionKey, description || '']
        );
+       if (metadata !== undefined) {
+         await pool.query(
+           `UPDATE admin_landing_config SET metadata = $1 WHERE section_key = $2`,
+           [metadata && typeof metadata === "object" ? metadata : {}, sectionKey]
+         );
+       }
     } else {
        await pool.query(
          `UPDATE admin_landing_config SET ${updates.join(", ")} WHERE section_key = $${idx}`,

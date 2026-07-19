@@ -59,6 +59,59 @@ const translations = {
     sellerProfile: "Profil vendeur",
     logout: "Se déconnecter",
     adminDashboard: "Dashboard Admin",
+    heroTitle: "GSA — Pas une boutique, un standard.",
+    heroSub: "L'expertise au service des créateurs et porteurs de projets Garry's Mod.",
+    heroBullet1: "Vendre vos assets sans gérer l'aspect commercial",
+    heroBullet2: "Construire un gameplay plus cohérent et engageant",
+    heroBullet3: "Éviter les erreurs coûteuses dans votre projet",
+    heroCta: "Gagnez du temps, économisez votre budget et faites les bons choix dès le départ.",
+    socialProof: "SOCIAL PROOF",
+    filterNew: "☼ Nouveau",
+    filterUpdated: "◌ Mis à jour",
+    filterTrending: "↗ Tendances",
+    filterPopular: "⬢ Populaire",
+    sortAllTime: "Tout le temps ⌄",
+    footerCopyright: "© 2026 GSA",
+    navCatalogue: "Catalogue",
+    navPrestation: "Prestation",
+    navAbout: "À propos",
+    navCart: "Panier",
+    navLogin: "Connexion",
+    navTerms: "Terms of Service",
+    navPrivacy: "Privacy Policy",
+    ariaHome: "Retour à l'accueil GSA",
+    marketplace: "Marketplace",
+    trendingSection: "Tendances",
+    salesSection: "Promotions",
+    scriptsSection: "Scripts",
+    viewAllSection: "Voir tout",
+    home: "Accueil",
+    hideFilters: "Masquer les filtres",
+    overview: "Vue d'ensemble",
+    all: "Tout",
+    onSale: "En promotion",
+    price: "Prix",
+    tags: "Tags",
+    loginEmail: "Email",
+    loginPassword: "Mot de passe",
+    loginSubmit: "Se connecter",
+    loginDiscord: "Connexion Discord",
+    loginSteam: "Connexion Steam",
+    registerTitle: "Créer un compte",
+    registerName: "Nom affiché",
+    registerEmail: "Email",
+    registerPassword: "Mot de passe",
+    registerSubmit: "Créer mon compte",
+    registerPlaceholderName: "Votre pseudo",
+    registerPlaceholderEmail: "vous@email.com",
+    registerPlaceholderPassword: "Minimum recommandé 8 caractères",
+    loginPlaceholderEmail: "client@gsa.local",
+    loginPlaceholderPassword: "••••••••",
+    prestationEyebrow: "Prestation",
+    aboutEyebrow: "À propos",
+    productCatalogue: "Catalogue",
+    searchProducts: "Rechercher un produit, un tag...",
+    searchShort: "Rechercher",
   },
   en: {
     languageLabel: "EN",
@@ -112,6 +165,59 @@ const translations = {
     sellerProfile: "Seller profile",
     logout: "Sign out",
     adminDashboard: "Admin Dashboard",
+    heroTitle: "GSA — Not just a shop, a standard.",
+    heroSub: "Expertise serving Garry's Mod creators and project leaders.",
+    heroBullet1: "Sell your assets without managing the commercial side",
+    heroBullet2: "Build more coherent and engaging gameplay",
+    heroBullet3: "Avoid costly mistakes in your project",
+    heroCta: "Save time, save your budget and make the right choices from the start.",
+    socialProof: "SOCIAL PROOF",
+    filterNew: "☼ New",
+    filterUpdated: "◌ Updated",
+    filterTrending: "↗ Trending",
+    filterPopular: "⬢ Popular",
+    sortAllTime: "All Time ⌄",
+    footerCopyright: "© 2026 GSA",
+    navCatalogue: "Catalogue",
+    navPrestation: "Services",
+    navAbout: "About",
+    navCart: "Cart",
+    navLogin: "Login",
+    navTerms: "Terms of Service",
+    navPrivacy: "Privacy Policy",
+    ariaHome: "Back to GSA homepage",
+    marketplace: "Marketplace",
+    trendingSection: "Trending",
+    salesSection: "Sales",
+    scriptsSection: "Scripts",
+    viewAllSection: "View All",
+    home: "Home",
+    hideFilters: "Hide Filters",
+    overview: "Overview",
+    all: "All",
+    onSale: "On sale",
+    price: "Price",
+    tags: "Tags",
+    loginEmail: "Email",
+    loginPassword: "Password",
+    loginSubmit: "Sign in",
+    loginDiscord: "Login with Discord",
+    loginSteam: "Login with Steam",
+    registerTitle: "Create an account",
+    registerName: "Display name",
+    registerEmail: "Email",
+    registerPassword: "Password",
+    registerSubmit: "Create account",
+    registerPlaceholderName: "Your username",
+    registerPlaceholderEmail: "you@email.com",
+    registerPlaceholderPassword: "Minimum 8 characters recommended",
+    loginPlaceholderEmail: "client@gsa.local",
+    loginPlaceholderPassword: "••••••••",
+    prestationEyebrow: "Services",
+    aboutEyebrow: "About",
+    productCatalogue: "Catalogue",
+    searchProducts: "Search product, tag, category...",
+    searchShort: "Search",
   },
 };
 
@@ -1954,6 +2060,24 @@ async function boot() {
   await renderProfilePage();
   await renderAdminPage();
   await renderSellerPage();
+  applyTranslations();
+}
+
+// ── Apply translations to all data-i18n elements ────────────────
+function applyTranslations() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.dataset.i18n;
+    const translated = t(key);
+    if (translated !== key) {
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        el.placeholder = translated;
+      } else if (el.tagName === "IMG") {
+        el.alt = translated;
+      } else {
+        el.textContent = translated;
+      }
+    }
+  });
 }
 
 async function renderSellerPage() {

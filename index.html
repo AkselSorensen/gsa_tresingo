@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GSA -Marketplace Garry's Mod</title>
+    <title>GSA — Marketplace Garry's Mod</title>
     <meta
       name="description"
       content="GSA structure la distribution d'assets Garry's Mod, les prestations et l'accompagnement de projet dans une marketplace premium."
@@ -24,23 +24,23 @@
     <div class="site-shell">
       <header class="site-header site-header-unified">
         <div class="container header-row header-row-unified">
-          <a class="brand brand-unified" href="index.html" aria-label="Retour à l'accueil GSA">
+          <a class="brand brand-unified" href="index.html" aria-label="Retour à l'accueil GSA" data-i18n="ariaHome">
             <img src="asset/logo/gsa_logo.png" alt="GSA Logo" class="brand-logo-img" />
           </a>
 
           <nav class="main-nav main-nav-unified">
-            <a href="catalogue.html">Marketplace</a>
-            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Support</a>
-            <a href="about.html">About</a>
+            <a href="catalogue.html" data-i18n="navMarketplace">Marketplace</a>
+            <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer" data-i18n="navSupport">Support</a>
+            <a href="about.html" data-i18n="navAbout">About</a>
           </nav>
 
           <div class="header-tools header-tools-unified">
             <button id="language-toggle" class="ghost-button nav-mini-button" type="button">EN</button>
             <label class="search-field search-field-unified">
-              <input id="global-search-input" type="search" placeholder="Rechercher" />
+              <input id="global-search-input" type="search" placeholder="Rechercher" data-i18n="searchShort" />
               <span>⌕</span>
             </label>
-            <a class="primary-button nav-register-button" href="login.html">Log in / Register</a>
+            <a class="primary-button nav-register-button" href="login.html" data-i18n="loginCta">Log in / Register</a>
           </div>
         </div>
       </header>
@@ -52,14 +52,14 @@
 
           <div class="container hero-shell hero-shell-frame">
             <div class="hero-overlay-content">
-              <h1>GSA -Pas une boutique, un standard.</h1>
-              <p class="hero-sub">L'expertise au service des créateurs et porteurs de projets Garry's Mod.</p>
+              <h1 data-i18n="heroTitle">GSA — Pas une boutique, un standard.</h1>
+              <p class="hero-sub" data-i18n="heroSub">L'expertise au service des créateurs et porteurs de projets Garry's Mod.</p>
               <div class="hero-bullets">
-                <span>Vendre vos assets sans gérer l'aspect commercial</span>
-                <span>Construire un gameplay plus cohérent et engageant</span>
-                <span>Éviter les erreurs coûteuses dans votre projet</span>
+                <span data-i18n="heroBullet1">Vendre vos assets sans gérer l'aspect commercial</span>
+                <span data-i18n="heroBullet2">Construire un gameplay plus cohérent et engageant</span>
+                <span data-i18n="heroBullet3">Éviter les erreurs coûteuses dans votre projet</span>
               </div>
-              <p class="hero-cta-text">Gagnez du temps, économisez votre budget et faites les bons choix dès le départ.</p>
+              <p class="hero-cta-text" data-i18n="heroCta">Gagnez du temps, économisez votre budget et faites les bons choix dès le départ.</p>
             </div>
           </div>
         </section>
@@ -70,9 +70,9 @@
               <div class="trending-panel-head">
                 <div class="trending-title-wrap">
                   <span class="trending-title-icon">↗</span>
-                  <h2>Trending</h2>
+                  <h2 data-i18n="trendingSection">Trending</h2>
                 </div>
-                <a class="trending-view-all" href="catalogue.html?tag=tendance">View All</a>
+                <a class="trending-view-all" href="catalogue.html?tag=tendance" data-i18n="viewAllSection">View All</a>
               </div>
 
               <div class="trending-featured-grid" id="trending-featured"></div>
@@ -92,7 +92,7 @@
 
         <section class="showcase-banner-section">
           <div class="container showcase-banner-shell">
-            <div class="showcase-banner"><span>SOCIAL PROOF</span></div>
+            <div class="showcase-banner"><span data-i18n="socialProof">SOCIAL PROOF</span></div>
           </div>
         </section>
 
@@ -102,9 +102,9 @@
               <div class="sales-panel-head">
                 <div class="sales-title-wrap">
                   <span class="sales-title-icon">↙</span>
-                  <h2>Sales</h2>
+                  <h2 data-i18n="salesSection">Sales</h2>
                 </div>
-                <a class="sales-view-all" href="catalogue.html?discount=true">View All</a>
+                <a class="sales-view-all" href="catalogue.html?discount=true" data-i18n="viewAllSection">View All</a>
               </div>
 
               <div class="sales-row">
@@ -118,7 +118,7 @@
 
         <section class="showcase-banner-section">
           <div class="container showcase-banner-shell">
-            <div class="showcase-banner"><span>SOCIAL PROOF</span></div>
+            <div class="showcase-banner"><span data-i18n="socialProof">SOCIAL PROOF</span></div>
           </div>
         </section>
 
@@ -128,20 +128,20 @@
               <div class="scripts-panel-head">
                 <div class="scripts-title-wrap">
                   <span class="scripts-title-icon">〈/〉</span>
-                  <h2>Scripts</h2>
+                  <h2 data-i18n="scriptsSection">Scripts</h2>
                 </div>
-                <a class="scripts-view-all" href="catalogue.html">View All</a>
+                <a class="scripts-view-all" href="catalogue.html" data-i18n="viewAllSection">View All</a>
               </div>
 
               <div class="scripts-toolbar">
                 <div class="scripts-filters">
-                  <button class="scripts-filter" type="button">☼ New</button>
-                  <button class="scripts-filter" type="button">◌ Updated</button>
-                  <button class="scripts-filter" type="button">↗ Trending</button>
-                  <button class="scripts-filter active" type="button">⬢ Popular</button>
+                  <button class="scripts-filter" type="button" data-i18n="filterNew">☼ New</button>
+                  <button class="scripts-filter" type="button" data-i18n="filterUpdated">◌ Updated</button>
+                  <button class="scripts-filter" type="button" data-i18n="filterTrending">↗ Trending</button>
+                  <button class="scripts-filter active" type="button" data-i18n="filterPopular">⬢ Popular</button>
                 </div>
 
-                <button class="scripts-sort" type="button">All Time ⌄</button>
+                <button class="scripts-sort" type="button" data-i18n="sortAllTime">All Time ⌄</button>
               </div>
 
               <div class="scripts-grid" id="category-showcase"></div>
@@ -151,29 +151,29 @@
                   <a class="brand footer-brand scripts-footer-brandmark" href="index.html">
                     <img src="asset/logo/gsa_logo.png" alt="GSA Logo" class="brand-logo-img" />
                   </a>
-                  <p class="scripts-footer-copy">
+                  <p class="scripts-footer-copy" data-i18n="footerText">
                     GSA embellit, structure et professionnalise le travail des prestataires Garry's Mod. Fondé et géré
                     uniquement par Tresingo.
                   </p>
                 </div>
                 <div class="scripts-footer-links">
                   <div class="scripts-footer-column">
-                    <h3>Navigation</h3>
-                    <a href="catalogue.html">Catalogue</a>
-                    <a href="prestation.html">Prestation</a>
-                    <a href="about.html">À propos</a>
-                    <a href="cart.html">Panier</a>
+                    <h3 data-i18n="footerNav">Navigation</h3>
+                    <a href="catalogue.html" data-i18n="navCatalogue">Catalogue</a>
+                    <a href="prestation.html" data-i18n="navPrestation">Prestation</a>
+                    <a href="about.html" data-i18n="navAbout">À propos</a>
+                    <a href="cart.html" data-i18n="navCart">Panier</a>
                   </div>
                   <div class="scripts-footer-column">
-                    <h3>Légal & contact</h3>
-                    <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Discord Ticket</a>
-                    <a href="login.html">Connexion</a>
-                    <a href="#">Terms of Service</a>
-                    <a href="#">Privacy Policy</a>
+                    <h3 data-i18n="footerLegal">Légal & contact</h3>
+                    <a href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer" data-i18n="footerDiscord">Discord Ticket</a>
+                    <a href="login.html" data-i18n="footerLogin">Connexion</a>
+                    <a href="#" data-i18n="footerTerms">Terms of Service</a>
+                    <a href="#" data-i18n="footerPrivacy">Privacy Policy</a>
                   </div>
                 </div>
                 <div class="scripts-footer-bottom">
-                  <span>© 2026 GSA</span>
+                  <span data-i18n="footerCopyright">© 2026 GSA</span>
                 </div>
               </div>
             </div>

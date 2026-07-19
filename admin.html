@@ -224,6 +224,7 @@
         <button class="tab-button" data-tab="users">👥 Utilisateurs</button>
         <button class="tab-button" data-tab="ambassadors">🎁 Ambassadeurs</button>
         <button class="tab-button" data-tab="settings">⚙️ Paramètres</button>
+        <button class="tab-button" data-tab="pages">📄 Pages</button>
       </div>
 
       <!-- PRODUCTS TAB -->
@@ -432,6 +433,86 @@
               </div>
               <div id="nav-link-msg" class="admin-msg" style="margin-top:10px;"></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PAGES TAB -->
+  <div class="admin-tab-panel" id="tab-pages">
+    <div class="settings-stack" style="max-width:100%;">
+      
+      <!-- Prestation Page -->
+      <div class="settings-block">
+        <div class="settings-block-head">
+          <div>
+            <strong>Page Prestation</strong>
+            <span>Configurez le contenu de la page d'accompagnement / game design.</span>
+          </div>
+        </div>
+        <div id="page-editor-prestation" class="create-form">
+          <div class="form-grid-2">
+            <label>Titre <input type="text" id="prest-heroTitle" placeholder="Accompagnement de projet et Game Design" maxlength="120" /></label>
+            <label>Sous-titre <input type="text" id="prest-heroSubtitle" placeholder="Une offre pensée pour..." maxlength="200" /></label>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+            <div class="panel" style="padding:12px;display:grid;gap:8px;">
+              <strong style="font-size:0.85rem;">Carte 1</strong>
+              <label style="font-size:0.78rem;">Titre <input type="text" id="prest-card1Title" maxlength="80" /></label>
+              <label style="font-size:0.78rem;">Texte <textarea id="prest-card1Text" rows="2" maxlength="300"></textarea></label>
+              <label style="font-size:0.78rem;">Points (1 par ligne) <textarea id="prest-card1Bullets" rows="3" placeholder="Point 1&#10;Point 2&#10;Point 3"></textarea></label>
+              <label style="font-size:0.78rem;">Texte bouton <input type="text" id="prest-card1BtnText" maxlength="60" /></label>
+              <label style="font-size:0.78rem;">URL bouton <input type="text" id="prest-card1BtnUrl" maxlength="200" /></label>
+            </div>
+            <div class="panel" style="padding:12px;display:grid;gap:8px;">
+              <strong style="font-size:0.85rem;">Carte 2</strong>
+              <label style="font-size:0.78rem;">Titre <input type="text" id="prest-card2Title" maxlength="80" /></label>
+              <label style="font-size:0.78rem;">Texte <textarea id="prest-card2Text" rows="2" maxlength="300"></textarea></label>
+              <label style="font-size:0.78rem;">Points (1 par ligne) <textarea id="prest-card2Bullets" rows="3" placeholder="Point 1&#10;Point 2&#10;Point 3"></textarea></label>
+              <label style="font-size:0.78rem;">Texte bouton <input type="text" id="prest-card2BtnText" maxlength="60" /></label>
+              <label style="font-size:0.78rem;">URL bouton <input type="text" id="prest-card2BtnUrl" maxlength="200" /></label>
+            </div>
+            <div class="panel" style="padding:12px;display:grid;gap:8px;">
+              <strong style="font-size:0.85rem;">Carte 3</strong>
+              <label style="font-size:0.78rem;">Titre <input type="text" id="prest-card3Title" maxlength="80" /></label>
+              <label style="font-size:0.78rem;">Texte <textarea id="prest-card3Text" rows="2" maxlength="300"></textarea></label>
+              <label style="font-size:0.78rem;">Points (1 par ligne) <textarea id="prest-card3Bullets" rows="3" placeholder="Point 1&#10;Point 2&#10;Point 3"></textarea></label>
+              <label style="font-size:0.78rem;">Texte bouton <input type="text" id="prest-card3BtnText" maxlength="60" /></label>
+              <label style="font-size:0.78rem;">URL bouton <input type="text" id="prest-card3BtnUrl" maxlength="200" /></label>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;">
+            <button class="save-button" type="button" onclick="savePageContent('prestation')">💾 Sauvegarder Prestation</button>
+            <span id="page-msg-prestation" class="admin-msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Page -->
+      <div class="settings-block">
+        <div class="settings-block-head">
+          <div>
+            <strong>Page À propos</strong>
+            <span>Configurez le contenu de la page About.</span>
+          </div>
+        </div>
+        <div id="page-editor-about" class="create-form">
+          <div class="form-grid-2">
+            <label>Titre <input type="text" id="about-heroTitle" placeholder="GSA — Pas une boutique, un standard" maxlength="120" /></label>
+            <label>Sous-titre <input type="text" id="about-heroSubtitle" placeholder="Distribution sérieuse..." maxlength="200" /></label>
+          </div>
+          <label>Sections (JSON avancé — voir format ci-dessous) 
+            <textarea id="about-sections" rows="10" style="font-family:monospace;font-size:0.8rem;"></textarea>
+          </label>
+          <div class="settings-helper">
+            <strong>Format JSON des sections :</strong><br/>
+            <code style="font-size:0.75rem;color:#a8afbb;">[{"text":"paragraphe..."},{"title":"Titre section","bullets":["point 1","point 2"]}]</code>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:8px;">
+            <button class="save-button" type="button" onclick="savePageContent('about')">💾 Sauvegarder À propos</button>
+            <span id="page-msg-about" class="admin-msg"></span>
           </div>
         </div>
       </div>

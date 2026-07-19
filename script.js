@@ -1391,32 +1391,129 @@ function renderPrestationPage() {
   const app = document.getElementById("prestation-page");
   if (!app) return;
 
-  app.innerHTML = `
-    <section class="page-hero small"><div class="container"><span class="eyebrow">Prestation</span><h1>Accompagnement de projet et Game Design</h1><p>Une offre pensée pour les petits et moyens serveurs, les projets en préparation de sortie et les refontes complètes.</p></div></section>
-    <section class="page-section"><div class="container editorial-grid">
-      <article class="editorial-card"><h2>Accompagnement de projet</h2><p>GSA aide à éviter les erreurs classiques, optimiser le temps de production et augmenter drastiquement la qualité finale du serveur.</p><ul><li>Analyse du plateau de jeu</li><li>Analyse du système économique</li><li>Analyse de la durabilité du concept</li><li>Analyse de la cohérence globale</li></ul></article>
-      <article class="editorial-card"><h2>Game Design</h2><p>Un serveur qui fonctionne n'est pas juste une somme de scripts : c'est une expérience pensée, lisible et équilibrée.</p><ul><li>Rétention des joueurs</li><li>Équilibrage PVP / grind</li><li>Lisibilité du gameplay</li><li>Réflexion map, systèmes, mécaniques</li></ul></article>
-      <article class="editorial-card"><h2>Mise en relation</h2><p>Quand le concept est clair, GSA relie votre projet aux prestataires fiables et adaptés à votre ambition.</p><a class="primary-button" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Ouvrir un ticket Discord</a></article>
-    </div></section>
-  `;
+  // Load content from API with fallback defaults
+  api("/api/page-content/prestation").then(content => {
+    const c = content && typeof content === 'object' && !content.message ? content : {};
+
+    const heroTitle = c.heroTitle || "Accompagnement de projet et Game Design";
+    const heroSub = c.heroSubtitle || "Une offre pensée pour les petits et moyens serveurs, les projets en préparation de sortie et les refontes complètes.";
+
+    const cards = [
+      {
+        title: c.card1Title || "Accompagnement de projet",
+        text: c.card1Text || "GSA aide à éviter les erreurs classiques, optimiser le temps de production et augmenter drastiquement la qualité finale du serveur.",
+        bullets: c.card1Bullets || ["Analyse du plateau de jeu", "Analyse du système économique", "Analyse de la durabilité du concept", "Analyse de la cohérence globale"],
+        btnText: c.card1BtnText || null,
+        btnUrl: c.card1BtnUrl || null,
+      },
+      {
+        title: c.card2Title || "Game Design",
+        text: c.card2Text || "Un serveur qui fonctionne n'est pas juste une somme de scripts : c'est une expérience pensée, lisible et équilibrée.",
+        bullets: c.card2Bullets || ["Rétention des joueurs", "Équilibrage PVP / grind", "Lisibilité du gameplay", "Réflexion map, systèmes, mécaniques"],
+        btnText: c.card2BtnText || null,
+        btnUrl: c.card2BtnUrl || null,
+      },
+      {
+        title: c.card3Title || "Mise en relation",
+        text: c.card3Text || "Quand le concept est clair, GSA relie votre projet aux prestataires fiables et adaptés à votre ambition.",
+        bullets: c.card3Bullets || null,
+        btnText: c.card3BtnText || "Ouvrir un ticket Discord",
+        btnUrl: c.card3BtnUrl || "https://discord.gg/ZbCrwE73uK",
+      },
+    ];
+
+    app.innerHTML = `
+      <section class="page-hero small"><div class="container"><span class="eyebrow">${t("footerService")}</span><h1>${escapeHtml(heroTitle)}</h1><p>${escapeHtml(heroSub)}</p></div></section>
+      <section class="page-section"><div class="container editorial-grid">
+        ${cards.map(card => `
+          <article class="editorial-card">
+            <h2>${escapeHtml(card.title)}</h2>
+            <p>${escapeHtml(card.text)}</p>
+            ${card.bullets ? `<ul>${card.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
+            ${card.btnText ? `<a class="primary-button" href="${escapeHtml(card.btnUrl || "#")}" target="_blank" rel="noreferrer">${escapeHtml(card.btnText)}</a>` : ""}
+          </article>
+        `).join("")}
+      </div></section>
+    `;
+  }).catch(() => {
+    // Fallback hardcoded
+    app.innerHTML = `
+      <section class="page-hero small"><div class="container"><span class="eyebrow">Prestation</span><h1>Accompagnement de projet et Game Design</h1><p>Une offre pensée pour les petits et moyens serveurs, les projets en préparation de sortie et les refontes complètes.</p></div></section>
+      <section class="page-section"><div class="container editorial-grid">
+        <article class="editorial-card"><h2>Accompagnement de projet</h2><p>GSA aide à éviter les erreurs classiques, optimiser le temps de production et augmenter drastiquement la qualité finale du serveur.</p><ul><li>Analyse du plateau de jeu</li><li>Analyse du système économique</li><li>Analyse de la durabilité du concept</li><li>Analyse de la cohérence globale</li></ul></article>
+        <article class="editorial-card"><h2>Game Design</h2><p>Un serveur qui fonctionne n'est pas juste une somme de scripts : c'est une expérience pensée, lisible et équilibrée.</p><ul><li>Rétention des joueurs</li><li>Équilibrage PVP / grind</li><li>Lisibilité du gameplay</li><li>Réflexion map, systèmes, mécaniques</li></ul></article>
+        <article class="editorial-card"><h2>Mise en relation</h2><p>Quand le concept est clair, GSA relie votre projet aux prestataires fiables et adaptés à votre ambition.</p><a class="primary-button" href="https://discord.gg/ZbCrwE73uK" target="_blank" rel="noreferrer">Ouvrir un ticket Discord</a></article>
+      </div></section>
+    `;
+  });
 }
 
 function renderAboutPage() {
   const app = document.getElementById("about-page");
   if (!app) return;
 
-  app.innerHTML = `
-    <section class="page-hero small"><div class="container"><span class="eyebrow">À propos</span><h1>GSA — Pas une boutique, un standard</h1><p>Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.</p></div></section>
-    <section class="page-section"><div class="container prose-panel panel">
-      <p>Des créateurs talentueux perdent du temps en communication, de l'énergie en support, des opportunités à cause d'une mauvaise mise en avant et de l'argent faute de distribution sérieuse.</p>
-      <p>Chez GSA, les prestataires se concentrent uniquement sur leur domaine et nous confient la distribution complète de leurs créations.</p>
-      <h2>Ce que GSA prend en charge</h2>
-      <ul><li>La mise en valeur : graphisme, visuels, montages internes à GSA</li><li>Les explications claires, démonstrations et présentations</li><li>La relation client</li><li>La vente et le suivi</li><li>La diffusion à un large public francophone et international</li></ul>
-      <h2>Pourquoi la non exclusivité n'est pas un frein</h2>
-      <p>Sur GMod, l'exclusivité signifie souvent des mois d'attente, des coûts énormes et un risque de vol très élevé.</p>
-      <ul><li>La non exclusivité permet des retours d'autres utilisateurs</li><li>Une qualité maximale</li><li>Un prix archi compétitif</li><li>Un déploiement rapide</li></ul>
-    </div></section>
-  `;
+  api("/api/page-content/about").then(content => {
+    const c = content && typeof content === 'object' && !content.message ? content : {};
+
+    const heroTitle = c.heroTitle || "GSA — Pas une boutique, un standard";
+    const heroSub = c.heroSubtitle || "Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.";
+
+    const sections = c.sections || [
+      {
+        text: "Des créateurs talentueux perdent du temps en communication, de l'énergie en support, des opportunités à cause d'une mauvaise mise en avant et de l'argent faute de distribution sérieuse.",
+      },
+      {
+        text: "Chez GSA, les prestataires se concentrent uniquement sur leur domaine et nous confient la distribution complète de leurs créations.",
+      },
+      {
+        title: "Ce que GSA prend en charge",
+        bullets: [
+          "La mise en valeur : graphisme, visuels, montages internes à GSA",
+          "Les explications claires, démonstrations et présentations",
+          "La relation client",
+          "La vente et le suivi",
+          "La diffusion à un large public francophone et international",
+        ],
+      },
+      {
+        title: "Pourquoi la non exclusivité n'est pas un frein",
+        text: "Sur GMod, l'exclusivité signifie souvent des mois d'attente, des coûts énormes et un risque de vol très élevé.",
+        bullets: [
+          "La non exclusivité permet des retours d'autres utilisateurs",
+          "Une qualité maximale",
+          "Un prix archi compétitif",
+          "Un déploiement rapide",
+        ],
+      },
+    ];
+
+    app.innerHTML = `
+      <section class="page-hero small"><div class="container"><span class="eyebrow">${t("footerAbout")}</span><h1>${escapeHtml(heroTitle)}</h1><p>${escapeHtml(heroSub)}</p></div></section>
+      <section class="page-section"><div class="container prose-panel panel">
+        ${sections.map(s => {
+          let html = "";
+          if (s.text) html += `<p>${escapeHtml(s.text)}</p>`;
+          if (s.title) html += `<h2>${escapeHtml(s.title)}</h2>`;
+          if (s.bullets) html += `<ul>${s.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
+          return html;
+        }).join("")}
+      </div></section>
+    `;
+  }).catch(() => {
+    // Fallback
+    app.innerHTML = `
+      <section class="page-hero small"><div class="container"><span class="eyebrow">À propos</span><h1>GSA — Pas une boutique, un standard</h1><p>Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.</p></div></section>
+      <section class="page-section"><div class="container prose-panel panel">
+        <p>Des créateurs talentueux perdent du temps en communication, de l'énergie en support, des opportunités à cause d'une mauvaise mise en avant et de l'argent faute de distribution sérieuse.</p>
+        <p>Chez GSA, les prestataires se concentrent uniquement sur leur domaine et nous confient la distribution complète de leurs créations.</p>
+        <h2>Ce que GSA prend en charge</h2>
+        <ul><li>La mise en valeur : graphisme, visuels, montages internes à GSA</li><li>Les explications claires, démonstrations et présentations</li><li>La relation client</li><li>La vente et le suivi</li><li>La diffusion à un large public francophone et international</li></ul>
+        <h2>Pourquoi la non exclusivité n'est pas un frein</h2>
+        <p>Sur GMod, l'exclusivité signifie souvent des mois d'attente, des coûts énormes et un risque de vol très élevé.</p>
+        <ul><li>La non exclusivité permet des retours d'autres utilisateurs</li><li>Une qualité maximale</li><li>Un prix archi compétitif</li><li>Un déploiement rapide</li></ul>
+      </div></section>
+    `;
+  });
 }
 
 async function renderProfilePage() {

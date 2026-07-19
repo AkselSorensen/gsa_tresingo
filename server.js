@@ -2920,6 +2920,60 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// ── Page Content API ──────────────────────────────────────────────────────
+
+// GET /api/page-content/:page — public, returns stored content (or defaults)
+app.get("/api/page-content/:page", async (req, res) => {
+  try {
+    const page = String(req.params.page).slice(0, 40);
+    const allowedPages = ["prestation", "about"];
+    if (!allowedPages.includes(page)) {
+      return res.status(404).json({ message: "Unknown page" });
+    }
+    const result = await pool.query(`SELECT value FROM settings WHERE key = $1`, [`page_content_${page}`]);
+    if (result.rowCount) {
+      try {
+        return res.json(JSON.parse(result.rows[0].value));
+      } catch (_) {
+        return res.json({});
+      }
+    }
+    return res.json({});
+  } catch (error) {
+    console.error("Page content get error:", error);
+    res.status(500).json({ message: "Unable to load page content" });
+  }
+});
+
+// PATCH /api/admin/page-content/:page — admin only, saves page content
+app.patch("/api/admin/page-content/:page", requireAdmin, async (req, res) => {
+  try {
+    const page = String(req.params.page).slice(0, 40);
+    const allowedPages = ["prestation", "about"];
+    if (!allowedPages.includes(page)) {
+      return res.status(404).json({ message: "Unknown page" });
+    }
+
+    const content = req.body;
+    if (!content || typeof content !== "object") {
+      return res.status(400).json({ message: "Content object is required" });
+    }
+
+    // Upsert into settings table
+    const key = `page_content_${page}`;
+    await pool.query(
+      `INSERT INTO settings (key, value) VALUES ($1, $2)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [key, JSON.stringify(content)]
+    );
+
+    res.json({ ok: true, page, saved: true });
+  } catch (error) {
+    console.error("Page content save error:", error);
+    res.status(500).json({ message: "Unable to save page content" });
+  }
+});
+
 initializeDatabase()
   .then(() => {
     // Ne démarrer app.listen que si on n'est PAS sur Vercel

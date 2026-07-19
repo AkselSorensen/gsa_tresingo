@@ -2073,8 +2073,13 @@ function applyTranslations() {
         el.placeholder = translated;
       } else if (el.tagName === "IMG") {
         el.alt = translated;
-      } else {
+      } else if (el.children.length === 0) {
+        // Only set textContent on leaf elements (no child elements)
         el.textContent = translated;
+      }
+      // For elements with children (like <a> wrapping <img>), update aria-label
+      if (el.hasAttribute("aria-label")) {
+        el.setAttribute("aria-label", translated);
       }
     }
   });

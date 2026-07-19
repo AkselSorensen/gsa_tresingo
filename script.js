@@ -780,11 +780,11 @@ async function renderCataloguePage() {
   const sort = params.get("sort") || "popular";
 
   let titleText = "Catalogue";
-  if (search) titleText = `Recherche: ${search} — Catalogue`;
-  else if (category) titleText = `Catégorie: ${category} — Catalogue`;
-  else if (tag) titleText = `Tag: ${tag} — Catalogue`;
+  if (search) titleText = `Recherche: ${search} -Catalogue`;
+  else if (category) titleText = `Catégorie: ${category} -Catalogue`;
+  else if (tag) titleText = `Tag: ${tag} -Catalogue`;
   
-  document.title = `${titleText} — GSA Marketplace`;
+  document.title = `${titleText} -GSA Marketplace`;
   let metaDesc = document.querySelector('meta[name="description"]');
   if (!metaDesc) {
     metaDesc = document.createElement('meta');
@@ -903,7 +903,7 @@ async function renderProductPage() {
   const product = await api(`/api/products/${encodeURIComponent(slug)}`);
   const media = product.media || [];
 
-  document.title = `${escapeHtml(product.title)} — GSA Marketplace`;
+  document.title = `${escapeHtml(product.title)} -GSA Marketplace`;
   let metaDesc = document.querySelector('meta[name="description"]');
   if (!metaDesc) {
     metaDesc = document.createElement('meta');
@@ -1455,7 +1455,7 @@ function renderAboutPage() {
   api("/api/page-content/about").then(content => {
     const c = content && typeof content === 'object' && !content.message ? content : {};
 
-    const heroTitle = c.heroTitle || "GSA — Pas une boutique, un standard";
+    const heroTitle = c.heroTitle || "GSA -Pas une boutique, un standard";
     const heroSub = c.heroSubtitle || "Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.";
 
     const sections = c.sections || [
@@ -1502,7 +1502,7 @@ function renderAboutPage() {
   }).catch(() => {
     // Fallback
     app.innerHTML = `
-      <section class="page-hero small"><div class="container"><span class="eyebrow">À propos</span><h1>GSA — Pas une boutique, un standard</h1><p>Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.</p></div></section>
+      <section class="page-hero small"><div class="container"><span class="eyebrow">À propos</span><h1>GSA -Pas une boutique, un standard</h1><p>Distribution sérieuse, structuration commerciale et professionnalisation des assets Garry's Mod.</p></div></section>
       <section class="page-section"><div class="container prose-panel panel">
         <p>Des créateurs talentueux perdent du temps en communication, de l'énergie en support, des opportunités à cause d'une mauvaise mise en avant et de l'argent faute de distribution sérieuse.</p>
         <p>Chez GSA, les prestataires se concentrent uniquement sur leur domaine et nous confient la distribution complète de leurs créations.</p>
@@ -2112,7 +2112,7 @@ async function renderSellerPage() {
       }
     }
 
-    document.title = `${escapeHtml(seller.displayName)} — Boutique GSA`;
+    document.title = `${escapeHtml(seller.displayName)} -Boutique GSA`;
     let metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
       metaDesc.content = `Découvrez tous les scripts et ressources Garry's Mod de ${escapeHtml(seller.displayName)}.`;

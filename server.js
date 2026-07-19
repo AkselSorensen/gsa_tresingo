@@ -2564,7 +2564,7 @@ app.get("/admin", (_req, res) => {
   res.sendFile(path.join(__dirname, "admin.html"));
 });
 
-// GET /api/admin/users — list all users
+// GET /api/admin/users -list all users
 app.get("/api/admin/users", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query(
@@ -2719,7 +2719,7 @@ app.patch("/api/admin/promo-codes/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/settings — get maintenance mode
+// GET /api/admin/settings -get maintenance mode
 app.get("/api/admin/settings", requireAdmin, async (_req, res) => {
   try {
     const result = await pool.query(`SELECT value FROM settings WHERE key = 'maintenance_mode'`);
@@ -2734,7 +2734,7 @@ app.get("/api/admin/settings", requireAdmin, async (_req, res) => {
   }
 });
 
-// PATCH /api/admin/landing-config/:key — update landing configuration
+// PATCH /api/admin/landing-config/:key -update landing configuration
 app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
   const sectionKey = String(req.params.key);
   const { isActive, title, description, metadata } = req.body;
@@ -2795,7 +2795,7 @@ app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/settings — update maintenance mode
+// PATCH /api/admin/settings -update maintenance mode
 app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
   const { maintenanceMode } = req.body;
   if (maintenanceMode === undefined) return res.status(400).json({ message: "maintenanceMode is required" });
@@ -2812,7 +2812,7 @@ app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/users/:id/role — update user role
+// PATCH /api/admin/users/:id/role -update user role
 app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
   const userId = Number(req.params.id);
   const { role } = req.body;
@@ -2833,7 +2833,7 @@ app.patch("/api/admin/users/:id/role", requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/products/:id — update product fields
+// PATCH /api/admin/products/:id -update product fields
 app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   const productId = Number(req.params.id);
   if (Number.isNaN(productId)) return res.status(400).json({ message: "Invalid product id" });
@@ -2922,7 +2922,7 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
 
 // ── Page Content API ──────────────────────────────────────────────────────
 
-// GET /api/page-content/:page — public, returns stored content (or defaults)
+// GET /api/page-content/:page -public, returns stored content (or defaults)
 app.get("/api/page-content/:page", async (req, res) => {
   try {
     const page = String(req.params.page).slice(0, 40);
@@ -2945,7 +2945,7 @@ app.get("/api/page-content/:page", async (req, res) => {
   }
 });
 
-// PATCH /api/admin/page-content/:page — admin only, saves page content
+// PATCH /api/admin/page-content/:page -admin only, saves page content
 app.patch("/api/admin/page-content/:page", requireAdmin, async (req, res) => {
   try {
     const page = String(req.params.page).slice(0, 40);

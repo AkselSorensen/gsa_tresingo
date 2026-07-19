@@ -642,20 +642,77 @@ function renderHomePage() {
       .join("");
   }
 
-  document.querySelectorAll("[data-carousel-prev]").forEach((button) => {
+  // ── Scripts filter buttons ──────────────────────────────────────
+  document.querySelectorAll(".scripts-filter").forEach((button) => {
     button.addEventListener("click", () => {
-      document
-        .getElementById(button.dataset.carouselPrev)
-        ?.scrollBy({ left: -320, behavior: "smooth" });
+      // Toggle active state
+      document.querySelectorAll(".scripts-filter").forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+
+      // Filter logic based on button text
+      const filter = button.textContent.trim();
+      const allProducts = state.bootstrap?.trending || [];
+      const discounts = state.bootstrap?.discounts || [];
+      const featured = state.bootstrap?.featuredByCategory || [];
+
+      let filtered = [];
+      if (filter.includes("New")) {
+        filtered = [...allProducts].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      } else if (filter.includes("Updated")) {
+        filtered = [...allProducts].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+      } else if (filter.includes("Trending")) {
+        filtered = allProducts.filter(p => p.isTrending !== false);
+      } else {
+        // Popular (default)
+        filtered = [...allProducts].sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0));
+      }
+
+      // Re-render scripts grid
+      const scriptPool = [
+        ...filtered,
+        ...discounts,
+        ...(featured.flatMap((group) =>
+          (group.products || []).map((p) => ({ ...p, category: group.categoryName }))
+        ) || []),
+      ].filter(Boolean);
+
+      const uniqueScripts = Array.from(new Map(scriptPool.map((p) => [p.slug, p])).values());
+      const rows = [];
+      for (let i = 0; i < Math.min(uniqueScripts.length, 15); i += 5) {
+        rows.push(uniqueScripts.slice(i, i + 5));
+      }
+
+      const container = document.getElementById("category-showcase");
+      if (container) {
+        container.innerHTML = rows
+          .filter((r) => r.length)
+          .map(
+            (row) => `
+            <section class="scripts-row">
+              ${row.map((p) => scriptLibraryCard(p, p.category || "Scripts")).join("")}
+            </section>
+          `
+          )
+          .join("");
+      }
     });
   });
 
+  // ── Carousel arrows (pixel-based scroll with card snap) ────────
+  const scrollCarousel = (carouselId, direction) => {
+    const el = document.getElementById(carouselId);
+    if (!el) return;
+    const card = el.querySelector("article, .trending-mini-card, .sales-card");
+    const scrollAmount = card ? card.offsetWidth + 12 : 300; // card width + gap
+    el.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
+  };
+
+  document.querySelectorAll("[data-carousel-prev]").forEach((button) => {
+    button.addEventListener("click", () => scrollCarousel(button.dataset.carouselPrev, -1));
+  });
+
   document.querySelectorAll("[data-carousel-next]").forEach((button) => {
-    button.addEventListener("click", () => {
-      document
-        .getElementById(button.dataset.carouselNext)
-        ?.scrollBy({ left: 320, behavior: "smooth" });
-    });
+    button.addEventListener("click", () => scrollCarousel(button.dataset.carouselNext, 1));
   });
 }
 

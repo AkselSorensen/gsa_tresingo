@@ -1208,10 +1208,10 @@ app.get("/api/bootstrap", async (req, res) => {
             p.title,
             p.short_description,
             p.price,
-            p.old_price,
-            p.discount_percent,
+            p.old_price AS "oldPrice",
+            p.discount_percent AS "discountPercent",
             p.rating,
-            p.review_count,
+            p.review_count AS "reviewCount",
             p.tags,
             p.is_featured,
             COALESCE(
@@ -1238,10 +1238,10 @@ app.get("/api/bootstrap", async (req, res) => {
             p.title,
             p.short_description,
             p.price,
-            p.old_price,
-            p.discount_percent,
+            p.old_price AS "oldPrice",
+            p.discount_percent AS "discountPercent",
             p.rating,
-            p.review_count,
+            p.review_count AS "reviewCount",
             p.tags,
             COALESCE(
               (

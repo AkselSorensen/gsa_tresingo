@@ -162,7 +162,7 @@
 .scripts-footer-brand-wrap {
   display: grid;
   gap: 18px;
-  max-width: 560px;
+  max-width: 420px;
 }
 
 .scripts-footer-brandmark {
@@ -173,13 +173,13 @@
   margin: 0;
   color: var(--muted);
   line-height: 1.6;
-  font-size: 0.98rem;
+  font-size: 0.95rem;
 }
 
 .scripts-footer-links {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 220px));
-  gap: 36px;
+  grid-template-columns: repeat(2, minmax(0, 200px));
+  gap: 48px;
   justify-content: end;
 }
 

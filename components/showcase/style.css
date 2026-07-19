@@ -72,18 +72,28 @@
 
 .sales-row {
   display: grid;
-  grid-template-columns: 34px 1fr 34px;
+  grid-template-columns: 40px 1fr 40px;
   align-items: center;
   gap: 12px;
 }
 
 .sales-nav-arrow {
   border: 0;
-  width: 34px;
-  height: 42px;
+  width: 40px;
+  height: 48px;
   background: #303030;
-  color: #7f7f7f;
-  font-size: 1rem;
+  color: #c0c0c0;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s, color 0.2s;
+  align-self: center;
+}
+
+.sales-nav-arrow:hover {
+  background: #444;
+  color: #fff;
 }
 
 .sales-carousel-strip {

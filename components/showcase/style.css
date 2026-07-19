@@ -157,24 +157,31 @@
   justify-content: center;
   min-height: 20px;
   padding: 0 8px;
-  background: #71dc00;
-  color: #183000;
+  background: #e84118;
+  color: #fff;
   font-weight: 800;
+  font-size: 0.7rem;
+  border-radius: 4px;
 }
 
 .sales-pricing {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .sales-pricing .old {
   color: #68707b;
   text-decoration: line-through;
+  font-size: 0.6rem;
 }
 
 .sales-pricing .new {
   color: #6dff6b;
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 @media (max-width: 900px) {

@@ -1214,6 +1214,10 @@ app.get("/api/bootstrap", async (req, res) => {
             p.review_count AS "reviewCount",
             p.tags,
             p.is_featured,
+            p.is_trending AS "isTrending",
+            p.popularity_score AS "popularityScore",
+            p.created_at AS "createdAt",
+            p.updated_at AS "updatedAt",
             COALESCE(
               (
                 SELECT pm.thumbnail_url
@@ -1243,6 +1247,9 @@ app.get("/api/bootstrap", async (req, res) => {
             p.rating,
             p.review_count AS "reviewCount",
             p.tags,
+            p.popularity_score AS "popularityScore",
+            p.created_at AS "createdAt",
+            p.updated_at AS "updatedAt",
             COALESCE(
               (
                 SELECT pm.thumbnail_url

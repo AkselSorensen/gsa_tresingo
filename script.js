@@ -645,55 +645,54 @@ function renderHomePage() {
   // ── Scripts filter buttons ──────────────────────────────────────
   document.querySelectorAll(".scripts-filter").forEach((button) => {
     button.addEventListener("click", () => {
-      // Toggle active state
-      document.querySelectorAll(".scripts-filter").forEach((btn) => btn.classList.remove("active"));
-      button.classList.add("active");
+      try {
+        // Toggle active state
+        document.querySelectorAll(".scripts-filter").forEach((btn) => btn.classList.remove("active"));
+        button.classList.add("active");
 
-      // Filter logic based on button text
-      const filter = button.textContent.trim();
-      const allProducts = state.bootstrap?.trending || [];
-      const discounts = state.bootstrap?.discounts || [];
-      const featured = state.bootstrap?.featuredByCategory || [];
+        // Rebuild the full product pool
+        const allTrending = state.bootstrap?.trending || [];
+        const allDiscounts = state.bootstrap?.discounts || [];
+        const featuredGroups = state.bootstrap?.featuredByCategory || [];
+        const featuredProducts = featuredGroups.flatMap(g => (g.products || []).map(p => ({ ...p, category: g.categoryName })));
 
-      let filtered = [];
-      if (filter.includes("New")) {
-        filtered = [...allProducts].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-      } else if (filter.includes("Updated")) {
-        filtered = [...allProducts].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-      } else if (filter.includes("Trending")) {
-        filtered = allProducts.filter(p => p.isTrending !== false);
-      } else {
-        // Popular (default)
-        filtered = [...allProducts].sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0));
-      }
+        const filter = button.textContent.trim();
 
-      // Re-render scripts grid
-      const scriptPool = [
-        ...filtered,
-        ...discounts,
-        ...(featured.flatMap((group) =>
-          (group.products || []).map((p) => ({ ...p, category: group.categoryName }))
-        ) || []),
-      ].filter(Boolean);
+        // Sort the trending products based on active filter
+        let sorted = [...allTrending];
+        if (filter.includes("New")) {
+          sorted.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        } else if (filter.includes("Updated")) {
+          sorted.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+        } else if (filter.includes("Trending")) {
+          sorted.sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0));
+        } else {
+          // Popular (default)
+          sorted.sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0));
+        }
 
-      const uniqueScripts = Array.from(new Map(scriptPool.map((p) => [p.slug, p])).values());
-      const rows = [];
-      for (let i = 0; i < Math.min(uniqueScripts.length, 15); i += 5) {
-        rows.push(uniqueScripts.slice(i, i + 5));
-      }
+        // Build the full pool (sorted trending + all discounts + featured)
+        const scriptPool = [...sorted, ...allDiscounts, ...featuredProducts].filter(Boolean);
+        const unique = Array.from(new Map(scriptPool.map(p => [p.slug, p])).values());
 
-      const container = document.getElementById("category-showcase");
-      if (container) {
-        container.innerHTML = rows
-          .filter((r) => r.length)
-          .map(
-            (row) => `
-            <section class="scripts-row">
-              ${row.map((p) => scriptLibraryCard(p, p.category || "Scripts")).join("")}
-            </section>
-          `
-          )
-          .join("");
+        // Render in rows of 5
+        const rows = [];
+        for (let i = 0; i < Math.min(unique.length, 15); i += 5) {
+          rows.push(unique.slice(i, i + 5));
+        }
+
+        const container = document.getElementById("category-showcase");
+        if (container) {
+          container.innerHTML = rows
+            .filter(r => r.length)
+            .map(row => `
+              <section class="scripts-row">
+                ${row.map(p => scriptLibraryCard(p, p.category || "Scripts")).join("")}
+              </section>
+            `).join("");
+        }
+      } catch (e) {
+        console.error("Scripts filter error:", e);
       }
     });
   });

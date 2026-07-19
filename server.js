@@ -1199,7 +1199,7 @@ app.get("/api/health", async (_req, res) => {
 app.get("/api/bootstrap", async (req, res) => {
   try {
     const [categories, trending, discounts, featured] = await Promise.all([
-      pool.query(`SELECT name, slug, description FROM categories ORDER BY sort_order ASC, name ASC`),
+      pool.query(`SELECT c.name, c.slug, c.description, COALESCE(COUNT(p.id), 0)::int AS "productCount" FROM categories c LEFT JOIN products p ON p.category_id = c.id AND p.is_hidden = FALSE GROUP BY c.name, c.slug, c.description, c.sort_order ORDER BY c.sort_order ASC, c.name ASC`),
       pool.query(
         `
           SELECT

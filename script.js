@@ -43,6 +43,7 @@ const translations = {
     updated: "Mis à jour",
     popular: "Populaire",
     allTime: "Tout le temps",
+    rating: "Note",
     searchPlaceholderShort: "Rechercher",
     footerNav: "Navigation",
     footerCatalogue: "Catalogue",
@@ -95,6 +96,7 @@ const translations = {
     updated: "Updated",
     popular: "Popular",
     allTime: "All Time",
+    rating: "Rating",
     searchPlaceholderShort: "Search",
     footerNav: "Navigation",
     footerCatalogue: "Catalogue",
@@ -626,8 +628,8 @@ function renderHomePage() {
     const uniqueScripts = Array.from(new Map(scriptPool.map((product) => [product.slug, product])).values());
     const rows = [];
 
-    for (let index = 0; index < Math.min(uniqueScripts.length, 15); index += 5) {
-      rows.push(uniqueScripts.slice(index, index + 5));
+    for (let index = 0; index < Math.min(uniqueScripts.length, 15); index += 4) {
+      rows.push(uniqueScripts.slice(index, index + 4));
     }
 
     categoryShowcase.innerHTML = rows
@@ -675,10 +677,10 @@ function renderHomePage() {
         const scriptPool = [...sorted, ...allDiscounts, ...featuredProducts].filter(Boolean);
         const unique = Array.from(new Map(scriptPool.map(p => [p.slug, p])).values());
 
-        // Render in rows of 5
+        // Render in rows of 4
         const rows = [];
-        for (let i = 0; i < Math.min(unique.length, 15); i += 5) {
-          rows.push(unique.slice(i, i + 5));
+        for (let i = 0; i < Math.min(unique.length, 15); i += 4) {
+          rows.push(unique.slice(i, i + 4));
         }
 
         const container = document.getElementById("category-showcase");
@@ -717,7 +719,7 @@ function renderHomePage() {
 
 function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort) {
   const categoryLinks = [
-    `<a class="market-filter-link ${!activeCategory ? "active" : ""}" href="catalogue.html">Overview <span>(All)</span></a>`,
+    `<a class="market-filter-link ${!activeCategory ? "active" : ""}" href="catalogue.html${search ? '?search='+encodeURIComponent(search) : ''}">${t("navMarketplace")} <span>(${(categories||[]).reduce((s,c) => s + (c.productCount||0), 0)})</span></a>`,
     ...categories.map(
       (item) =>
         `<a class="market-filter-link ${item.slug === activeCategory ? "active" : ""}" href="catalogue.html?search=${encodeURIComponent(
@@ -728,51 +730,43 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
     ),
   ].join("");
 
+  const tags = ["darkrp", "ui", "job", "economy", "tendance", "reduction", "animation", "map", "arme", "3d-import", "particle"];
+
   return `
     <div class="market-sidebar-group">
-      <div class="market-sidebar-title">Categories</div>
+      <div class="market-sidebar-title">${t("category")}s</div>
       <div class="market-filter-stack">${categoryLinks}</div>
     </div>
 
     <div class="market-sidebar-group">
       <div class="market-sidebar-title">Tags</div>
-      <div class="market-select-wrap">
-        <select onchange="if(this.value) window.location.href=this.value">
-          <option value="">Sélectionner</option>
-          <option value="catalogue.html?tag=darkrp">DarkRP</option>
-          <option value="catalogue.html?tag=ui">UI</option>
-          <option value="catalogue.html?tag=job">Job</option>
-          <option value="catalogue.html?tag=economy">Economy</option>
-        </select>
+      <div class="market-tag-stack">
+        ${tags.map(t => `<a class="market-tag-link ${tag === t ? 'active' : ''}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${escapeHtml(t)}</a>`).join("")}
       </div>
     </div>
 
     <div class="market-sidebar-group">
-      <div class="market-sidebar-title">Price</div>
-      <div class="market-range-lines">
-        <div class="market-range-bar"></div>
-        <div class="market-range-values"><span>$1</span><span>$0</span></div>
+      <div class="market-sidebar-title">${t("sales")}</div>
+      <label class="market-check"><input type="checkbox" ${discount === "true" ? "checked" : ""} onchange="window.location.href='catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount='+(this.checked?'true':'')+'&sort=${encodeURIComponent(sort)}'" /> ${t("sales")}</label>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">${t("allTime")}</div>
+      <div class="market-sort-stack">
+        ${["popular", "new", "discount", "rating"].map(s => `
+          <a class="market-sort-link ${sort === s ? 'active' : ''}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(s)}">${t(sortLabels[s] || s)}</a>
+        `).join("")}
       </div>
-    </div>
-
-    <div class="market-sidebar-group">
-      <div class="market-sidebar-title">Rating</div>
-      <label class="market-check"><input type="checkbox" /> ★★★★★ <span>(194)</span></label>
-      <label class="market-check"><input type="checkbox" /> ★★★★☆ <span>(85)</span></label>
-      <label class="market-check"><input type="checkbox" /> ★★★☆☆ <span>(22)</span></label>
-    </div>
-
-    <div class="market-sidebar-group">
-      <div class="market-sidebar-title">Sale</div>
-      <label class="market-check"><input type="checkbox" ${discount === "true" ? "checked" : ""} onclick="window.location.href='catalogue.html?search=${encodeURIComponent(
-        search
-      )}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=true&sort=${encodeURIComponent(
-        sort
-      )}'" /> On sale</label>
-      <label class="market-check"><input type="checkbox" /> Only show sales</label>
     </div>
   `;
 }
+
+const sortLabels = {
+  popular: "popular",
+  new: "newLabel",
+  discount: "sales",
+  rating: "rating"
+};
 
 async function renderCataloguePage() {
   const app = document.getElementById("catalogue-page");
@@ -808,10 +802,10 @@ async function renderCataloguePage() {
   app.innerHTML = `
     <section class="market-hero-strip">
       <div class="container market-hero-shell">
-        <div class="market-breadcrumb">Home <span>›</span> Scripts</div>
+        <div class="market-breadcrumb">${t("navMarketplace")} <span>›</span> ${t("scripts")}</div>
         <div class="market-hero-content">
           <div>
-            <h1>Stand out your server among all.</h1>
+            <h1>${t("navMarketplace")}</h1>
           </div>
           <div class="market-hero-art"></div>
         </div>
@@ -825,19 +819,7 @@ async function renderCataloguePage() {
         </aside>
 
         <div class="market-main">
-          <div class="market-toolbar">
-            <div class="market-toolbar-left">
-              <span class="market-chip active">Hide Filters</span>
-            </div>
-            <div class="market-toolbar-right">
-              <span class="market-sort ${sort === "popular" ? "active" : ""}">All Time</span>
-              <span class="market-sort ${sort === "new" ? "active" : ""}">Date Published</span>
-              <span class="market-sort">Updated</span>
-              <span class="market-sort ${sort === "discount" ? "active" : ""}">Trending</span>
-            </div>
-          </div>
-
-          <div class="market-products-grid ${data.items.length ? "" : "is-empty"}">
+          <div class="market-products-grid catalogue-grid-4 ${data.items.length ? "" : "is-empty"}">
             ${
               data.items.length
                 ? data.items.map((product) => productCard(product)).join("")

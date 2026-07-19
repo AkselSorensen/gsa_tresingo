@@ -147,7 +147,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 8px;
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   color: #8a8a8a;
 }
 
@@ -155,32 +155,32 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 20px;
-  padding: 0 8px;
+  min-height: 22px;
+  padding: 0 10px;
   background: #e84118;
   color: #fff;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   border-radius: 4px;
 }
 
 .sales-pricing {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
 
 .sales-pricing .old {
-  color: #68707b;
+  color: #8892a0;
   text-decoration: line-through;
-  font-size: 0.6rem;
+  font-size: 0.8rem;
 }
 
 .sales-pricing .new {
-  color: #6dff6b;
-  font-size: 0.9rem;
+  color: #4ade80;
+  font-size: 1.05rem;
   font-weight: 700;
 }
 

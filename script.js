@@ -8,7 +8,7 @@ const state = {
 
 const translations = {
   fr: {
-    languageLabel: "EN",
+    languageLabel: "FR",
     loginCta: "Log in / Register",
     cart: "Panier",
     searchPlaceholder: "Rechercher un produit, un tag...",
@@ -32,9 +32,35 @@ const translations = {
     stripeUnavailable: "Stripe n'est pas configuré pour le moment.",
     checkoutSuccess: "Paiement validé. Merci pour votre commande.",
     checkoutCancel: "Paiement annulé. Vous pouvez reprendre votre panier.",
+    navMarketplace: "Marketplace",
+    navSupport: "Support",
+    navAbout: "About",
+    trending: "Tendances",
+    viewAll: "Voir tout",
+    sales: "Promotions",
+    scripts: "Scripts",
+    newLabel: "Nouveau",
+    updated: "Mis à jour",
+    popular: "Populaire",
+    allTime: "Tout le temps",
+    searchPlaceholderShort: "Rechercher",
+    footerNav: "Navigation",
+    footerCatalogue: "Catalogue",
+    footerService: "Prestation",
+    footerAbout: "À propos",
+    footerCart: "Panier",
+    footerLegal: "Légal & contact",
+    footerDiscord: "Discord Ticket",
+    footerLogin: "Connexion",
+    footerTerms: "Terms of Service",
+    footerPrivacy: "Privacy Policy",
+    yourProfile: "Mon profil",
+    sellerProfile: "Profil vendeur",
+    logout: "Se déconnecter",
+    adminDashboard: "Dashboard Admin",
   },
   en: {
-    languageLabel: "FR",
+    languageLabel: "EN",
     loginCta: "Log in / Register",
     cart: "Cart",
     searchPlaceholder: "Search product, tag, category...",
@@ -58,6 +84,32 @@ const translations = {
     stripeUnavailable: "Stripe is not configured right now.",
     checkoutSuccess: "Payment confirmed. Thank you for your order.",
     checkoutCancel: "Payment cancelled. You can continue with your cart.",
+    navMarketplace: "Marketplace",
+    navSupport: "Support",
+    navAbout: "About",
+    trending: "Trending",
+    viewAll: "View All",
+    sales: "Sales",
+    scripts: "Scripts",
+    newLabel: "New",
+    updated: "Updated",
+    popular: "Popular",
+    allTime: "All Time",
+    searchPlaceholderShort: "Search",
+    footerNav: "Navigation",
+    footerCatalogue: "Catalogue",
+    footerService: "Services",
+    footerAbout: "About",
+    footerCart: "Cart",
+    footerLegal: "Legal & Contact",
+    footerDiscord: "Discord Ticket",
+    footerLogin: "Login",
+    footerTerms: "Terms of Service",
+    footerPrivacy: "Privacy Policy",
+    yourProfile: "My profile",
+    sellerProfile: "Seller profile",
+    logout: "Sign out",
+    adminDashboard: "Admin Dashboard",
   },
 };
 
@@ -304,10 +356,10 @@ function updateHeaderLabels() {
     wrap.innerHTML = `
       <button class="primary-button" id="user-menu-trigger" type="button">${escapeHtml(t("welcome"))}, ${escapeHtml(state.user.displayName)}</button>
       <div id="user-menu-dropdown" class="user-menu-dropdown hidden">
-        ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
-        <a href="profile.html">Mon profil</a>
-        ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">Profil vendeur</a>` : ''}
-        <button type="button" id="user-logout-btn">Se déconnecter</button>
+        ${state.user.role === 'admin' ? '<a href="admin.html">' + t("adminDashboard") + '</a>' : ''}
+        <a href="profile.html">${t("yourProfile")}</a>
+        ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">${t("sellerProfile")}</a>` : ''}
+        <button type="button" id="user-logout-btn">${t("logout")}</button>
       </div>
     `;
     return wrap;
@@ -342,10 +394,10 @@ function updateHeaderLabels() {
       const dropdown = document.getElementById("user-menu-dropdown");
       if (dropdown) {
         dropdown.innerHTML = `
-          ${state.user.role === 'admin' ? '<a href="admin.html">Dashboard Admin</a>' : ''}
-          <a href="profile.html">Mon profil</a>
-          ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">Profil vendeur</a>` : ''}
-          <button type="button" id="user-logout-btn">Se déconnecter</button>
+          ${state.user.role === 'admin' ? '<a href="admin.html">' + t("adminDashboard") + '</a>' : ''}
+          <a href="profile.html">${t("yourProfile")}</a>
+          ${['seller', 'admin'].includes(state.user.role) ? `<a href="seller.html?id=${encodeURIComponent(state.user.slug || '')}">${t("sellerProfile")}</a>` : ''}
+          <button type="button" id="user-logout-btn">${t("logout")}</button>
         `;
       }
       attachUserMenuEvents();
@@ -405,6 +457,41 @@ function attachLanguageToggle() {
 function attachSearchHandler() {
   const input = document.getElementById("global-search-input");
   if (!input) return;
+
+  const label = input.closest(".search-field");
+  const icon = label?.querySelector("span");
+
+  const updateIcon = () => {
+    if (!icon) return;
+    const hasValue = input.value.trim().length > 0;
+    const isFocused = document.activeElement === input;
+    if (hasValue || isFocused) {
+      icon.textContent = "✕";
+      icon.className = "search-close-btn";
+      icon.style.pointerEvents = "all";
+    } else {
+      icon.textContent = "⌕";
+      icon.className = "";
+      icon.style.pointerEvents = "none";
+    }
+  };
+
+  input.addEventListener("focus", updateIcon);
+  input.addEventListener("blur", () => {
+    // Small delay so click on close button registers before we switch back
+    setTimeout(updateIcon, 150);
+  });
+  input.addEventListener("input", updateIcon);
+
+  // Close button clears search and refocuses
+  icon?.addEventListener("click", (e) => {
+    const span = e.currentTarget;
+    if (span.classList.contains("search-close-btn")) {
+      input.value = "";
+      input.focus();
+      updateIcon();
+    }
+  });
 
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && input.value.trim()) {

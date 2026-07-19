@@ -1100,8 +1100,6 @@ async function renderLoginPage() {
             <a class="ghost-button center" href="/auth/discord">Connexion Discord</a>
             <a class="ghost-button center" href="/auth/steam">Connexion Steam</a>
           </div>
-          <p class="helper-text">Compte démo client : client@gsa.local / Client123!</p>
-          <p class="helper-text">Compte admin : admin@gstore.local / Admin1234!</p>
         </form>
         <form class="panel form-panel" id="register-form">
           <h2>Créer un compte</h2>

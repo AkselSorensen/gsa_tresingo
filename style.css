@@ -1200,6 +1200,68 @@ select {
   background: rgba(47, 125, 246, 0.25);
 }
 
+/* ── Price range slider ─────────────────────────────────────────── */
+.market-price-slider {
+  padding: 8px 0 4px;
+}
+
+.mps-track {
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  cursor: pointer;
+  margin: 0 6px;
+}
+
+.mps-range {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.mps-handle {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--primary);
+  cursor: grab;
+  z-index: 2;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  transition: box-shadow 0.15s;
+}
+
+.mps-handle:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.mps-handle:active {
+  cursor: grabbing;
+  box-shadow: 0 2px 12px rgba(47,125,246,0.4);
+}
+
+.mps-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.mps-label-min,
+.mps-label-max {
+  font-weight: 600;
+  color: var(--text);
+}
+
 .market-select-wrap select {
   width: 100%;
   min-height: 28px;

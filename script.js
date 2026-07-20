@@ -899,11 +899,16 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
 
     <div class="market-sidebar-group">
       <div class="market-sidebar-title">${t("price")}</div>
-      <div class="market-price-range">
-        <input type="number" class="market-price-input" id="price-min" placeholder="Min" min="0" value="${price ? price.split('-')[0] : ''}" />
-        <span class="market-price-sep">—</span>
-        <input type="number" class="market-price-input" id="price-max" placeholder="Max" min="0" value="${price ? price.split('-')[1] || '' : ''}" />
-        <button class="market-price-go" onclick="filterByPrice()">OK</button>
+      <div class="market-price-slider" data-price-min="${price ? price.split('-')[0] : 0}" data-price-max="${price ? price.split('-')[1] || 200 : 200}">
+        <div class="mps-track">
+          <div class="mps-range"></div>
+          <div class="mps-handle mps-handle-min" tabindex="0"></div>
+          <div class="mps-handle mps-handle-max" tabindex="0"></div>
+        </div>
+        <div class="mps-labels">
+          <span class="mps-label-min">0 €</span>
+          <span class="mps-label-max">200 €</span>
+        </div>
       </div>
     </div>
 
@@ -938,6 +943,91 @@ function filterByPrice() {
   else if (max) params.set("price", `0-${max}`);
   else params.delete("price");
   window.location.href = `catalogue.html?${params.toString()}`;
+}
+
+// ── Price range slider ───────────────────────────────────────────
+function initPriceSliders() {
+  document.querySelectorAll(".market-price-slider").forEach((slider) => {
+    const track = slider.querySelector(".mps-track");
+    const range = slider.querySelector(".mps-range");
+    const minHandle = slider.querySelector(".mps-handle-min");
+    const maxHandle = slider.querySelector(".mps-handle-max");
+    const labelMin = slider.querySelector(".mps-label-min");
+    const labelMax = slider.querySelector(".mps-label-max");
+
+    const minVal = Number(slider.dataset.priceMin) || 0;
+    const maxVal = Number(slider.dataset.priceMax) || 200;
+    const MAX = 200;
+
+    const update = () => {
+      const pMin = (minVal / MAX) * 100;
+      const pMax = (maxVal / MAX) * 100;
+      minHandle.style.left = `${pMin}%`;
+      maxHandle.style.left = `${pMax}%`;
+      range.style.left = `${pMin}%`;
+      range.style.width = `${pMax - pMin}%`;
+      labelMin.textContent = `${Math.round(minVal)} €`;
+      labelMax.textContent = `${Math.round(maxVal)} €`;
+    };
+
+    let activeHandle = null;
+
+    const startDrag = (e, handle) => {
+      e.preventDefault();
+      activeHandle = handle;
+      const rect = track.getBoundingClientRect();
+
+      const onMove = (ev) => {
+        const x = Math.max(0, Math.min(ev.clientX - rect.left, rect.width));
+        const pct = x / rect.width;
+        let val = Math.round(pct * MAX);
+
+        if (handle === "min") {
+          val = Math.min(val, maxVal - 5);
+          slider.dataset.priceMin = val;
+        } else {
+          val = Math.max(val, minVal + 5);
+          slider.dataset.priceMax = val;
+        }
+
+        // Re-read since we modified
+        const newMin = Number(slider.dataset.priceMin);
+        const newMax = Number(slider.dataset.priceMax);
+        const pMin = (newMin / MAX) * 100;
+        const pMax = (newMax / MAX) * 100;
+        minHandle.style.left = `${pMin}%`;
+        maxHandle.style.left = `${pMax}%`;
+        range.style.left = `${pMin}%`;
+        range.style.width = `${pMax - pMin}%`;
+        labelMin.textContent = `${newMin} €`;
+        labelMax.textContent = `${newMax} €`;
+      };
+
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        activeHandle = null;
+        // Apply filter
+        const mn = Number(slider.dataset.priceMin);
+        const mx = Number(slider.dataset.priceMax);
+        const params = new URLSearchParams(window.location.search);
+        if (mn > 0 || mx < MAX) {
+          params.set("price", mn > 0 ? `${mn}-${mx}` : `0-${mx}`);
+        } else {
+          params.delete("price");
+        }
+        window.location.href = `catalogue.html?${params.toString()}`;
+      };
+
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    };
+
+    minHandle.addEventListener("mousedown", (e) => startDrag(e, "min"));
+    maxHandle.addEventListener("mousedown", (e) => startDrag(e, "max"));
+
+    update();
+  });
 }
 
 async function renderCataloguePage() {
@@ -1003,6 +1093,7 @@ async function renderCataloguePage() {
       </div>
     </section>
   `;
+  initPriceSliders();
 }
 
 function renderMainMedia(media) {

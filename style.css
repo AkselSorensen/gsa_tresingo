@@ -1447,7 +1447,7 @@ select {
 
 .market-products-grid .product-card-topline {
   margin-bottom: 3px;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
 }
 
 .market-products-grid .product-tag,
@@ -1457,7 +1457,7 @@ select {
   border: 0;
   border-radius: 0;
   background: transparent;
-  font-size: 0.48rem;
+  font-size: 0.62rem;
 }
 
 .market-products-grid .product-tag {
@@ -1472,7 +1472,7 @@ select {
 
 .market-products-grid .product-card h3 {
   margin: 0 0 3px;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   line-height: 1.15;
 }
 
@@ -1480,7 +1480,7 @@ select {
   margin: 0 0 5px;
   min-height: 0;
   color: #8d96a5;
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   line-height: 1.35;
 }
 
@@ -1492,7 +1492,7 @@ select {
 .market-products-grid .product-meta,
 .market-products-grid .product-seller-line {
   color: #737c8a;
-  font-size: 0.5rem;
+  font-size: 0.68rem;
 }
 
 .market-products-grid .price-cluster {

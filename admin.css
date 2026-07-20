@@ -44,7 +44,6 @@ button {
 }
 
 .admin-shell {
-  min-height: 100vh;
   display: grid;
   grid-template-columns: 260px 1fr;
 }

@@ -866,7 +866,7 @@ function renderHomePage() {
   });
 }
 
-function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort, price) {
+function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort, price, rating) {
   const categoryLinks = [
     `<a class="market-filter-link ${!activeCategory ? "active" : ""}" href="catalogue.html${search ? '?search='+encodeURIComponent(search) : ''}">${t("navMarketplace")} <span>(${(categories||[]).reduce((s,c) => s + (c.productCount||0), 0)})</span></a>`,
     ...categories.map(
@@ -909,6 +909,18 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
           <span class="mps-label-min">0 €</span>
           <span class="mps-label-max">200 €</span>
         </div>
+      </div>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">${t("rating")}</div>
+      <div class="market-rating-stars">
+        ${rating ? `<a class="market-star-link" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}${price ? `&price=${price}` : ''}">${t("all")}</a>` : ""}
+        ${[5,4,3,2,1].map(s => {
+          const href = `catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}${price ? `&price=${price}` : ''}&rating=${s}`;
+          const active = Number(rating) === s;
+          return `<a class="market-star-link ${active ? 'active' : ''}" href="${href}">${"★".repeat(s)}${"☆".repeat(5-s)} <span>${s}+</span></a>`;
+        }).join("")}
       </div>
     </div>
 
@@ -1041,6 +1053,7 @@ async function renderCataloguePage() {
   const discount = params.get("discount") || "";
   const sort = params.get("sort") || "popular";
   const price = params.get("price") || "";
+  const rating = params.get("rating") || "";
 
   let titleText = "Catalogue";
   if (search) titleText = `Recherche: ${search} -Catalogue`;
@@ -1059,7 +1072,7 @@ async function renderCataloguePage() {
   const data = await api(
     `/api/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(
       category
-    )}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}${price ? `&price_min=${price.split('-')[0]}&price_max=${price.split('-')[1] || ''}` : ''}`
+    )}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}${price ? `&price_min=${price.split('-')[0]}&price_max=${price.split('-')[1] || ''}` : ''}${rating ? `&rating=${rating}` : ''}`
   );
 
   app.innerHTML = `
@@ -1078,7 +1091,7 @@ async function renderCataloguePage() {
     <section class="market-page-section">
       <div class="container market-layout">
         <aside class="market-sidebar">
-          ${renderCatalogueFilters(state.categories, category, search, tag, discount, sort, price)}
+          ${renderCatalogueFilters(state.categories, category, search, tag, discount, sort, price, rating)}
         </aside>
 
         <div class="market-main">

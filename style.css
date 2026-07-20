@@ -1262,6 +1262,41 @@ select {
   color: var(--text);
 }
 
+.market-rating-stars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.market-star-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-decoration: none;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+
+.market-star-link:hover {
+  background: rgba(47,125,246,0.08);
+  color: #fff;
+}
+
+.market-star-link.active {
+  background: rgba(47,125,246,0.15);
+  color: var(--star-color);
+}
+
+.market-star-link span {
+  font-size: 0.65rem;
+  color: var(--muted-2);
+  margin-left: auto;
+}
+
 .market-select-wrap select {
   width: 100%;
   min-height: 28px;

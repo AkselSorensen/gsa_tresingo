@@ -140,6 +140,12 @@ function buildWhereClause(query = {}) {
     index += 1;
   }
 
+  if (query.rating) {
+    clauses.push(`p.rating >= $${index}`);
+    values.push(Number(query.rating));
+    index += 1;
+  }
+
   clauses.push(`p.is_hidden = FALSE`);
 
   return {

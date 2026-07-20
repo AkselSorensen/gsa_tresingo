@@ -135,13 +135,20 @@
 
 .sales-card-body {
   padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .sales-card-title {
   margin: 0;
   color: #2bb8ff;
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .sales-card-title a {
@@ -153,9 +160,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 0.75rem;
+  gap: 6px;
+  font-size: 0.68rem;
   color: #8a8a8a;
 }
 
@@ -163,32 +169,32 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 22px;
-  padding: 0 10px;
+  min-height: 18px;
+  padding: 0 6px;
   background: #e84118;
   color: #fff;
   font-weight: 800;
-  font-size: 0.75rem;
-  border-radius: 4px;
+  font-size: 0.62rem;
+  border-radius: 3px;
 }
 
 .sales-pricing {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
   justify-content: flex-end;
 }
 
 .sales-pricing .old {
   color: #8892a0;
   text-decoration: line-through;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
 }
 
 .sales-pricing .new {
   color: #4ade80;
-  font-size: 1.05rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 

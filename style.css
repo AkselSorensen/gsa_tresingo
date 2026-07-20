@@ -751,6 +751,16 @@ select {
 }
 
 /* ── Product image uniform sizing ───────────────────────────────── */
+.product-card-media,
+.trending-featured-media,
+.trending-mini-media,
+.sales-card-media,
+.script-card-media,
+.market-products-grid .product-card-media {
+  aspect-ratio: 16 / 9 !important;
+  overflow: hidden;
+}
+
 .product-card-media {
   display: block;
   aspect-ratio: 16 / 9;
@@ -820,7 +830,6 @@ select {
 }
 
 .product-card.featured .product-card-media {
-  aspect-ratio: 16 / 9;
 }
 
 .product-tags-row {
@@ -1409,7 +1418,6 @@ select {
 }
 
 .market-products-grid .product-card-media {
-  aspect-ratio: 16 / 8.2;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111;
 }

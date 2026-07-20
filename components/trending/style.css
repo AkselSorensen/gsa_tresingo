@@ -71,7 +71,6 @@
 }
 
 .trending-featured-media {
-  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -172,7 +171,6 @@
 /* Remove old scrollbar styles - no longer needed */
 
 .trending-mini-media {
-  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #111;
   border: 1px solid rgba(255, 255, 255, 0.08);

@@ -450,156 +450,187 @@
 
   <!-- PAGES TAB -->
   <div class="admin-tab-panel" id="tab-pages">
-    <div class="settings-stack" style="max-width:100%;gap:8px;">
+    <div style="display:grid;gap:20px;max-width:1100px;">
 
       <!-- Footer -->
-      <div class="settings-block" style="padding:8px;">
-        <div class="settings-block-head" style="margin-bottom:6px;">
-          <strong style="font-size:0.85rem;">Footer</strong>
+      <div class="settings-block" style="padding:20px;">
+        <div class="settings-block-head" style="margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,179,237,0.12);display:grid;place-items:center;flex-shrink:0;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#90cdf4" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div>
+              <strong style="font-size:1rem;color:#fff;">Footer</strong>
+              <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Texte de copyright et description du site</div>
+            </div>
+          </div>
         </div>
-        <div style="display:grid;gap:6px;">
-          <input type="text" id="footer-copy" oninput="previewFooter()" placeholder="Texte de description / copyright" maxlength="300" style="padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-          <div class="settings-helper" style="font-size:0.7rem;">Ce texte apparaît en bas du site, sous le logo.</div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="save-button" onclick="saveFooter()" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
-            <span id="page-msg-footer" style="font-size:0.7rem;color:var(--muted);"></span>
+        <div style="display:grid;gap:10px;">
+          <input type="text" id="footer-copy" oninput="previewFooter()" placeholder="Ex: GSA embellit, structure et professionnalise le travail des prestataires..." maxlength="300" style="padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+          <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;">
+            <div style="font-size:0.78rem;color:var(--muted-2);">Ce texte apparaît sous le logo dans le footer.</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="save-button" onclick="saveFooter()" style="min-height:32px;font-size:0.82rem;padding:0 16px;">Sauvegarder</button>
+              <span id="page-msg-footer" style="font-size:0.8rem;color:var(--muted);"></span>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Prestation -->
-      <div class="settings-block" style="padding:8px;">
-        <div class="settings-block-head" style="margin-bottom:6px;">
-          <strong style="font-size:0.85rem;">Page Prestation</strong>
+      <div class="settings-block" style="padding:20px;">
+        <div class="settings-block-head" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,179,237,0.12);display:grid;place-items:center;flex-shrink:0;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#90cdf4" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <strong style="font-size:1rem;color:#fff;">Page Prestation</strong>
+              <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Section héro + 3 cartes d'accompagnement</div>
+            </div>
+          </div>
         </div>
-        <div style="display:grid;gap:6px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <input type="text" id="prest-heroTitle" oninput="previewPrestation()" placeholder="Titre de la section" maxlength="120" style="flex:1;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-            <input type="text" id="prest-heroSubtitle" oninput="previewPrestation()" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-          </div>
-          <div class="settings-helper" style="font-size:0.7rem;">Titre et sous-titre de la page d'accompagnement.</div>
 
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;color:var(--muted);">Carte 1</strong>
-              <input type="text" id="prest-card1Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              <textarea id="prest-card1Text" oninput="previewPrestation()" rows="1" placeholder="Texte" maxlength="300" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <textarea id="prest-card1Bullets" oninput="previewPrestation()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <div style="display:flex;gap:3px;">
-                <input type="text" id="prest-card1BtnText" oninput="previewPrestation()" placeholder="Bouton" maxlength="60" style="flex:1;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-                <input type="text" id="prest-card1BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              </div>
-            </div>
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;color:var(--muted);">Carte 2</strong>
-              <input type="text" id="prest-card2Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              <textarea id="prest-card2Text" oninput="previewPrestation()" rows="1" placeholder="Texte" maxlength="300" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <textarea id="prest-card2Bullets" oninput="previewPrestation()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <div style="display:flex;gap:3px;">
-                <input type="text" id="prest-card2BtnText" oninput="previewPrestation()" placeholder="Bouton" maxlength="60" style="flex:1;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-                <input type="text" id="prest-card2BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              </div>
-            </div>
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;color:var(--muted);">Carte 3</strong>
-              <input type="text" id="prest-card3Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              <textarea id="prest-card3Text" oninput="previewPrestation()" rows="1" placeholder="Texte" maxlength="300" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <textarea id="prest-card3Bullets" oninput="previewPrestation()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-              <div style="display:flex;gap:3px;">
-                <input type="text" id="prest-card3BtnText" oninput="previewPrestation()" placeholder="Bouton" maxlength="60" style="flex:1;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-                <input type="text" id="prest-card3BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-              </div>
+        <!-- Hero inputs -->
+        <div style="display:grid;gap:8px;margin-bottom:16px;">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Section héro</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="prest-heroTitle" oninput="previewPrestation()" placeholder="Titre principal" maxlength="120" style="flex:1;min-width:180px;padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            <input type="text" id="prest-heroSubtitle" oninput="previewPrestation()" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:180px;padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+          </div>
+        </div>
+
+        <!-- 3 cards -->
+        <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Cartes de présentation</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Carte 1</div>
+            <input type="text" id="prest-card1Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="prest-card1Text" oninput="previewPrestation()" rows="2" placeholder="Texte de présentation" maxlength="300" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="prest-card1Bullets" oninput="previewPrestation()" rows="2" placeholder="Points clés (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="prest-card1BtnText" oninput="previewPrestation()" placeholder="Texte bouton" maxlength="60" style="flex:1;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+              <input type="text" id="prest-card1BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
             </div>
           </div>
-
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="save-button" onclick="savePageContent('prestation')" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
-            <span id="page-msg-prestation" style="font-size:0.7rem;color:var(--muted);"></span>
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Carte 2</div>
+            <input type="text" id="prest-card2Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="prest-card2Text" oninput="previewPrestation()" rows="2" placeholder="Texte de présentation" maxlength="300" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="prest-card2Bullets" oninput="previewPrestation()" rows="2" placeholder="Points clés (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="prest-card2BtnText" oninput="previewPrestation()" placeholder="Texte bouton" maxlength="60" style="flex:1;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+              <input type="text" id="prest-card2BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            </div>
           </div>
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Carte 3</div>
+            <input type="text" id="prest-card3Title" oninput="previewPrestation()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="prest-card3Text" oninput="previewPrestation()" rows="2" placeholder="Texte de présentation" maxlength="300" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="prest-card3Bullets" oninput="previewPrestation()" rows="2" placeholder="Points clés (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="prest-card3BtnText" oninput="previewPrestation()" placeholder="Texte bouton" maxlength="60" style="flex:1;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+              <input type="text" id="prest-card3BtnUrl" oninput="previewPrestation()" placeholder="URL" maxlength="200" style="flex:2;padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            </div>
+          </div>
+        </div>
 
-          <!-- Aperçu Prestation -->
-          <div id="preview-prestation" style="margin-top:6px;border:1px solid var(--panel-border);border-radius:8px;overflow:hidden;background:#0e131b;">
-            <div style="padding:6px 10px;background:var(--panel-border);font-size:0.68rem;color:var(--muted);">Aperçu</div>
-            <div id="preview-prestation-body" style="padding:16px;display:grid;gap:12px;">
-              <div>
-                <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Accompagnement</div>
-                <h3 id="pv-prest-title" style="margin:4px 0 0;font-size:1.1rem;color:#fff;">Titre</h3>
-                <p id="pv-prest-sub" style="margin:4px 0 0;font-size:0.78rem;color:var(--muted);">Sous-titre</p>
-              </div>
-              <div id="pv-prest-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-                <div class="panel" style="padding:10px;display:grid;gap:4px;">
-                  <strong style="font-size:0.82rem;color:#2bb8ff;">Titre carte</strong>
-                  <p style="margin:0;font-size:0.7rem;color:var(--muted);">Texte démo</p>
-                  <ul style="margin:0;padding:0 0 0 14px;font-size:0.65rem;color:var(--muted-2);"><li>Point 1</li><li>Point 2</li></ul>
-                  <button class="ghost-button" style="margin-top:4px;font-size:0.68rem;min-height:24px;padding:0 8px;justify-self:start;">En savoir plus</button>
-                </div>
-                <div class="panel" style="padding:10px;display:grid;gap:4px;">
-                  <strong style="font-size:0.82rem;color:#2bb8ff;">Titre carte</strong>
-                  <p style="margin:0;font-size:0.7rem;color:var(--muted);">Texte démo</p>
-                  <ul style="margin:0;padding:0 0 0 14px;font-size:0.65rem;color:var(--muted-2);"><li>Point 1</li></ul>
-                </div>
-                <div class="panel" style="padding:10px;display:grid;gap:4px;">
-                  <strong style="font-size:0.82rem;color:#2bb8ff;">Titre carte</strong>
-                  <p style="margin:0;font-size:0.7rem;color:var(--muted);">Texte démo</p>
-                </div>
-              </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:16px;">
+          <button class="save-button" onclick="savePageContent('prestation')" style="min-height:36px;font-size:0.85rem;padding:0 20px;">💾 Sauvegarder la page</button>
+          <span id="page-msg-prestation" style="font-size:0.8rem;color:var(--muted);"></span>
+        </div>
+      </div>
+
+      <!-- Aperçu Prestation -->
+      <div style="border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;background:#0e131b;">
+        <div style="padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--panel-border);display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Aperçu en direct</span>
+        </div>
+        <div id="preview-prestation-body" style="padding:24px;display:grid;gap:20px;">
+          <div>
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Accompagnement</div>
+            <h3 id="pv-prest-title" style="margin:6px 0 0;font-size:1.4rem;color:#fff;font-weight:700;">Titre de la section</h3>
+            <p id="pv-prest-sub" style="margin:4px 0 0;font-size:0.9rem;color:var(--muted);">Sous-titre de présentation</p>
+          </div>
+          <div id="pv-prest-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+            <div class="panel" style="padding:16px;display:grid;gap:8px;border-radius:10px;">
+              <strong style="font-size:0.95rem;color:#2bb8ff;">Carte</strong>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted);">Contenu de la carte...</p>
+            </div>
+            <div class="panel" style="padding:16px;display:grid;gap:8px;border-radius:10px;">
+              <strong style="font-size:0.95rem;color:#2bb8ff;">Carte</strong>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted);">Contenu de la carte...</p>
+            </div>
+            <div class="panel" style="padding:16px;display:grid;gap:8px;border-radius:10px;">
+              <strong style="font-size:0.95rem;color:#2bb8ff;">Carte</strong>
+              <p style="margin:0;font-size:0.85rem;color:var(--muted);">Contenu de la carte...</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- About -->
-      <div class="settings-block" style="padding:8px;">
-        <div class="settings-block-head" style="margin-bottom:6px;">
-          <strong style="font-size:0.85rem;">Page À propos</strong>
+      <div class="settings-block" style="padding:20px;">
+        <div class="settings-block-head" style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,179,237,0.12);display:grid;place-items:center;flex-shrink:0;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#90cdf4" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </div>
+            <div>
+              <strong style="font-size:1rem;color:#fff;">Page À propos</strong>
+              <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Section héro + contenu éditorial</div>
+            </div>
+          </div>
         </div>
-        <div style="display:grid;gap:6px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <input type="text" id="about-heroTitle" oninput="previewAbout()" placeholder="Titre" maxlength="120" style="flex:1;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-            <input type="text" id="about-heroSubtitle" oninput="previewAbout()" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-          </div>
-          <div class="settings-helper" style="font-size:0.7rem;">Titre, sous-titre et sections de la page À propos.</div>
 
-          <!-- Section 1 -->
-          <div class="panel" style="padding:6px;display:grid;gap:3px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <strong style="font-size:0.7rem;color:var(--muted);">Section 1</strong>
-              <button class="ghost-button" onclick="addAboutSection()" style="font-size:0.65rem;min-height:18px;padding:0 6px;border:none;">+ Ajouter</button>
-            </div>
-            <input type="text" id="about-sec1-title" oninput="previewAbout()" placeholder="Titre de section (optionnel)" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-            <textarea id="about-sec1-text" oninput="previewAbout()" rows="1" placeholder="Texte" maxlength="500" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-            <textarea id="about-sec1-bullets" oninput="previewAbout()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
+        <div style="display:grid;gap:8px;margin-bottom:16px;">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Section héro</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="about-heroTitle" oninput="previewAbout()" placeholder="Titre principal" maxlength="120" style="flex:1;min-width:180px;padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            <input type="text" id="about-heroSubtitle" oninput="previewAbout()" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:180px;padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
           </div>
-          <!-- Section 2 -->
-          <div class="panel" style="padding:6px;display:grid;gap:3px;">
-            <strong style="font-size:0.7rem;color:var(--muted);">Section 2</strong>
-            <input type="text" id="about-sec2-title" oninput="previewAbout()" placeholder="Titre (optionnel)" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-            <textarea id="about-sec2-text" oninput="previewAbout()" rows="1" placeholder="Texte" maxlength="500" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-            <textarea id="about-sec2-bullets" oninput="previewAbout()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-          </div>
-          <!-- Section 3 -->
-          <div class="panel" style="padding:6px;display:grid;gap:3px;">
-            <strong style="font-size:0.7rem;color:var(--muted);">Section 3</strong>
-            <input type="text" id="about-sec3-title" oninput="previewAbout()" placeholder="Titre (optionnel)" maxlength="80" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
-            <textarea id="about-sec3-text" oninput="previewAbout()" rows="1" placeholder="Texte" maxlength="500" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-            <textarea id="about-sec3-bullets" oninput="previewAbout()" rows="1" placeholder="Points (1 par ligne)" style="padding:3px 6px;font-size:0.72rem;border-radius:4px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:24px;resize:vertical;"></textarea>
-          </div>
+        </div>
 
-          <!-- Aperçu About -->
-          <div id="preview-about" style="margin-top:6px;border:1px solid var(--panel-border);border-radius:8px;overflow:hidden;background:#0e131b;">
-            <div style="padding:6px 10px;background:var(--panel-border);font-size:0.68rem;color:var(--muted);">Aperçu</div>
-            <div id="preview-about-body" style="padding:16px;display:grid;gap:12px;">
-              <h2 id="pv-about-title" style="margin:0;font-size:1.3rem;color:#fff;">Titre</h2>
-              <p id="pv-about-sub" style="margin:0;font-size:0.82rem;color:var(--muted);">Sous-titre</p>
-              <div id="pv-about-sections">
-                <p style="font-size:0.78rem;color:var(--muted);">Contenu de la section...</p>
-              </div>
-            </div>
+        <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Sections de contenu</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Section 1</div>
+            <input type="text" id="about-sec1-title" oninput="previewAbout()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="about-sec1-text" oninput="previewAbout()" rows="2" placeholder="Texte" maxlength="500" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="about-sec1-bullets" oninput="previewAbout()" rows="2" placeholder="Points (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
           </div>
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Section 2</div>
+            <input type="text" id="about-sec2-title" oninput="previewAbout()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="about-sec2-text" oninput="previewAbout()" rows="2" placeholder="Texte" maxlength="500" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="about-sec2-bullets" oninput="previewAbout()" rows="2" placeholder="Points (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+          </div>
+          <div class="panel" style="padding:14px;display:grid;gap:8px;border-radius:10px;">
+            <div style="font-size:0.85rem;font-weight:700;color:#90cdf4;letter-spacing:0.02em;">Section 3</div>
+            <input type="text" id="about-sec3-title" oninput="previewAbout()" placeholder="Titre" maxlength="80" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <textarea id="about-sec3-text" oninput="previewAbout()" rows="2" placeholder="Texte" maxlength="500" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+            <textarea id="about-sec3-bullets" oninput="previewAbout()" rows="2" placeholder="Points (1 par ligne)" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;width:100%;box-sizing:border-box;"></textarea>
+          </div>
+        </div>
 
-          <div style="display:flex;gap:6px;align-items:center;">
-            <button class="save-button" onclick="savePageContent('about')" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
-            <span id="page-msg-about" style="font-size:0.7rem;color:var(--muted);"></span>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:16px;">
+          <button class="save-button" onclick="savePageContent('about')" style="min-height:36px;font-size:0.85rem;padding:0 20px;">💾 Sauvegarder la page</button>
+          <span id="page-msg-about" style="font-size:0.8rem;color:var(--muted);"></span>
+        </div>
+      </div>
+
+      <!-- Aperçu About -->
+      <div style="border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;background:#0e131b;">
+        <div style="padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--panel-border);display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Aperçu en direct</span>
+        </div>
+        <div id="preview-about-body" style="padding:24px;display:grid;gap:16px;">
+          <h2 id="pv-about-title" style="margin:0;font-size:1.6rem;color:#fff;font-weight:700;">Titre</h2>
+          <p id="pv-about-sub" style="margin:0;font-size:0.95rem;color:var(--muted);">Sous-titre</p>
+          <div id="pv-about-sections">
+            <p style="font-size:0.85rem;color:var(--muted);">Contenu de la section...</p>
           </div>
         </div>
       </div>

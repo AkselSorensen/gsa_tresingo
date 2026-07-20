@@ -208,14 +208,11 @@
   <style>
     /* Sidebar layout */
     .admin-layout {
-      display: flex;
-      flex-direction: row;
-      align-items: flex-start;
-      width: 100%;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      align-items: start;
     }
     .admin-sidebar {
-      width: 180px;
-      flex: 0 0 180px;
     }
     .admin-sidebar .admin-header {
       padding: 16px 12px 4px;
@@ -263,8 +260,7 @@
       padding: 20px 0 20px 24px;
     }
     @media (max-width: 768px) {
-      .admin-layout { flex-direction: column; }
-      .admin-sidebar { width: 100%; position: static; }
+      .admin-layout { grid-template-columns: 1fr; }
       .admin-main { padding: 12px 0; }
       .admin-sidebar .admin-tabs { flex-direction: row; overflow-x: auto; }
       .admin-sidebar .tab-button { white-space: nowrap; flex-shrink: 0; }

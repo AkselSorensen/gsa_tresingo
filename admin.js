@@ -255,11 +255,11 @@ checkAuth();
 
 const pageContentFields = {
   prestation: [
-    "heroTitle", "heroSubtitle",
-    "card1Title", "card1Text", "card1Bullets", "card1BtnText", "card1BtnUrl",
-    "card2Title", "card2Text", "card2Bullets", "card2BtnText", "card2BtnUrl",
-    "card3Title", "card3Text", "card3Bullets", "card3BtnText", "card3BtnUrl",
+    "heroTitle", "heroSubtitle", "cards"
   ],
+  about: [
+    "heroTitle", "heroSubtitle", "sections"
+  ]
 };
 
 async function loadPageContent(page) {
@@ -267,7 +267,7 @@ async function loadPageContent(page) {
     const data = await apiFetch(`/api/page-content/${page}`);
     if (!data || typeof data !== 'object') return;
 
-    // Prestation fields
+    // All fields handled by generic loop below
     if (page === "prestation") {
       for (const field of pageContentFields.prestation) {
         const el = document.getElementById(`prest-${field}`);
@@ -275,8 +275,10 @@ async function loadPageContent(page) {
           const val = data[field];
           if (val !== undefined && val !== null) {
             // Bullets are arrays, join with newlines for textarea
-            if (Array.isArray(val)) {
+            if (Array.isArray(val) && field !== "cards") {
               el.value = val.join("\n");
+            } else if (field === "cards" || field === "sections") {
+              el.value = JSON.stringify(val, null, 2);
             } else {
               el.value = String(val);
             }
@@ -285,14 +287,8 @@ async function loadPageContent(page) {
       }
     }
 
-    // About fields
+    // About fields handled by generic loop above
     if (page === "about") {
-      const titleEl = document.getElementById("about-heroTitle");
-      const subEl = document.getElementById("about-heroSubtitle");
-      const sectionsEl = document.getElementById("about-sections");
-      if (titleEl && data.heroTitle) titleEl.value = data.heroTitle;
-      if (subEl && data.heroSubtitle) subEl.value = data.heroSubtitle;
-      if (sectionsEl && data.sections) sectionsEl.value = JSON.stringify(data.sections, null, 2);
     }
   } catch (err) {
     console.error(`Load ${page} content error:`, err);
@@ -311,9 +307,8 @@ async function savePageContent(page) {
         const el = document.getElementById(`prest-${field}`);
         if (el) {
           const val = el.value.trim();
-          // Bullets fields: split by newlines into array
-          if (field.endsWith("Bullets") && val) {
-            content[field] = val.split("\n").map(s => s.trim()).filter(Boolean);
+          if (field === "cards" || field === "sections") {
+            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
           } else if (val) {
             content[field] = val;
           }
@@ -322,18 +317,29 @@ async function savePageContent(page) {
     }
 
     if (page === "about") {
-      const titleEl = document.getElementById("about-heroTitle");
-      const subEl = document.getElementById("about-heroSubtitle");
-      const sectionsEl = document.getElementById("about-sections");
-      if (titleEl?.value.trim()) content.heroTitle = titleEl.value.trim();
-      if (subEl?.value.trim()) content.heroSubtitle = subEl.value.trim();
-      if (sectionsEl?.value.trim()) {
-        try {
-          content.sections = JSON.parse(sectionsEl.value.trim());
-        } catch (_) {
-          msgEl.textContent = "✕ Erreur JSON dans les sections";
-          msgEl.className = "admin-msg err";
-          return;
+      for (const field of pageContentFields.about) {
+        const el = document.getElementById(`about-${field}`);
+        if (el) {
+          const val = el.value.trim();
+          if (field === "sections") {
+            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
+          } else if (val) {
+            content[field] = val;
+          }
+        }
+      }
+    }
+
+    if (page === "about") {
+      for (const field of pageContentFields.about) {
+        const el = document.getElementById(`about-${field}`);
+        if (el) {
+          const val = el.value.trim();
+          if (field === "sections") {
+            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
+          } else if (val) {
+            content[field] = val;
+          }
         }
       }
     }

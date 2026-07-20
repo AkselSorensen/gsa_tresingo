@@ -447,56 +447,30 @@
 
   <!-- PAGES TAB -->
   <div class="admin-tab-panel" id="tab-pages">
-    <div class="settings-stack" style="max-width:100%;">
+    <div class="settings-stack" style="max-width:100%;gap:10px;">
       
       <!-- Prestation Page -->
       <div class="settings-block">
         <div class="settings-block-head">
           <div>
             <strong>Page Prestation</strong>
-            <span>Configurez le contenu de la page d'accompagnement / game design.</span>
+            <span style="font-size:0.72rem;">Hero + 3 cartes</span>
           </div>
         </div>
-        <div id="page-editor-prestation" class="create-form" style="gap:8px;">
-          <div class="form-grid-2" style="gap:8px;">
-            <label style="font-size:0.75rem;">Titre <input type="text" id="prest-heroTitle" placeholder="..." maxlength="120" style="padding:6px 10px;font-size:0.8rem;" /></label>
-            <label style="font-size:0.75rem;">Sous-titre <input type="text" id="prest-heroSubtitle" placeholder="..." maxlength="200" style="padding:6px 10px;font-size:0.8rem;" /></label>
+        <div id="page-editor-prestation" class="create-form" style="gap:6px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="prest-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
+            <input type="text" id="prest-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;">Carte 1</strong>
-              <input type="text" id="prest-card1Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
-              <textarea id="prest-card1Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <textarea id="prest-card1Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <div style="display:flex;gap:4px;">
-                <input type="text" id="prest-card1BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
-                <input type="text" id="prest-card1BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
-              </div>
-            </div>
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;">Carte 2</strong>
-              <input type="text" id="prest-card2Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
-              <textarea id="prest-card2Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <textarea id="prest-card2Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <div style="display:flex;gap:4px;">
-                <input type="text" id="prest-card2BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
-                <input type="text" id="prest-card2BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
-              </div>
-            </div>
-            <div class="panel" style="padding:6px;display:grid;gap:3px;">
-              <strong style="font-size:0.7rem;">Carte 3</strong>
-              <input type="text" id="prest-card3Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
-              <textarea id="prest-card3Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <textarea id="prest-card3Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
-              <div style="display:flex;gap:4px;">
-                <input type="text" id="prest-card3BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
-                <input type="text" id="prest-card3BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
-              </div>
-            </div>
+          <label style="font-size:0.72rem;">Cartes (JSON)
+            <textarea id="prest-cards" rows="3" style="font-family:monospace;font-size:0.72rem;padding:4px 8px;min-height:50px;width:100%;box-sizing:border-box;"></textarea>
+          </label>
+          <div style="font-size:0.65rem;color:var(--muted-2);">
+            <code>[{"title":"...","text":"...","bullets":["..."],"btn":"...","url":"..."}]</code>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
-            <button class="save-button" type="button" onclick="savePageContent('prestation')" style="min-height:26px;font-size:0.75rem;">Sauvegarder Prestation</button>
-            <span id="page-msg-prestation" class="admin-msg" style="font-size:0.75rem;"></span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="save-button" type="button" onclick="savePageContent('prestation')" style="min-height:24px;font-size:0.72rem;padding:4px 12px;">Sauvegarder</button>
+            <span id="page-msg-prestation" class="admin-msg" style="font-size:0.7rem;"></span>
           </div>
         </div>
       </div>
@@ -506,23 +480,23 @@
         <div class="settings-block-head">
           <div>
             <strong>Page À propos</strong>
-            <span>Configurez le contenu de la page About.</span>
+            <span style="font-size:0.72rem;">Hero + sections</span>
           </div>
         </div>
         <div id="page-editor-about" class="create-form" style="gap:6px;">
-          <div class="form-grid-2" style="gap:8px;">
-            <label style="font-size:0.75rem;">Titre <input type="text" id="about-heroTitle" placeholder="..." maxlength="120" style="padding:6px 10px;font-size:0.8rem;" /></label>
-            <label style="font-size:0.75rem;">Sous-titre <input type="text" id="about-heroSubtitle" placeholder="..." maxlength="200" style="padding:6px 10px;font-size:0.8rem;" /></label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="about-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
+            <input type="text" id="about-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
           </div>
-          <label style="font-size:0.7rem;">Sections (JSON)
-            <textarea id="about-sections" rows="5" style="font-family:monospace;font-size:0.75rem;padding:6px 10px;min-height:80px;"></textarea>
+          <label style="font-size:0.72rem;">Sections (JSON)
+            <textarea id="about-sections" rows="3" style="font-family:monospace;font-size:0.72rem;padding:4px 8px;min-height:50px;width:100%;box-sizing:border-box;"></textarea>
           </label>
-          <div class="settings-helper" style="font-size:0.7rem;margin:0;">
-            <code style="font-size:0.65rem;">[{"text":"paragraphe..."},{"title":"Titre","bullets":["point 1","point 2"]}]</code>
+          <div style="font-size:0.65rem;color:var(--muted-2);">
+            <code>[{"text":"..."},{"title":"...","bullets":["..."]}]</code>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="save-button" type="button" onclick="savePageContent('about')" style="min-height:26px;font-size:0.75rem;">Sauvegarder À propos</button>
-            <span id="page-msg-about" class="admin-msg" style="font-size:0.75rem;"></span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="save-button" type="button" onclick="savePageContent('about')" style="min-height:24px;font-size:0.72rem;padding:4px 12px;">Sauvegarder</button>
+            <span id="page-msg-about" class="admin-msg" style="font-size:0.7rem;"></span>
           </div>
         </div>
       </div>

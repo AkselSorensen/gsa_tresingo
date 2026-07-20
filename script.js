@@ -805,16 +805,60 @@ function renderHomePage() {
     });
   });
 
-  // ── Carousel arrows ────────────────────────────────────────────
-  document.querySelectorAll("[data-carousel-prev], [data-carousel-next]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.carouselPrev || btn.dataset.carouselNext;
-      const el = document.getElementById(id);
-      if (!el) return;
-      const dir = btn.dataset.carouselPrev ? -1 : 1;
-      const amt = el.clientWidth * 0.85;
-      el.scrollBy({ left: dir * amt, behavior: "smooth" });
+  // ── Carousel with pagination & progress dots ───────────────────
+  document.querySelectorAll(".trending-panel, .sales-panel").forEach((panel) => {
+    const strip = panel.querySelector(".trending-carousel-strip, .sales-carousel-strip");
+    const prev = panel.querySelector("[data-carousel-prev]");
+    const next = panel.querySelector("[data-carousel-next]");
+    const progress = panel.querySelector(".trending-progress, .sales-progress");
+    if (!strip) return;
+
+    const getPages = () => Math.max(1, Math.ceil(strip.scrollWidth / strip.clientWidth));
+    let currentPage = 0;
+
+    const updateProgress = () => {
+      if (!progress) return;
+      const pages = getPages();
+      const dots = progress.querySelectorAll("span");
+      // Create dots if needed
+      while (dots.length < pages) {
+        const dot = document.createElement("span");
+        progress.appendChild(dot);
+        dots.push(dot);
+      }
+      // Remove excess dots
+      while (dots.length > pages) {
+        progress.removeChild(progress.lastElementChild);
+        dots.pop();
+      }
+      dots.forEach((dot, i) => {
+        dot.style.background = i === currentPage ? "#2f7df6" : "#d9d9d9";
+        dot.style.boxShadow = "none";
+        dot.style.width = i === currentPage ? "24px" : "14px";
+      });
+    };
+
+    const goToPage = (page) => {
+      const pages = getPages();
+      currentPage = Math.max(0, Math.min(pages - 1, page));
+      strip.scrollTo({ left: currentPage * strip.clientWidth, behavior: "smooth" });
+      updateProgress();
+    };
+
+    if (prev) prev.addEventListener("click", () => goToPage(currentPage - 1));
+    if (next) next.addEventListener("click", () => goToPage(currentPage + 1));
+
+    // Listen to scroll events to sync progress
+    strip.addEventListener("scroll", () => {
+      const newPage = Math.round(strip.scrollLeft / strip.clientWidth);
+      if (newPage !== currentPage) {
+        currentPage = newPage;
+        updateProgress();
+      }
     });
+
+    // Init progress
+    updateProgress();
   });
 }
 

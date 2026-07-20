@@ -757,6 +757,7 @@ select {
 .sales-card-media,
 .script-card-media,
 .market-products-grid .product-card-media {
+  display: block !important;
   height: 130px !important;
   width: 100%;
   overflow: hidden;
@@ -769,7 +770,7 @@ select {
 .script-card-media img,
 .market-products-grid .product-card-media img {
   width: 100%;
-  height: 100%;
+  height: 100% !important;
   object-fit: cover;
 }
 

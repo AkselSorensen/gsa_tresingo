@@ -866,7 +866,7 @@ function renderHomePage() {
   });
 }
 
-function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort) {
+function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort, price) {
   const categoryLinks = [
     `<a class="market-filter-link ${!activeCategory ? "active" : ""}" href="catalogue.html${search ? '?search='+encodeURIComponent(search) : ''}">${t("navMarketplace")} <span>(${(categories||[]).reduce((s,c) => s + (c.productCount||0), 0)})</span></a>`,
     ...categories.map(
@@ -893,6 +893,27 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
         <select onchange="if(this.value) window.location.href=this.value">
           <option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${t("tags")}...</option>
           ${tags.map(t => `<option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(t)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}" ${tag === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="market-sidebar-group">
+      <div class="market-sidebar-title">${t("price")}</div>
+      <div class="market-select-wrap">
+        <select onchange="if(this.value) window.location.href=this.value">
+          <option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${t("price")}...</option>
+          ${[
+            {label: "0 € - 10 €", min: 0, max: 10},
+            {label: "10 € - 20 €", min: 10, max: 20},
+            {label: "20 € - 50 €", min: 20, max: 50},
+            {label: "50 € - 100 €", min: 50, max: 100},
+            {label: "100 € - 200 €", min: 100, max: 200},
+            {label: "200 € +", min: 200, max: ""},
+          ].map(r => {
+            const val = r.max ? `${r.min}-${r.max}` : `${r.min}-`;
+            const href = `catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}&price=${val}`;
+            return `<option value="${href}" ${price === val ? 'selected' : ''}>${r.label}</option>`;
+          }).join("")}
         </select>
       </div>
     </div>
@@ -930,6 +951,7 @@ async function renderCataloguePage() {
   const tag = params.get("tag") || "";
   const discount = params.get("discount") || "";
   const sort = params.get("sort") || "popular";
+  const price = params.get("price") || "";
 
   let titleText = "Catalogue";
   if (search) titleText = `Recherche: ${search} -Catalogue`;
@@ -948,7 +970,7 @@ async function renderCataloguePage() {
   const data = await api(
     `/api/products?search=${encodeURIComponent(search)}&category=${encodeURIComponent(
       category
-    )}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}`
+    )}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}${price ? `&price_min=${price.split('-')[0]}&price_max=${price.split('-')[1] || ''}` : ''}`
   );
 
   app.innerHTML = `
@@ -967,7 +989,7 @@ async function renderCataloguePage() {
     <section class="market-page-section">
       <div class="container market-layout">
         <aside class="market-sidebar">
-          ${renderCatalogueFilters(state.categories, category, search, tag, discount, sort)}
+          ${renderCatalogueFilters(state.categories, category, search, tag, discount, sort, price)}
         </aside>
 
         <div class="market-main">

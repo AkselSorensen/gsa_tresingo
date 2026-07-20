@@ -129,6 +129,17 @@ function buildWhereClause(query = {}) {
     clauses.push(`p.discount_percent > 0`);
   }
 
+  if (query.price_min) {
+    clauses.push(`p.price >= $${index}`);
+    values.push(Number(query.price_min));
+    index += 1;
+  }
+  if (query.price_max) {
+    clauses.push(`p.price <= $${index}`);
+    values.push(Number(query.price_max));
+    index += 1;
+  }
+
   clauses.push(`p.is_hidden = FALSE`);
 
   return {

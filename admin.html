@@ -211,11 +211,81 @@
     .modal-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--panel-border); }
     .modal-footer-actions { display: flex; gap: 12px; }
   </style>
+  <style>
+    /* Sidebar layout */
+    .admin-layout {
+      display: flex;
+      gap: 0;
+      align-items: flex-start;
+    }
+    .admin-sidebar {
+      width: 200px;
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+    }
+    .admin-sidebar .admin-header {
+      padding: 20px 16px 8px;
+    }
+    .admin-sidebar .admin-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 8px 16px;
+    }
+    .admin-sidebar .tab-button {
+      justify-content: flex-start;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+    }
+    .admin-sidebar .tab-button:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    .admin-sidebar .tab-button.active {
+      background: rgba(47,125,246,0.12);
+      color: #90cdf4;
+    }
+    .admin-sidebar .tab-button svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .admin-main {
+      flex: 1;
+      min-width: 0;
+      padding: 20px 0 20px 24px;
+    }
+    @media (max-width: 768px) {
+      .admin-layout { flex-direction: column; }
+      .admin-sidebar { width: 100%; position: static; }
+      .admin-main { padding: 12px 0; }
+      .admin-sidebar .admin-tabs { flex-direction: row; overflow-x: auto; }
+      .admin-sidebar .tab-button { white-space: nowrap; flex-shrink: 0; }
+    }
+  </style>
 </head>
 <body>
   <div class="site-shell">
     <div class="container admin-shell">
 
+      <div class="admin-layout">
+
+      <div class="admin-sidebar">
       <div class="admin-header">
         <div>
           <div class="eyebrow" style="font-size:0.7rem;">Administration</div>
@@ -235,7 +305,9 @@
         <button class="tab-button" data-tab="featured"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Mise en avant</button>
         <button class="tab-button" data-tab="pages"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Pages</button>
       </div>
+      </div>
 
+      <div class="admin-main">
       <!-- PRODUCTS TAB -->
       <div class="admin-tab-panel active" id="tab-products">
         <div class="products-panel-layout">
@@ -1918,5 +1990,6 @@
       loadFeaturedBanner();
     });
   </script>
+</div></div></div></div>
 </body>
 </html>

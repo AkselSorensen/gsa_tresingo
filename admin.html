@@ -453,21 +453,63 @@
   <div class="admin-tab-panel" id="tab-featured">
     <div style="display:grid;gap:20px;max-width:1100px;">
 
-      <!-- Banner Settings -->
-      <div class="settings-block" style="padding:20px;">
+      <!-- Header + Add button -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,179,237,0.12);display:grid;place-items:center;flex-shrink:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#90cdf4" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div>
+            <strong style="font-size:1.1rem;color:#fff;">Bannières mises en avant</strong>
+            <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">Gérez les bannières promotionnelles affichées sur la page d'accueil</div>
+          </div>
+        </div>
+        <button class="save-button" onclick="newFeaturedBanner()" style="min-height:36px;font-size:0.85rem;padding:0 18px;border-color:var(--accent);color:var(--accent);">+ Ajouter une mise en avant</button>
+      </div>
+
+      <!-- Table of existing banners -->
+      <div class="panel" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Titre</th>
+                <th>Texte</th>
+                <th>Produits</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="fb-table-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Aucune mise en avant.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Banner Editor Form (hidden by default) -->
+      <div id="fb-editor-panel" class="settings-block" style="padding:20px;display:none;">
         <div class="settings-block-head" style="margin-bottom:12px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,179,237,0.12);display:grid;place-items:center;flex-shrink:0;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#90cdf4" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             </div>
             <div>
-              <strong style="font-size:1rem;color:#fff;">Bannière mise en avant</strong>
-              <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Bannière promotionnelle visible sur la page d'accueil</div>
+              <strong id="fb-editor-title" style="font-size:1rem;color:#fff;">Modifier la bannière</strong>
+              <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Configurez l'apparence et les produits liés</div>
             </div>
           </div>
         </div>
 
         <div style="display:grid;gap:14px;">
+          <input type="hidden" id="fb-editing-key" value="" />
+
+          <!-- Banner name -->
+          <div style="display:grid;gap:6px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Nom de la bannière</div>
+            <input type="text" id="fb-title" placeholder="Ex: Nouvelle collection été" maxlength="80" style="padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+          </div>
+
           <!-- Active toggle -->
           <div style="display:flex;align-items:center;gap:12px;">
             <label class="switch" style="position:relative;display:inline-block;width:50px;height:24px;flex-shrink:0;">
@@ -475,7 +517,7 @@
               <span class="slider" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--panel-border);transition:.4s;border-radius:24px;"></span>
               <span class="slider-dot" style="position:absolute;content:'';height:16px;width:16px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%;"></span>
             </label>
-            <span style="font-size:0.9rem;color:var(--muted);">Bannière active sur l'accueil</span>
+            <span style="font-size:0.9rem;color:var(--muted);">Active sur l'accueil</span>
             <style>
               #fb-active:checked + .slider { background-color: var(--accent); }
               #fb-active:checked ~ .slider-dot { transform: translateX(26px); }
@@ -523,19 +565,20 @@
             </div>
           </div>
 
-          <!-- Save button -->
+          <!-- Buttons -->
           <div style="display:flex;gap:10px;align-items:center;margin-top:4px;">
-            <button class="save-button" onclick="saveFeaturedBanner()" style="min-height:36px;font-size:0.85rem;padding:0 20px;">💾 Sauvegarder la bannière</button>
+            <button class="save-button" onclick="saveFeaturedBanner()" style="min-height:36px;font-size:0.85rem;padding:0 20px;">💾 Sauvegarder</button>
+            <button class="danger-button" onclick="cancelFeaturedBannerEdit()" style="min-height:36px;font-size:0.85rem;padding:0 20px;">Annuler</button>
             <span id="fb-msg" style="font-size:0.8rem;color:var(--muted);"></span>
           </div>
         </div>
       </div>
 
       <!-- Preview -->
-      <div style="border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;background:#0e131b;">
+      <div id="fb-preview-panel" style="border:1px solid var(--panel-border);border-radius:12px;overflow:hidden;background:#0e131b;display:none;">
         <div style="padding:10px 16px;background:rgba(255,255,255,0.03);border-bottom:1px solid var(--panel-border);display:flex;align-items:center;gap:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Aperçu de la bannière</span>
+          <span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Aperçu</span>
         </div>
         <div style="padding:24px;display:grid;gap:16px;">
           <div id="fb-preview-banner" style="width:100%;min-height:180px;border-radius:12px;background:#2a2a2a;display:grid;place-items:center;background-size:cover;background-position:center;transition:all 0.3s;">
@@ -1420,33 +1463,127 @@
 
     // ─── Featured Banner ─────────────────────────────────────
     let selectedFeaturedBannerProducts = [];
+    let fbBanners = [];
+    let fbEditingKey = '';
 
     async function loadFeaturedBanner() {
       try {
         const settings = await apiFetch('/api/admin/settings');
-        const config = (settings.landingConfig || []).find(c => c.section_key === 'featured_banner');
-        if (!config) return;
-
-        document.getElementById('fb-active').checked = config.is_active !== false;
-        const meta = config.metadata || {};
-
-        if (meta.bannerImage) document.getElementById('fb-image-url').value = meta.bannerImage;
-        if (meta.bgColor) {
-          document.getElementById('fb-bg-color').value = meta.bgColor;
-          document.getElementById('fb-bg-color-hex').value = meta.bgColor;
-        }
-        if (meta.textOverlay) document.getElementById('fb-text').value = meta.textOverlay;
-        if (meta.textColor) {
-          document.getElementById('fb-text-color').value = meta.textColor;
-          document.getElementById('fb-text-color-hex').value = meta.textColor;
-        }
-
-        selectedFeaturedBannerProducts = Array.isArray(meta.productIds) ? meta.productIds : [];
-        renderFeaturedBannerProducts();
-        renderFeaturedBannerProductsList();
-        updateFeaturedBannerPreview();
+        fbBanners = (settings.landingConfig || []).filter(c => c.section_key && c.section_key.startsWith('featured_banner'));
+        renderFeaturedBannerTable();
       } catch(err) {
-        console.error('Load featured banner error:', err);
+        console.error('Load featured banners error:', err);
+      }
+    }
+
+    function renderFeaturedBannerTable() {
+      const tbody = document.getElementById('fb-table-tbody');
+      if (!tbody) return;
+
+      if (!fbBanners.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px;">Aucune mise en avant. Cliquez sur "+ Ajouter une mise en avant" pour commencer.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = fbBanners.map(b => {
+        const meta = b.metadata || {};
+        const prodCount = Array.isArray(meta.productIds) ? meta.productIds.length : 0;
+        return `
+          <tr>
+            <td><strong>${esc(b.title || 'Sans titre')}</strong></td>
+            <td style="color:var(--muted);font-size:0.85rem;">${esc(meta.textOverlay || '—')}</td>
+            <td style="color:var(--muted);font-size:0.85rem;">${prodCount} produit${prodCount > 1 ? 's' : ''}</td>
+            <td>${b.is_active !== false ? '<span style="color:#6ee7b7;">Actif</span>' : '<span style="color:var(--muted);">Inactif</span>'}</td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <button class="save-button" onclick="editFeaturedBanner('${b.section_key}')" style="min-height:28px;font-size:0.78rem;padding:0 10px;">✏️</button>
+                <button class="save-button" onclick="toggleFeaturedBannerStatus('${b.section_key}')" style="min-height:28px;font-size:0.78rem;padding:0 10px;">${b.is_active !== false ? '🔴' : '🟢'}</button>
+                <button class="danger-button" onclick="deleteFeaturedBanner('${b.section_key}')" style="min-height:28px;font-size:0.78rem;padding:0 10px;">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function newFeaturedBanner() {
+      fbEditingKey = '';
+      document.getElementById('fb-editing-key').value = '';
+      document.getElementById('fb-editor-title').textContent = 'Nouvelle bannière';
+      document.getElementById('fb-title').value = '';
+      document.getElementById('fb-active').checked = true;
+      document.getElementById('fb-image-url').value = '';
+      document.getElementById('fb-bg-color').value = '#2a2a2a';
+      document.getElementById('fb-bg-color-hex').value = '#2a2a2a';
+      document.getElementById('fb-text').value = '';
+      document.getElementById('fb-text-color').value = '#ffffff';
+      document.getElementById('fb-text-color-hex').value = '#ffffff';
+      selectedFeaturedBannerProducts = [];
+      document.getElementById('fb-msg').textContent = '';
+      document.getElementById('fb-editor-panel').style.display = '';
+      document.getElementById('fb-preview-panel').style.display = '';
+      renderFeaturedBannerProductsList();
+      renderFeaturedBannerProducts();
+      updateFeaturedBannerPreview();
+    }
+
+    function editFeaturedBanner(key) {
+      const config = fbBanners.find(c => c.section_key === key);
+      if (!config) return;
+      fbEditingKey = key;
+      document.getElementById('fb-editing-key').value = key;
+      document.getElementById('fb-editor-title').textContent = 'Modifier la bannière';
+      document.getElementById('fb-title').value = config.title || '';
+      document.getElementById('fb-active').checked = config.is_active !== false;
+
+      const meta = config.metadata || {};
+      document.getElementById('fb-image-url').value = meta.bannerImage || '';
+      document.getElementById('fb-bg-color').value = meta.bgColor || '#2a2a2a';
+      document.getElementById('fb-bg-color-hex').value = meta.bgColor || '#2a2a2a';
+      document.getElementById('fb-text').value = meta.textOverlay || '';
+      document.getElementById('fb-text-color').value = meta.textColor || '#ffffff';
+      document.getElementById('fb-text-color-hex').value = meta.textColor || '#ffffff';
+      selectedFeaturedBannerProducts = Array.isArray(meta.productIds) ? meta.productIds : [];
+      document.getElementById('fb-msg').textContent = '';
+      document.getElementById('fb-editor-panel').style.display = '';
+      document.getElementById('fb-preview-panel').style.display = '';
+      renderFeaturedBannerProductsList();
+      renderFeaturedBannerProducts();
+      updateFeaturedBannerPreview();
+    }
+
+    function cancelFeaturedBannerEdit() {
+      document.getElementById('fb-editor-panel').style.display = 'none';
+      document.getElementById('fb-preview-panel').style.display = 'none';
+    }
+
+    async function toggleFeaturedBannerStatus(key) {
+      const config = fbBanners.find(c => c.section_key === key);
+      if (!config) return;
+      try {
+        await apiFetch(`/api/admin/landing-config/${encodeURIComponent(key)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: config.is_active === false })
+        });
+        await loadFeaturedBanner();
+      } catch(err) {
+        alert('Erreur: ' + err.message);
+      }
+    }
+
+    async function deleteFeaturedBanner(key) {
+      if (!confirm('Supprimer cette mise en avant ?')) return;
+      try {
+        // Delete by setting is_active false + clearing metadata to hide it
+        // We can't truly delete from admin_landing_config via the API, so we deactivate
+        await apiFetch(`/api/admin/landing-config/${encodeURIComponent(key)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: false, title: '', description: '', metadata: {} })
+        });
+        if (fbEditingKey === key) cancelFeaturedBannerEdit();
+        await loadFeaturedBanner();
+      } catch(err) {
+        alert('Erreur: ' + err.message);
       }
     }
 
@@ -1457,6 +1594,7 @@
         btn.disabled = true;
         btn.textContent = 'Sauvegarde…';
 
+        const title = document.getElementById('fb-title').value.trim() || 'Bannière';
         const metadata = {
           bannerImage: document.getElementById('fb-image-url').value.trim(),
           bgColor: document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a',
@@ -1465,19 +1603,30 @@
           productIds: selectedFeaturedBannerProducts,
         };
         const isActive = document.getElementById('fb-active').checked;
-        const title = metadata.textOverlay || 'Bannière mise en avant';
 
-        await apiFetch('/api/admin/landing-config/featured_banner', {
+        let key = fbEditingKey;
+        if (!key) {
+          // Find next available key
+          let num = 1;
+          const existingKeys = fbBanners.map(c => c.section_key);
+          while (existingKeys.includes(`featured_banner_${num}`)) num++;
+          key = `featured_banner_${num}`;
+        }
+
+        await apiFetch(`/api/admin/landing-config/${encodeURIComponent(key)}`, {
           method: 'PATCH',
           body: JSON.stringify({ title, isActive, metadata })
         });
+
         showMsg(msgEl, '✓ Bannière sauvegardée !', true);
-        updateFeaturedBannerPreview();
+        fbEditingKey = key;
+        document.getElementById('fb-editing-key').value = key;
+        await loadFeaturedBanner();
       } catch(err) {
         showMsg(msgEl, '✕ ' + err.message, false);
       } finally {
         btn.disabled = false;
-        btn.textContent = '💾 Sauvegarder la bannière';
+        btn.textContent = '💾 Sauvegarder';
       }
     }
 
@@ -1493,6 +1642,7 @@
         bannerEl.style.backgroundImage = `url(${JSON.stringify(imageUrl)})`;
         bannerEl.style.backgroundSize = 'cover';
         bannerEl.style.backgroundPosition = 'center';
+        bannerEl.style.background = '';
       } else {
         bannerEl.style.backgroundImage = 'none';
         bannerEl.style.background = bgColor;
@@ -1500,8 +1650,6 @@
 
       textEl.textContent = textOverlay || 'Bannière mise en avant';
       textEl.style.color = textColor;
-
-      // Render selected products in preview
       renderFeaturedBannerProducts();
     }
 

@@ -726,19 +726,28 @@ function renderHomePage() {
     }
   }
 
-  // ── Featured Banner ───────────────────────────────────────
-  const fbConfig = landingConfig.find(c => c.section_key === "featured_banner");
+  // ── Featured Banner (multi) ──────────────────────────────
+  const fbBanners = landingConfig.filter(c => c.section_key && c.section_key.startsWith('featured_banner'));
   const fbSection = document.getElementById("featured-banner-section");
   const fbBanner = document.getElementById("featured-banner-link");
   const fbText = document.getElementById("featured-banner-text");
   const fbProducts = document.getElementById("featured-banner-products");
+  const allSiteProducts = [
+    ...(state.bootstrap.trending || []),
+    ...(state.bootstrap.discounts || []),
+    ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
+  ];
+  const uniqueSiteProducts = Array.from(new Map(allSiteProducts.map(p => [p.id, p])).values());
 
   if (fbSection && fbBanner && fbText && fbProducts) {
-    if (fbConfig && fbConfig.is_active !== false) {
-      const meta = fbConfig.metadata || {};
+    const activeBanners = fbBanners.filter(c => c.is_active !== false);
+    if (activeBanners.length) {
       fbSection.style.display = "";
 
-      // Background image or color
+      // Use the first active banner for the main banner slot
+      const banner = activeBanners[0];
+      const meta = banner.metadata || {};
+
       if (meta.bannerImage) {
         fbBanner.style.backgroundImage = `url(${JSON.stringify(meta.bannerImage)})`;
         fbBanner.style.backgroundSize = "cover";
@@ -749,22 +758,19 @@ function renderHomePage() {
         fbBanner.style.background = meta.bgColor || "#2a2a2a";
       }
 
-      // Text overlay
       fbText.textContent = meta.textOverlay || "";
       if (meta.textColor) fbText.style.color = meta.textColor;
       fbText.style.display = meta.textOverlay ? "" : "none";
 
-      // Products
-      const productIds = Array.isArray(meta.productIds) ? meta.productIds : [];
-      if (productIds.length) {
-        const allProducts = [
-          ...(state.bootstrap.trending || []),
-          ...(state.bootstrap.discounts || []),
-          ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
-        ];
-        const uniqueProducts = Array.from(new Map(allProducts.map(p => [p.id, p])).values());
-        const selected = uniqueProducts.filter(p => productIds.includes(p.id));
+      // Collect all product IDs across all active banners
+      const allProductIds = [];
+      activeBanners.forEach(b => {
+        const ids = Array.isArray(b.metadata?.productIds) ? b.metadata.productIds : [];
+        ids.forEach(id => { if (!allProductIds.includes(id)) allProductIds.push(id); });
+      });
 
+      if (allProductIds.length) {
+        const selected = uniqueSiteProducts.filter(p => allProductIds.includes(p.id));
         if (selected.length) {
           fbProducts.innerHTML = selected.map(p => {
             const img = (p.media || []).find(m => m.type === 'image');
@@ -779,12 +785,8 @@ function renderHomePage() {
               </a>
             `;
           }).join("");
-        } else {
-          fbProducts.innerHTML = "";
-        }
-      } else {
-        fbProducts.innerHTML = "";
-      }
+        } else { fbProducts.innerHTML = ""; }
+      } else { fbProducts.innerHTML = ""; }
     } else {
       fbSection.style.display = "none";
     }

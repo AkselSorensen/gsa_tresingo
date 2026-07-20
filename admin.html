@@ -462,30 +462,36 @@
             <label style="font-size:0.75rem;">Titre <input type="text" id="prest-heroTitle" placeholder="..." maxlength="120" style="padding:6px 10px;font-size:0.8rem;" /></label>
             <label style="font-size:0.75rem;">Sous-titre <input type="text" id="prest-heroSubtitle" placeholder="..." maxlength="200" style="padding:6px 10px;font-size:0.8rem;" /></label>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">
-            <div class="panel" style="padding:8px;display:grid;gap:4px;">
-              <strong style="font-size:0.75rem;">Carte 1</strong>
-              <label style="font-size:0.7rem;">Titre <input type="text" id="prest-card1Title" maxlength="80" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">Texte <textarea id="prest-card1Text" rows="1" maxlength="300" style="padding:4px 8px;font-size:0.78rem;min-height:28px;"></textarea></label>
-              <label style="font-size:0.7rem;">Points <textarea id="prest-card1Bullets" rows="2" placeholder="1 par ligne" style="padding:4px 8px;font-size:0.78rem;min-height:36px;"></textarea></label>
-              <label style="font-size:0.7rem;">Bouton <input type="text" id="prest-card1BtnText" maxlength="60" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">URL <input type="text" id="prest-card1BtnUrl" maxlength="200" style="padding:4px 8px;font-size:0.78rem;" /></label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+            <div class="panel" style="padding:6px;display:grid;gap:3px;">
+              <strong style="font-size:0.7rem;">Carte 1</strong>
+              <input type="text" id="prest-card1Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
+              <textarea id="prest-card1Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <textarea id="prest-card1Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <div style="display:flex;gap:4px;">
+                <input type="text" id="prest-card1BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
+                <input type="text" id="prest-card1BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
+              </div>
             </div>
-            <div class="panel" style="padding:8px;display:grid;gap:4px;">
-              <strong style="font-size:0.75rem;">Carte 2</strong>
-              <label style="font-size:0.7rem;">Titre <input type="text" id="prest-card2Title" maxlength="80" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">Texte <textarea id="prest-card2Text" rows="1" maxlength="300" style="padding:4px 8px;font-size:0.78rem;min-height:28px;"></textarea></label>
-              <label style="font-size:0.7rem;">Points <textarea id="prest-card2Bullets" rows="2" placeholder="1 par ligne" style="padding:4px 8px;font-size:0.78rem;min-height:36px;"></textarea></label>
-              <label style="font-size:0.7rem;">Bouton <input type="text" id="prest-card2BtnText" maxlength="60" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">URL <input type="text" id="prest-card2BtnUrl" maxlength="200" style="padding:4px 8px;font-size:0.78rem;" /></label>
+            <div class="panel" style="padding:6px;display:grid;gap:3px;">
+              <strong style="font-size:0.7rem;">Carte 2</strong>
+              <input type="text" id="prest-card2Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
+              <textarea id="prest-card2Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <textarea id="prest-card2Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <div style="display:flex;gap:4px;">
+                <input type="text" id="prest-card2BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
+                <input type="text" id="prest-card2BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
+              </div>
             </div>
-            <div class="panel" style="padding:8px;display:grid;gap:4px;">
-              <strong style="font-size:0.75rem;">Carte 3</strong>
-              <label style="font-size:0.7rem;">Titre <input type="text" id="prest-card3Title" maxlength="80" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">Texte <textarea id="prest-card3Text" rows="1" maxlength="300" style="padding:4px 8px;font-size:0.78rem;min-height:28px;"></textarea></label>
-              <label style="font-size:0.7rem;">Points <textarea id="prest-card3Bullets" rows="2" placeholder="1 par ligne" style="padding:4px 8px;font-size:0.78rem;min-height:36px;"></textarea></label>
-              <label style="font-size:0.7rem;">Bouton <input type="text" id="prest-card3BtnText" maxlength="60" style="padding:4px 8px;font-size:0.78rem;" /></label>
-              <label style="font-size:0.7rem;">URL <input type="text" id="prest-card3BtnUrl" maxlength="200" style="padding:4px 8px;font-size:0.78rem;" /></label>
+            <div class="panel" style="padding:6px;display:grid;gap:3px;">
+              <strong style="font-size:0.7rem;">Carte 3</strong>
+              <input type="text" id="prest-card3Title" maxlength="80" placeholder="Titre" style="padding:3px 6px;font-size:0.72rem;" />
+              <textarea id="prest-card3Text" rows="1" maxlength="300" placeholder="Texte" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <textarea id="prest-card3Bullets" rows="1" placeholder="Points (1/ligne)" style="padding:3px 6px;font-size:0.72rem;min-height:24px;"></textarea>
+              <div style="display:flex;gap:4px;">
+                <input type="text" id="prest-card3BtnText" maxlength="60" placeholder="Bouton" style="flex:1;padding:3px 6px;font-size:0.72rem;" />
+                <input type="text" id="prest-card3BtnUrl" maxlength="200" placeholder="URL" style="flex:2;padding:3px 6px;font-size:0.72rem;" />
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">

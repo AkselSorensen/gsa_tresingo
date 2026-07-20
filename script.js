@@ -748,14 +748,22 @@ function renderHomePage() {
       const banner = activeBanners[0];
       const meta = banner.metadata || {};
 
+      const fbImg = document.getElementById("featured-banner-img");
+      const fbBg = document.getElementById("featured-banner-bg");
+
       if (meta.bannerImage) {
-        fbBanner.style.backgroundImage = `url(${JSON.stringify(meta.bannerImage)})`;
-        fbBanner.style.backgroundSize = "cover";
-        fbBanner.style.backgroundPosition = "center";
-        fbBanner.style.background = "";
+        fbImg.src = meta.bannerImage;
+        fbImg.style.display = "";
+        if (fbBg) fbBg.style.display = "none";
+        fbBanner.style.display = "";
+        fbBanner.style.background = "none";
       } else {
-        fbBanner.style.backgroundImage = "none";
-        fbBanner.style.background = meta.bgColor || "#2a2a2a";
+        fbImg.style.display = "none";
+        if (fbBg) {
+          fbBg.style.display = "";
+          fbBg.style.background = meta.bgColor || "#2a2a2a";
+        }
+        fbBanner.style.display = "";
       }
 
       fbText.textContent = meta.textOverlay || "";
@@ -773,8 +781,7 @@ function renderHomePage() {
         const selected = uniqueSiteProducts.filter(p => allProductIds.includes(p.id));
         if (selected.length) {
           fbProducts.innerHTML = selected.map(p => {
-            const img = (p.media || []).find(m => m.type === 'image');
-            const imgUrl = img ? (img.thumbnail || img.url) : '';
+            const imgUrl = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
             return `
               <a href="/product.html?id=${p.id}" class="featured-product-card">
                 ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(p.title)}" loading="lazy" />` : '<div style="aspect-ratio:16/9;background:var(--panel-border);"></div>'}

@@ -97,15 +97,17 @@
 }
 
 .sales-carousel-strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 12px;
   overflow-x: auto;
   scrollbar-width: none;
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sales-carousel-strip > * {
+  flex: 0 0 calc(33.333% - 8px);
+  min-width: 220px;
   scroll-snap-align: start;
 }
 

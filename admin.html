@@ -590,7 +590,7 @@
             <div class="image-upload-zone" id="fb-upload-zone" style="cursor:pointer;">
               <input type="file" id="fb-file-input" accept="image/*" style="display:none;" />
               <p>Cliquez ou glissez une image ici</p>
-              <span style="font-size:0.75rem;color:var(--muted-2);">PNG, JPG, WebP (Max 2Mo)</span>
+              <span style="font-size:0.75rem;color:var(--muted-2);">PNG, JPG, WebP, GIF (Max 5Mo)</span>
             </div>
             <div class="image-preview-container" id="fb-preview-cont" style="display:none;margin-top:0;">
               <img id="fb-preview-img" src="" alt="Bannière" style="width:100%;aspect-ratio:21/9;object-fit:cover;border-radius:8px;" />
@@ -981,8 +981,8 @@
         alert('Veuillez sélectionner une image valide.');
         return;
       }
-      if (file.size > 2 * 1024 * 1024) {
-        alert("L'image est trop lourde (max 2Mo).");
+      if (file.size > 5 * 1024 * 1024) {
+        alert("L'image est trop lourde (max 5Mo).");
         return;
       }
       const reader = new FileReader();

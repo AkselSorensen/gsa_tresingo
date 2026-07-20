@@ -98,10 +98,15 @@
 
 .sales-carousel-strip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   overflow-x: auto;
   scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+
+.sales-carousel-strip > * {
+  scroll-snap-align: start;
 }
 
 .sales-carousel-strip::-webkit-scrollbar {

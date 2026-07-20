@@ -764,15 +764,15 @@ function renderHomePage() {
         const featuredGroups = state.bootstrap?.featuredByCategory || [];
         const featuredProducts = featuredGroups.flatMap(g => (g.products || []).map(p => ({ ...p, category: g.categoryName })));
 
-        const filter = button.textContent.trim();
+        const filter = button.dataset.filter || button.textContent.trim().replace(/[^a-zA-Z]/g, "");
 
         // Sort the trending products based on active filter
         let sorted = [...allTrending];
-        if (filter.includes("New")) {
+        if (filter === "new") {
           sorted.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-        } else if (filter.includes("Updated")) {
+        } else if (filter === "updated") {
           sorted.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
-        } else if (filter.includes("Trending")) {
+        } else if (filter === "trending") {
           sorted.sort((a, b) => (b.popularityScore || 0) - (a.popularityScore || 0));
         } else {
           // Popular (default)

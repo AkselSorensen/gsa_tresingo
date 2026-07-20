@@ -690,8 +690,8 @@ function renderHomePage() {
 
   const [first, second, ...rest] = state.bootstrap.trending || [];
   if (featured) featured.innerHTML = [first, second].filter(Boolean).map((p) => trendingCard(p, true)).join("");
-  if (carousel) carousel.innerHTML = `<div class="trending-carousel-track">${rest.map((p) => trendingCard(p)).join("")}</div>`;
-  if (discounts) discounts.innerHTML = `<div class="sales-carousel-track">${(state.bootstrap.discounts || []).slice(0, 6).map((p) => salesCard(p)).join("")}</div>`;
+  if (carousel) carousel.innerHTML = rest.map((p) => trendingCard(p)).join("");
+  if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).slice(0, 6).map((p) => salesCard(p)).join("");
 
   const landingConfig = state.bootstrap.landingConfig || [];
 
@@ -811,7 +811,7 @@ function renderHomePage() {
     const prev = panel.querySelector("[data-carousel-prev]");
     const next = panel.querySelector("[data-carousel-next]");
     const progress = panel.querySelector(".trending-progress, .sales-progress");
-    if (!strip) return;
+    if (!strip || !strip.children.length) return;
 
     const getPages = () => Math.max(1, Math.ceil(strip.scrollWidth / strip.clientWidth));
     let currentPage = 0;

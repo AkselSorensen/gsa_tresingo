@@ -103,16 +103,13 @@
   scrollbar-width: none;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
 }
 
-.sales-carousel-track {
-  display: flex;
-  gap: 12px;
-}
-
-.sales-carousel-track > * {
-  flex: 0 0 280px;
+.sales-carousel-strip > * {
+  flex: 0 0 calc((100% - 24px) / 3);
   min-width: 0;
+  scroll-snap-align: start;
 }
 
 .sales-carousel-strip::-webkit-scrollbar {

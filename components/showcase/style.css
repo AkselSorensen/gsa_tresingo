@@ -22,6 +22,88 @@
   letter-spacing: -0.04em;
 }
 
+/* Featured Banner */
+.featured-banner-section {
+  padding: 34px 0 28px;
+}
+
+.featured-banner-shell {
+  display: flex;
+  justify-content: center;
+}
+
+.featured-banner-wrap {
+  width: min(100%, 790px);
+}
+
+.featured-banner-inner {
+  width: 100%;
+  display: block;
+  text-decoration: none;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 21 / 9;
+  min-height: 160px;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.featured-banner-inner:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.featured-banner-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.featured-banner-title {
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+.featured-banner-products {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.featured-product-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--panel);
+  transition: border-color 0.2s, transform 0.2s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.featured-product-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.featured-product-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
 .sales-section-v2 {
   padding: 18px 0 28px;
 }

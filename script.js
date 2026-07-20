@@ -726,6 +726,70 @@ function renderHomePage() {
     }
   }
 
+  // ── Featured Banner ───────────────────────────────────────
+  const fbConfig = landingConfig.find(c => c.section_key === "featured_banner");
+  const fbSection = document.getElementById("featured-banner-section");
+  const fbBanner = document.getElementById("featured-banner-link");
+  const fbText = document.getElementById("featured-banner-text");
+  const fbProducts = document.getElementById("featured-banner-products");
+
+  if (fbSection && fbBanner && fbText && fbProducts) {
+    if (fbConfig && fbConfig.is_active !== false) {
+      const meta = fbConfig.metadata || {};
+      fbSection.style.display = "";
+
+      // Background image or color
+      if (meta.bannerImage) {
+        fbBanner.style.backgroundImage = `url(${JSON.stringify(meta.bannerImage)})`;
+        fbBanner.style.backgroundSize = "cover";
+        fbBanner.style.backgroundPosition = "center";
+        fbBanner.style.background = "";
+      } else {
+        fbBanner.style.backgroundImage = "none";
+        fbBanner.style.background = meta.bgColor || "#2a2a2a";
+      }
+
+      // Text overlay
+      fbText.textContent = meta.textOverlay || "";
+      if (meta.textColor) fbText.style.color = meta.textColor;
+      fbText.style.display = meta.textOverlay ? "" : "none";
+
+      // Products
+      const productIds = Array.isArray(meta.productIds) ? meta.productIds : [];
+      if (productIds.length) {
+        const allProducts = [
+          ...(state.bootstrap.trending || []),
+          ...(state.bootstrap.discounts || []),
+          ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
+        ];
+        const uniqueProducts = Array.from(new Map(allProducts.map(p => [p.id, p])).values());
+        const selected = uniqueProducts.filter(p => productIds.includes(p.id));
+
+        if (selected.length) {
+          fbProducts.innerHTML = selected.map(p => {
+            const img = (p.media || []).find(m => m.type === 'image');
+            const imgUrl = img ? (img.thumbnail || img.url) : '';
+            return `
+              <a href="/product.html?id=${p.id}" class="featured-product-card">
+                ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(p.title)}" loading="lazy" />` : '<div style="aspect-ratio:16/9;background:var(--panel-border);"></div>'}
+                <div style="padding:10px 12px;">
+                  <div style="font-size:0.9rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.title)}</div>
+                  <div style="font-size:0.82rem;color:var(--accent);font-weight:700;margin-top:4px;">${p.price ? Number(p.price).toFixed(2) + '€' : ''}</div>
+                </div>
+              </a>
+            `;
+          }).join("");
+        } else {
+          fbProducts.innerHTML = "";
+        }
+      } else {
+        fbProducts.innerHTML = "";
+      }
+    } else {
+      fbSection.style.display = "none";
+    }
+  }
+
   if (categoryShowcase) {
     const scriptPool = [
       ...(state.bootstrap.trending || []),

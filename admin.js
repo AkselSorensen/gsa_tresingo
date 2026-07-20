@@ -447,5 +447,6 @@ showDashboard = function(user) {
   origShowDashboard(user);
   loadPageContent("prestation");
   loadPageContent("about");
+  loadFeaturedBanner();
   loadFooter();
 };

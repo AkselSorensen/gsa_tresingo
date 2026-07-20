@@ -744,6 +744,9 @@ function renderHomePage() {
     if (activeBanners.length) {
       fbSection.style.display = "";
 
+      // Hide social proof banners when a featured banner is active
+      banners.forEach(b => { b.style.display = "none"; });
+
       // Use the first active banner for the main banner slot
       const banner = activeBanners[0];
       const meta = banner.metadata || {};

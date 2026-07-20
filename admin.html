@@ -33,6 +33,10 @@
     .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .role-select { border-radius:8px; border:1px solid var(--panel-border); background:#0e131b; padding:6px 10px; color:var(--text); font:inherit; font-size:0.85rem; }
     .products-panel-layout { display:grid; grid-template-columns:1fr 380px; gap:24px; align-items:start; }
+    .tab-button svg {
+      vertical-align: middle;
+      margin-right: 4px;
+    }
     @media (max-width: 900px) { .products-panel-layout { grid-template-columns:1fr; } .form-grid-2 { grid-template-columns:1fr; } }
     .inline-edit-input { border-radius:6px; border:1px solid var(--panel-border); background:#0e131b; padding:5px 8px; color:var(--text); font:inherit; font-size:0.85rem; width:90px; }
     .toggle-check { width:16px; height:16px; cursor:pointer; accent-color:var(--accent); }
@@ -220,11 +224,11 @@
       </div>
 
       <div class="admin-tabs">
-        <button class="tab-button active" data-tab="products">📦 Produits</button>
-        <button class="tab-button" data-tab="users">👥 Utilisateurs</button>
-        <button class="tab-button" data-tab="ambassadors">🎁 Ambassadeurs</button>
-        <button class="tab-button" data-tab="settings">⚙️ Paramètres</button>
-        <button class="tab-button" data-tab="pages">📄 Pages</button>
+        <button class="tab-button active" data-tab="products"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Produits</button>
+        <button class="tab-button" data-tab="users"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Utilisateurs</button>
+        <button class="tab-button" data-tab="ambassadors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Ambassadeurs</button>
+        <button class="tab-button" data-tab="settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Paramètres</button>
+        <button class="tab-button" data-tab="pages"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Pages</button>
       </div>
 
       <!-- PRODUCTS TAB -->
@@ -457,7 +461,7 @@
             <label>Titre <input type="text" id="prest-heroTitle" placeholder="Accompagnement de projet et Game Design" maxlength="120" /></label>
             <label>Sous-titre <input type="text" id="prest-heroSubtitle" placeholder="Une offre pensée pour..." maxlength="200" /></label>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
             <div class="panel" style="padding:12px;display:grid;gap:8px;">
               <strong style="font-size:0.85rem;">Carte 1</strong>
               <label style="font-size:0.78rem;">Titre <input type="text" id="prest-card1Title" maxlength="80" /></label>

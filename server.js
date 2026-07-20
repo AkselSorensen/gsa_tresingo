@@ -2943,7 +2943,7 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
 app.get("/api/page-content/:page", async (req, res) => {
   try {
     const page = String(req.params.page).slice(0, 40);
-    const allowedPages = ["prestation", "about"];
+    const allowedPages = ["prestation", "about", "footer"];
     if (!allowedPages.includes(page)) {
       return res.status(404).json({ message: "Unknown page" });
     }
@@ -2966,7 +2966,7 @@ app.get("/api/page-content/:page", async (req, res) => {
 app.patch("/api/admin/page-content/:page", requireAdmin, async (req, res) => {
   try {
     const page = String(req.params.page).slice(0, 40);
-    const allowedPages = ["prestation", "about"];
+    const allowedPages = ["prestation", "about", "footer"];
     if (!allowedPages.includes(page)) {
       return res.status(404).json({ message: "Unknown page" });
     }

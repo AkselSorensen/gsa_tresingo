@@ -584,11 +584,20 @@
             </style>
           </div>
 
-          <!-- Banner Image URL -->
+          <!-- Banner Image Upload -->
           <div style="display:grid;gap:6px;">
-            <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Image de fond (URL)</div>
-            <input type="text" id="fb-image-url" placeholder="https://exemple.com/banniere.jpg" maxlength="500" style="padding:10px 14px;font-size:0.9rem;border-radius:10px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
-            <div style="font-size:0.75rem;color:var(--muted-2);">Laissez vide pour utiliser un fond de couleur uni.</div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Image de fond</div>
+            <div class="image-upload-zone" id="fb-upload-zone" style="cursor:pointer;">
+              <input type="file" id="fb-file-input" accept="image/*" style="display:none;" />
+              <p>Cliquez ou glissez une image ici</p>
+              <span style="font-size:0.75rem;color:var(--muted-2);">PNG, JPG, WebP (Max 2Mo)</span>
+            </div>
+            <div class="image-preview-container" id="fb-preview-cont" style="display:none;margin-top:0;">
+              <img id="fb-preview-img" src="" alt="Bannière" style="width:100%;aspect-ratio:21/9;object-fit:cover;border-radius:8px;" />
+              <button class="remove-image" id="fb-remove-img" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,0.6);color:#fff;font-size:1.2rem;cursor:pointer;display:grid;place-items:center;line-height:1;">×</button>
+            </div>
+            <input type="text" id="fb-image-url" placeholder="Ou collez une URL d'image" maxlength="500" style="padding:8px 12px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);width:100%;box-sizing:border-box;" />
+            <div style="font-size:0.75rem;color:var(--muted-2);">Déposez une image ou collez une URL. Laissez vide pour utiliser un fond de couleur uni.</div>
           </div>
 
           <!-- Background color fallback -->
@@ -944,7 +953,7 @@
         return;
       }
       if (file.size > 2 * 1024 * 1024) {
-        alert('L\'image est trop lourde (max 2Mo).');
+        alert("L'image est trop lourde (max 2Mo).");
         return;
       }
 
@@ -961,6 +970,29 @@
           document.getElementById('cp-preview-cont').style.display = 'block';
           document.getElementById('cp-upload-zone').style.display = 'none';
         }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleFbFiles(files) {
+      if (!files || !files.length) return;
+      const file = files[0];
+      if (!file.type.startsWith('image/')) {
+        alert('Veuillez sélectionner une image valide.');
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert("L'image est trop lourde (max 2Mo).");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        fbBannerBase64 = e.target.result;
+        document.getElementById('fb-preview-img').src = fbBannerBase64;
+        document.getElementById('fb-preview-cont').style.display = '';
+        document.getElementById('fb-upload-zone').style.display = 'none';
+        document.getElementById('fb-image-url').value = '';
+        updateFeaturedBannerPreview();
       };
       reader.readAsDataURL(file);
     }
@@ -1525,6 +1557,7 @@
     let selectedFeaturedBannerProducts = [];
     let fbBanners = [];
     let fbEditingKey = '';
+    let fbBannerBase64 = '';
 
     async function loadFeaturedBanner() {
       try {
@@ -1568,6 +1601,7 @@
 
     function newFeaturedBanner() {
       fbEditingKey = '';
+      fbBannerBase64 = '';
       document.getElementById('fb-editing-key').value = '';
       document.getElementById('fb-editor-title').textContent = 'Nouvelle bannière';
       document.getElementById('fb-title').value = '';
@@ -1578,6 +1612,10 @@
       document.getElementById('fb-text').value = '';
       document.getElementById('fb-text-color').value = '#ffffff';
       document.getElementById('fb-text-color-hex').value = '#ffffff';
+      document.getElementById('fb-preview-cont').style.display = 'none';
+      document.getElementById('fb-upload-zone').style.display = '';
+      document.getElementById('fb-preview-img').src = '';
+      fbBannerBase64 = '';
       selectedFeaturedBannerProducts = [];
       document.getElementById('fb-msg').textContent = '';
       document.getElementById('fb-editor-panel').style.display = '';
@@ -1591,18 +1629,31 @@
       const config = fbBanners.find(c => c.section_key === key);
       if (!config) return;
       fbEditingKey = key;
+      fbBannerBase64 = '';
       document.getElementById('fb-editing-key').value = key;
       document.getElementById('fb-editor-title').textContent = 'Modifier la bannière';
       document.getElementById('fb-title').value = config.title || '';
       document.getElementById('fb-active').checked = config.is_active !== false;
 
       const meta = config.metadata || {};
-      document.getElementById('fb-image-url').value = meta.bannerImage || '';
+      const bannerImage = meta.bannerImage || '';
+      document.getElementById('fb-image-url').value = bannerImage.startsWith('data:') ? '' : bannerImage;
       document.getElementById('fb-bg-color').value = meta.bgColor || '#2a2a2a';
       document.getElementById('fb-bg-color-hex').value = meta.bgColor || '#2a2a2a';
       document.getElementById('fb-text').value = meta.textOverlay || '';
       document.getElementById('fb-text-color').value = meta.textColor || '#ffffff';
       document.getElementById('fb-text-color-hex').value = meta.textColor || '#ffffff';
+
+      // Handle base64 image
+      if (bannerImage.startsWith('data:')) {
+        fbBannerBase64 = bannerImage;
+        document.getElementById('fb-preview-img').src = bannerImage;
+        document.getElementById('fb-preview-cont').style.display = '';
+        document.getElementById('fb-upload-zone').style.display = 'none';
+      } else {
+        document.getElementById('fb-preview-cont').style.display = 'none';
+        document.getElementById('fb-upload-zone').style.display = '';
+      }
       selectedFeaturedBannerProducts = Array.isArray(meta.productIds) ? meta.productIds : [];
       document.getElementById('fb-msg').textContent = '';
       document.getElementById('fb-editor-panel').style.display = '';
@@ -1655,8 +1706,9 @@
         btn.textContent = 'Sauvegarde…';
 
         const title = document.getElementById('fb-title').value.trim() || 'Bannière';
+        const urlVal = document.getElementById('fb-image-url').value.trim();
         const metadata = {
-          bannerImage: document.getElementById('fb-image-url').value.trim(),
+          bannerImage: fbBannerBase64 || urlVal,
           bgColor: document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a',
           textOverlay: document.getElementById('fb-text').value.trim(),
           textColor: document.getElementById('fb-text-color-hex').value.trim() || '#ffffff',
@@ -1693,7 +1745,8 @@
     function updateFeaturedBannerPreview() {
       const bannerEl = document.getElementById('fb-preview-banner');
       const textEl = document.getElementById('fb-preview-text');
-      const imageUrl = document.getElementById('fb-image-url').value.trim();
+      const urlVal = document.getElementById('fb-image-url').value.trim();
+      const imageUrl = fbBannerBase64 || urlVal;
       const textOverlay = document.getElementById('fb-text').value.trim();
       const textColor = document.getElementById('fb-text-color-hex').value.trim() || '#ffffff';
       const bgColor = document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a';
@@ -1858,6 +1911,33 @@
         e.stopPropagation();
         resetImageUpload(true);
       });
+
+      // Featured banner upload
+      const fbZone = document.getElementById('fb-upload-zone');
+      const fbFileInput = document.getElementById('fb-file-input');
+      if (fbZone && fbFileInput) {
+        fbZone.addEventListener('click', () => fbFileInput.click());
+        fbZone.addEventListener('dragover', (e) => { e.preventDefault(); fbZone.classList.add('dragover'); });
+        fbZone.addEventListener('dragleave', () => { fbZone.classList.remove('dragover'); });
+        fbZone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          fbZone.classList.remove('dragover');
+          if (e.dataTransfer.files) handleFbFiles(e.dataTransfer.files);
+        });
+        fbFileInput.addEventListener('change', (e) => {
+          if (e.target.files) handleFbFiles(e.target.files);
+        });
+      }
+      const fbRemoveBtn = document.getElementById('fb-remove-img');
+      if (fbRemoveBtn) {
+        fbRemoveBtn.addEventListener('click', () => {
+          fbBannerBase64 = '';
+          document.getElementById('fb-preview-cont').style.display = 'none';
+          document.getElementById('fb-upload-zone').style.display = '';
+          document.getElementById('fb-preview-img').src = '';
+          updateFeaturedBannerPreview();
+        });
+      }
 
       // Products table actions
       document.getElementById('products-tbody').addEventListener('click', async e => {

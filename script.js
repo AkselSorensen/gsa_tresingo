@@ -627,6 +627,7 @@ async function loadBootstrap() {
 function applyNavigationConfig(configs = []) {
   const defaults = {
     nav_marketplace: { title: "Marketplace", url: "catalogue.html" },
+    nav_prestation: { title: "Prestation", url: "prestation.html" },
     nav_support: { title: "Support", url: "https://discord.gg/ZbCrwE73uK" },
     nav_about: { title: "About", url: "about.html" },
   };
@@ -635,6 +636,9 @@ function applyNavigationConfig(configs = []) {
     const links = Array.from(nav.querySelectorAll("a"));
     if (key === "nav_marketplace") {
       return links.find((link) => /catalogue\.html(?:$|[?#])/i.test(link.getAttribute("href") || ""));
+    }
+    if (key === "nav_prestation") {
+      return links.find((link) => /prestation\.html(?:$|[?#])/i.test(link.getAttribute("href") || ""));
     }
     if (key === "nav_support") {
       return links.find((link) => /discord\.gg|discord\.com/i.test(link.getAttribute("href") || ""));
@@ -646,7 +650,7 @@ function applyNavigationConfig(configs = []) {
   };
 
   document.querySelectorAll(".main-nav").forEach((nav) => {
-    ["nav_marketplace", "nav_support", "nav_about"].forEach((key) => {
+    ["nav_marketplace", "nav_prestation", "nav_support", "nav_about"].forEach((key) => {
       const link = findNavLink(nav, key);
       if (!link) return;
 

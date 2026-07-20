@@ -650,9 +650,11 @@
           <span style="font-size:0.78rem;color:var(--muted);font-weight:500;">Aperçu</span>
         </div>
         <div style="padding:24px;display:grid;gap:16px;">
-          <div id="fb-preview-banner" style="width:100%;min-height:180px;border-radius:12px;background:#2a2a2a;display:grid;place-items:center;background-size:cover;background-position:center;transition:all 0.3s;">
-            <div style="padding:40px 24px;text-align:center;">
-              <h3 id="fb-preview-text" style="margin:0;font-size:clamp(1.6rem,4vw,2.8rem);font-weight:800;color:#fff;letter-spacing:-0.03em;">Bannière mise en avant</h3>
+          <div id="fb-preview-banner" style="width:100%;min-height:180px;border-radius:12px;position:relative;overflow:hidden;transition:all 0.3s;">
+            <img id="fb-preview-banner-img" src="" alt="" style="width:100%;height:100%;position:absolute;inset:0;object-fit:cover;display:none;" />
+            <div id="fb-preview-banner-bg" style="width:100%;height:100%;position:absolute;inset:0;display:block;"></div>
+            <div style="position:relative;z-index:1;padding:40px 24px;text-align:center;">
+              <h3 id="fb-preview-text" style="margin:0;font-size:clamp(1.6rem,4vw,2.8rem);font-weight:800;color:#fff;letter-spacing:-0.03em;text-shadow:0 2px 12px rgba(0,0,0,0.5);">Bannière mise en avant</h3>
             </div>
           </div>
           <div id="fb-preview-products" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
@@ -1744,6 +1746,8 @@
 
     function updateFeaturedBannerPreview() {
       const bannerEl = document.getElementById('fb-preview-banner');
+      const imgEl = document.getElementById('fb-preview-banner-img');
+      const bgEl = document.getElementById('fb-preview-banner-bg');
       const textEl = document.getElementById('fb-preview-text');
       const urlVal = document.getElementById('fb-image-url').value.trim();
       const imageUrl = fbBannerBase64 || urlVal;
@@ -1752,13 +1756,14 @@
       const bgColor = document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a';
 
       if (imageUrl) {
-        bannerEl.style.backgroundImage = `url(${JSON.stringify(imageUrl)})`;
-        bannerEl.style.backgroundSize = 'cover';
-        bannerEl.style.backgroundPosition = 'center';
-        bannerEl.style.background = '';
+        imgEl.src = imageUrl;
+        imgEl.style.display = '';
+        bgEl.style.display = 'none';
+        bannerEl.style.background = 'none';
       } else {
-        bannerEl.style.backgroundImage = 'none';
-        bannerEl.style.background = bgColor;
+        imgEl.style.display = 'none';
+        bgEl.style.display = '';
+        bgEl.style.background = bgColor;
       }
 
       textEl.textContent = textOverlay || 'Bannière mise en avant';

@@ -819,7 +819,7 @@ function renderHomePage() {
     const updateProgress = () => {
       if (!progress) return;
       const pages = getPages();
-      const dots = progress.querySelectorAll("span");
+      let dots = Array.from(progress.querySelectorAll("span"));
       // Create dots if needed
       while (dots.length < pages) {
         const dot = document.createElement("span");

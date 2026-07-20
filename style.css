@@ -346,6 +346,20 @@ select {
   color: #f0f2f5;
 }
 
+.nav-mini-button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  min-width: auto;
+  padding: 0 8px;
+}
+
+.nav-mini-button:hover {
+  color: #fff;
+}
+
 .nav-register-button {
   padding: 0 12px;
   border-color: #2b72de;

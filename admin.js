@@ -262,6 +262,29 @@ const pageContentFields = {
   ]
 };
 
+async function saveFooter() {
+  const el = document.getElementById("footer-copy");
+  const msg = document.getElementById("page-msg-footer");
+  if (!el || !msg) return;
+  try {
+    await apiFetch("/api/admin/page-content/footer", {
+      method: "PATCH",
+      body: JSON.stringify({ footerText: el.value.trim() }),
+    });
+    msg.textContent = "✓ OK";
+  } catch (e) {
+    msg.textContent = "✕ Erreur";
+  }
+}
+
+async function loadFooter() {
+  try {
+    const data = await apiFetch("/api/page-content/footer");
+    const el = document.getElementById("footer-copy");
+    if (el && data?.footerText) el.value = data.footerText;
+  } catch (e) {}
+}
+
 async function loadPageContent(page) {
   try {
     const data = await apiFetch(`/api/page-content/${page}`);
@@ -364,4 +387,5 @@ showDashboard = function(user) {
   origShowDashboard(user);
   loadPageContent("prestation");
   loadPageContent("about");
+  loadFooter();
 };

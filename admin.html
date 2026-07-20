@@ -216,11 +216,11 @@
       <div class="admin-header">
         <div>
           <div class="eyebrow">Administration</div>
-          <h1 style="margin:4px 0 0;font-size:2rem;">Dashboard Admin</h1>
+          <h1 style="margin:2px 0 0;font-size:1.3rem;">Dashboard Admin</h1>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <a class="ghost-button" href="/">← Retour au site</a>
-          <button class="danger-button" id="btn-logout">Se déconnecter</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="ghost-button" href="/" style="font-size:0.78rem;min-height:28px;">← Retour</a>
+          <button class="danger-button" id="btn-logout" style="font-size:0.78rem;min-height:28px;">Déconnexion</button>
         </div>
       </div>
 
@@ -447,62 +447,61 @@
 
   <!-- PAGES TAB -->
   <div class="admin-tab-panel" id="tab-pages">
-    <div class="settings-stack" style="max-width:100%;gap:10px;">
-      
-      <!-- Prestation Page -->
-      <div class="settings-block">
-        <div class="settings-block-head">
-          <div>
-            <strong>Page Prestation</strong>
-            <span style="font-size:0.72rem;">Hero + 3 cartes</span>
-          </div>
+    <div class="settings-stack" style="max-width:100%;gap:8px;">
+
+      <!-- Footer -->
+      <div class="settings-block" style="padding:8px;">
+        <div class="settings-block-head" style="margin-bottom:6px;">
+          <strong style="font-size:0.85rem;">Footer</strong>
         </div>
-        <div id="page-editor-prestation" class="create-form" style="gap:6px;">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <input type="text" id="prest-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
-            <input type="text" id="prest-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
-          </div>
-          <label style="font-size:0.72rem;">Cartes (JSON)
-            <textarea id="prest-cards" rows="3" style="font-family:monospace;font-size:0.72rem;padding:4px 8px;min-height:50px;width:100%;box-sizing:border-box;"></textarea>
-          </label>
-          <div style="font-size:0.65rem;color:var(--muted-2);">
-            <code>[{"title":"...","text":"...","bullets":["..."],"btn":"...","url":"..."}]</code>
-          </div>
+        <div id="page-editor-footer" style="display:grid;gap:6px;">
+          <input type="text" id="footer-copy" placeholder="Texte copyright / description" maxlength="300" style="padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
           <div style="display:flex;gap:6px;align-items:center;">
-            <button class="save-button" type="button" onclick="savePageContent('prestation')" style="min-height:24px;font-size:0.72rem;padding:4px 12px;">Sauvegarder</button>
-            <span id="page-msg-prestation" class="admin-msg" style="font-size:0.7rem;"></span>
+            <button class="save-button" onclick="saveFooter()" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
+            <span id="page-msg-footer" style="font-size:0.7rem;color:var(--muted);"></span>
           </div>
         </div>
       </div>
 
-      <!-- About Page -->
-      <div class="settings-block">
-        <div class="settings-block-head">
-          <div>
-            <strong>Page À propos</strong>
-            <span style="font-size:0.72rem;">Hero + sections</span>
-          </div>
+      <!-- Prestation -->
+      <div class="settings-block" style="padding:8px;">
+        <div class="settings-block-head" style="margin-bottom:6px;">
+          <strong style="font-size:0.85rem;">Page Prestation</strong>
         </div>
-        <div id="page-editor-about" class="create-form" style="gap:6px;">
+        <div id="page-editor-prestation" style="display:grid;gap:6px;">
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <input type="text" id="about-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
-            <input type="text" id="about-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:140px;padding:4px 8px;font-size:0.78rem;" />
+            <input type="text" id="prest-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            <input type="text" id="prest-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
           </div>
-          <label style="font-size:0.72rem;">Sections (JSON)
-            <textarea id="about-sections" rows="3" style="font-family:monospace;font-size:0.72rem;padding:4px 8px;min-height:50px;width:100%;box-sizing:border-box;"></textarea>
+          <label style="font-size:0.72rem;color:var(--muted);">3 cartes (JSON)
+            <textarea id="prest-cards" rows="2" placeholder='[{"title":"...","text":"...","bullets":["..."],"btn":"...","url":"..."}]' style="width:100%;box-sizing:border-box;padding:6px 10px;font-size:0.78rem;font-family:monospace;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;"></textarea>
           </label>
-          <div style="font-size:0.65rem;color:var(--muted-2);">
-            <code>[{"text":"..."},{"title":"...","bullets":["..."]}]</code>
-          </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <button class="save-button" type="button" onclick="savePageContent('about')" style="min-height:24px;font-size:0.72rem;padding:4px 12px;">Sauvegarder</button>
-            <span id="page-msg-about" class="admin-msg" style="font-size:0.7rem;"></span>
+            <button class="save-button" onclick="savePageContent('prestation')" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
+            <span id="page-msg-prestation" style="font-size:0.7rem;color:var(--muted);"></span>
           </div>
         </div>
       </div>
 
-    </div>
-  </div>
+      <!-- About -->
+      <div class="settings-block" style="padding:8px;">
+        <div class="settings-block-head" style="margin-bottom:6px;">
+          <strong style="font-size:0.85rem;">Page À propos</strong>
+        </div>
+        <div id="page-editor-about" style="display:grid;gap:6px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="text" id="about-heroTitle" placeholder="Titre" maxlength="120" style="flex:1;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+            <input type="text" id="about-heroSubtitle" placeholder="Sous-titre" maxlength="200" style="flex:2;min-width:120px;padding:6px 10px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+          </div>
+          <label style="font-size:0.72rem;color:var(--muted);">Sections (JSON)
+            <textarea id="about-sections" rows="2" placeholder='[{"text":"..."},{"title":"...","bullets":["..."]}]' style="width:100%;box-sizing:border-box;padding:6px 10px;font-size:0.78rem;font-family:monospace;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);min-height:40px;resize:vertical;"></textarea>
+          </label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="save-button" onclick="savePageContent('about')" style="min-height:24px;font-size:0.72rem;padding:3px 10px;">Sauvegarder</button>
+            <span id="page-msg-about" style="font-size:0.7rem;color:var(--muted);"></span>
+          </div>
+        </div>
+      </div>
 
   <!-- Edit Product Modal -->
   <div class="modal-overlay" id="edit-modal">

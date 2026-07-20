@@ -805,32 +805,17 @@ function renderHomePage() {
     });
   });
 
-  // ── Carousel ───────────────────────────────────────────────────
-  // Transform-based slide carousel (works with any number of items)
-  function initCarousel(containerId) {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    const track = el.querySelector(".trending-carousel-track, .sales-carousel-track");
-    if (!track) return;
-
-    let currentPos = 0;
-    const maxScroll = () => Math.max(0, track.scrollWidth - el.clientWidth);
-
-    const slide = (dir) => {
-      const step = el.clientWidth * 0.9; // 90% of visible width
-      const max = maxScroll();
-      currentPos = Math.max(0, Math.min(max, currentPos + dir * step));
-      track.style.transform = `translateX(-${currentPos}px)`;
-    };
-
-    const prev = document.querySelector(`[data-carousel-prev="${containerId}"]`);
-    const next = document.querySelector(`[data-carousel-next="${containerId}"]`);
-    if (prev) prev.addEventListener("click", () => slide(-1));
-    if (next) next.addEventListener("click", () => slide(1));
-  }
-
-  initCarousel("trending-carousel");
-  initCarousel("discount-carousel");
+  // ── Carousel arrows ────────────────────────────────────────────
+  document.querySelectorAll("[data-carousel-prev], [data-carousel-next]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.carouselPrev || btn.dataset.carouselNext;
+      const el = document.getElementById(id);
+      if (!el) return;
+      const dir = btn.dataset.carouselPrev ? -1 : 1;
+      const amt = el.clientWidth * 0.85;
+      el.scrollBy({ left: dir * amt, behavior: "smooth" });
+    });
+  });
 }
 
 function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort) {

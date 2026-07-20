@@ -785,8 +785,9 @@ function renderHomePage() {
         if (selected.length) {
           fbProducts.innerHTML = selected.map(p => {
             const imgUrl = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
+            const slug = p.slug || p.id;
             return `
-              <a href="/product.html?id=${p.id}" class="featured-product-card">
+              <a href="/product.html?slug=${encodeURIComponent(slug)}" class="featured-product-card">
                 ${imgUrl ? `<img src="${imgUrl}" alt="${escapeHtml(p.title)}" loading="lazy" />` : '<div style="aspect-ratio:16/9;background:var(--panel-border);"></div>'}
                 <div style="padding:10px 12px;">
                   <div style="font-size:0.9rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p.title)}</div>

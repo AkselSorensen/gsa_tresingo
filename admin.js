@@ -255,10 +255,16 @@ checkAuth();
 
 const pageContentFields = {
   prestation: [
-    "heroTitle", "heroSubtitle", "cards"
+    "heroTitle", "heroSubtitle",
+    "card1Title", "card1Text", "card1Bullets", "card1BtnText", "card1BtnUrl",
+    "card2Title", "card2Text", "card2Bullets", "card2BtnText", "card2BtnUrl",
+    "card3Title", "card3Text", "card3Bullets", "card3BtnText", "card3BtnUrl",
   ],
   about: [
-    "heroTitle", "heroSubtitle", "sections"
+    "heroTitle", "heroSubtitle",
+    "sec1Title", "sec1Text", "sec1Bullets",
+    "sec2Title", "sec2Text", "sec2Bullets",
+    "sec3Title", "sec3Text", "sec3Bullets",
   ]
 };
 
@@ -281,8 +287,71 @@ async function loadFooter() {
   try {
     const data = await apiFetch("/api/page-content/footer");
     const el = document.getElementById("footer-copy");
-    if (el && data?.footerText) el.value = data.footerText;
+    if (el && data?.footerText) { el.value = data.footerText; updatePreviewAll(); }
   } catch (e) {}
+}
+
+// ── Preview functions ─────────────────────────────────────────────
+function previewFooter() {
+  const val = document.getElementById("footer-copy")?.value || "";
+  const el = document.querySelector(".footer-copy-preview");
+  if (el) el.textContent = val;
+}
+
+function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function previewPrestation() {
+  const title = document.getElementById("prest-heroTitle")?.value || "Titre";
+  const sub = document.getElementById("prest-heroSubtitle")?.value || "Sous-titre";
+  document.getElementById("pv-prest-title").textContent = title;
+  document.getElementById("pv-prest-sub").textContent = sub;
+
+  const cards = [1,2,3].map(i => ({
+    t: document.getElementById(`prest-card${i}Title`)?.value || "",
+    x: document.getElementById(`prest-card${i}Text`)?.value || "",
+    b: (document.getElementById(`prest-card${i}Bullets`)?.value || "").split("\n").map(s=>s.trim()).filter(Boolean),
+    btn: document.getElementById(`prest-card${i}BtnText`)?.value || "",
+    url: document.getElementById(`prest-card${i}BtnUrl`)?.value || ""
+  }));
+
+  const container = document.getElementById("pv-prest-cards");
+  if (!container) return;
+  container.innerHTML = cards.map(c => `
+    <div class="panel" style="padding:10px;display:grid;gap:4px;">
+      ${c.t ? `<strong style="font-size:0.82rem;color:#2bb8ff;">${escHtml(c.t)}</strong>` : ""}
+      ${c.x ? `<p style="margin:0;font-size:0.7rem;color:var(--muted);">${escHtml(c.x)}</p>` : ""}
+      ${c.b.length ? `<ul style="margin:0;padding:0 0 0 14px;font-size:0.65rem;color:var(--muted-2);">${c.b.map(b => `<li>${escHtml(b)}</li>`).join("")}</ul>` : ""}
+      ${c.btn ? `<button class="ghost-button" style="margin-top:4px;font-size:0.68rem;min-height:24px;padding:0 8px;justify-self:start;">${escHtml(c.btn)}</button>` : ""}
+    </div>
+  `).join("");
+}
+
+function previewAbout() {
+  const title = document.getElementById("about-heroTitle")?.value || "Titre";
+  const sub = document.getElementById("about-heroSubtitle")?.value || "Sous-titre";
+  document.getElementById("pv-about-title").textContent = title;
+  document.getElementById("pv-about-sub").textContent = sub;
+
+  const sections = [1,2,3].map(i => ({
+    t: document.getElementById(`about-sec${i}-title`)?.value || "",
+    x: document.getElementById(`about-sec${i}-text`)?.value || "",
+    b: (document.getElementById(`about-sec${i}-bullets`)?.value || "").split("\n").map(s=>s.trim()).filter(Boolean)
+  })).filter(s => s.t || s.x || s.b.length);
+
+  const container = document.getElementById("pv-about-sections");
+  if (!container) return;
+  if (!sections.length) { container.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);">Contenu de la section...</p>'; return; }
+  container.innerHTML = sections.map(s => `
+    ${s.t ? `<h3 style="margin:0 0 4px;font-size:0.95rem;color:#fff;">${escHtml(s.t)}</h3>` : ""}
+    ${s.x ? `<p style="margin:0 0 6px;font-size:0.78rem;color:var(--muted);">${escHtml(s.x)}</p>` : ""}
+    ${s.b.length ? `<ul style="margin:0 0 10px;padding:0 0 0 16px;font-size:0.78rem;color:var(--muted-2);">${s.b.map(b => `<li>${escHtml(b)}</li>`).join("")}</ul>` : ""}
+  `).join("");
+}
+
+function updatePreviewAll() {
+  previewFooter();
+  previewPrestation();
+  previewAbout();
 }
 
 async function loadPageContent(page) {
@@ -290,32 +359,38 @@ async function loadPageContent(page) {
     const data = await apiFetch(`/api/page-content/${page}`);
     if (!data || typeof data !== 'object') return;
 
-    // All fields handled by generic loop below
     if (page === "prestation") {
-      for (const field of pageContentFields.prestation) {
-        const el = document.getElementById(`prest-${field}`);
-        if (el) {
-          const val = data[field];
-          if (val !== undefined && val !== null) {
-            // Bullets are arrays, join with newlines for textarea
-            if (Array.isArray(val) && field !== "cards") {
-              el.value = val.join("\n");
-            } else if (field === "cards" || field === "sections") {
-              el.value = JSON.stringify(val, null, 2);
-            } else {
-              el.value = String(val);
-            }
-          }
-        }
-      }
+      document.getElementById("prest-heroTitle").value = data.heroTitle || "";
+      document.getElementById("prest-heroSubtitle").value = data.heroSubtitle || "";
+      (data.cards || []).forEach((card, i) => {
+        const idx = i + 1;
+        setVal(`prest-card${idx}Title`, card.title);
+        setVal(`prest-card${idx}Text`, card.text);
+        setVal(`prest-card${idx}Bullets`, (card.bullets || []).join("\n"));
+        setVal(`prest-card${idx}BtnText`, card.btn);
+        setVal(`prest-card${idx}BtnUrl`, card.url);
+      });
     }
 
-    // About fields handled by generic loop above
     if (page === "about") {
+      document.getElementById("about-heroTitle").value = data.heroTitle || "";
+      document.getElementById("about-heroSubtitle").value = data.heroSubtitle || "";
+      (data.sections || []).forEach((sec, i) => {
+        const idx = i + 1;
+        setVal(`about-sec${idx}-title`, sec.title || "");
+        setVal(`about-sec${idx}-text`, sec.text || "");
+        setVal(`about-sec${idx}-bullets`, (sec.bullets || []).join("\n"));
+      });
     }
+    updatePreviewAll();
   } catch (err) {
-    console.error(`Load ${page} content error:`, err);
+    console.error(`Load ${page} error:`, err);
   }
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val || "";
 }
 
 async function savePageContent(page) {
@@ -326,45 +401,30 @@ async function savePageContent(page) {
     const content = {};
 
     if (page === "prestation") {
-      for (const field of pageContentFields.prestation) {
-        const el = document.getElementById(`prest-${field}`);
-        if (el) {
-          const val = el.value.trim();
-          if (field === "cards" || field === "sections") {
-            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
-          } else if (val) {
-            content[field] = val;
-          }
-        }
-      }
+      content.heroTitle = document.getElementById("prest-heroTitle")?.value?.trim() || "";
+      content.heroSubtitle = document.getElementById("prest-heroSubtitle")?.value?.trim() || "";
+      content.cards = [1,2,3].map(i => ({
+        title: document.getElementById(`prest-card${i}Title`)?.value?.trim() || "",
+        text: document.getElementById(`prest-card${i}Text`)?.value?.trim() || "",
+        bullets: (document.getElementById(`prest-card${i}Bullets`)?.value?.trim() || "").split("\n").map(s=>s.trim()).filter(Boolean),
+        btn: document.getElementById(`prest-card${i}BtnText`)?.value?.trim() || "",
+        url: document.getElementById(`prest-card${i}BtnUrl`)?.value?.trim() || "",
+      }));
     }
 
     if (page === "about") {
-      for (const field of pageContentFields.about) {
-        const el = document.getElementById(`about-${field}`);
-        if (el) {
-          const val = el.value.trim();
-          if (field === "sections") {
-            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
-          } else if (val) {
-            content[field] = val;
-          }
-        }
-      }
-    }
-
-    if (page === "about") {
-      for (const field of pageContentFields.about) {
-        const el = document.getElementById(`about-${field}`);
-        if (el) {
-          const val = el.value.trim();
-          if (field === "sections") {
-            try { content[field] = JSON.parse(val); } catch(e) { msgEl.textContent = "JSON invalide !"; return; }
-          } else if (val) {
-            content[field] = val;
-          }
-        }
-      }
+      content.heroTitle = document.getElementById("about-heroTitle")?.value?.trim() || "";
+      content.heroSubtitle = document.getElementById("about-heroSubtitle")?.value?.trim() || "";
+      content.sections = [1,2,3].map(i => {
+        const sec = {};
+        const t = document.getElementById(`about-sec${i}-title`)?.value?.trim();
+        const x = document.getElementById(`about-sec${i}-text`)?.value?.trim();
+        const b = (document.getElementById(`about-sec${i}-bullets`)?.value?.trim() || "").split("\n").map(s=>s.trim()).filter(Boolean);
+        if (t) sec.title = t;
+        if (x) sec.text = x;
+        if (b.length) sec.bullets = b;
+        return Object.keys(sec).length ? sec : null;
+      }).filter(Boolean);
     }
 
     await apiFetch(`/api/admin/page-content/${page}`, {

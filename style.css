@@ -990,8 +990,8 @@ select {
 
 .catalogue-grid-4 {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px;
 }
 
 .market-products-grid {

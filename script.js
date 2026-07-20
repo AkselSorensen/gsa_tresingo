@@ -805,12 +805,11 @@ function renderHomePage() {
     });
   });
 
-  // ── Carousel arrows (pixel-based scroll with card snap) ────────
+  // ── Carousel arrows ────────────────────────────────────────────
   const scrollCarousel = (carouselId, direction) => {
     const el = document.getElementById(carouselId);
     if (!el) return;
-    const card = el.querySelector("article, .trending-mini-card, .sales-card");
-    const scrollAmount = card ? card.offsetWidth + 12 : 300; // card width + gap
+    const scrollAmount = el.clientWidth * 0.8; // scroll 80% of visible width
     el.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
   };
 

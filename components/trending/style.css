@@ -154,16 +154,17 @@
 }
 
 .trending-carousel-strip {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 220px;
+  display: flex;
   gap: 12px;
   overflow-x: auto;
   scrollbar-width: none;
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
 }
 
 .trending-carousel-strip > * {
+  flex: 0 0 220px;
+  min-width: 0;
   scroll-snap-align: start;
 }
 

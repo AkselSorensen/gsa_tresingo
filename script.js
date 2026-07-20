@@ -889,8 +889,11 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
 
     <div class="market-sidebar-group">
       <div class="market-sidebar-title">Tags</div>
-      <div class="market-tag-stack">
-        ${tags.map(t => `<a class="market-tag-link ${tag === t ? 'active' : ''}" href="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${escapeHtml(t)}</a>`).join("")}
+      <div class="market-select-wrap">
+        <select onchange="if(this.value) window.location.href=this.value">
+          <option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${t("tags")}...</option>
+          ${tags.map(t => `<option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(t)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}" ${tag === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join("")}
+        </select>
       </div>
     </div>
 

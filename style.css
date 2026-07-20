@@ -1155,6 +1155,51 @@ select {
   gap: 6px;
 }
 
+.market-price-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.market-price-input {
+  width: 60px;
+  min-height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(11, 14, 20, 0.72);
+  color: var(--text);
+  font-size: 0.78rem;
+  padding: 0 8px;
+  text-align: center;
+  outline: none;
+}
+
+.market-price-input:focus {
+  border-color: var(--primary);
+}
+
+.market-price-sep {
+  color: var(--muted-2);
+  font-size: 0.8rem;
+}
+
+.market-price-go {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(47, 125, 246, 0.15);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.market-price-go:hover {
+  background: rgba(47, 125, 246, 0.25);
+}
+
 .market-select-wrap select {
   width: 100%;
   min-height: 28px;

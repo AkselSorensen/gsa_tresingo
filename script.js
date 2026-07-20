@@ -899,22 +899,11 @@ function renderCatalogueFilters(categories, activeCategory, search, tag, discoun
 
     <div class="market-sidebar-group">
       <div class="market-sidebar-title">${t("price")}</div>
-      <div class="market-select-wrap">
-        <select onchange="if(this.value) window.location.href=this.value">
-          <option value="catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}">${t("price")}...</option>
-          ${[
-            {label: "0 € - 10 €", min: 0, max: 10},
-            {label: "10 € - 20 €", min: 10, max: 20},
-            {label: "20 € - 50 €", min: 20, max: 50},
-            {label: "50 € - 100 €", min: 50, max: 100},
-            {label: "100 € - 200 €", min: 100, max: 200},
-            {label: "200 € +", min: 200, max: ""},
-          ].map(r => {
-            const val = r.max ? `${r.min}-${r.max}` : `${r.min}-`;
-            const href = `catalogue.html?search=${encodeURIComponent(search)}&category=${encodeURIComponent(activeCategory)}&tag=${encodeURIComponent(tag)}&discount=${encodeURIComponent(discount)}&sort=${encodeURIComponent(sort)}&price=${val}`;
-            return `<option value="${href}" ${price === val ? 'selected' : ''}>${r.label}</option>`;
-          }).join("")}
-        </select>
+      <div class="market-price-range">
+        <input type="number" class="market-price-input" id="price-min" placeholder="Min" min="0" value="${price ? price.split('-')[0] : ''}" />
+        <span class="market-price-sep">—</span>
+        <input type="number" class="market-price-input" id="price-max" placeholder="Max" min="0" value="${price ? price.split('-')[1] || '' : ''}" />
+        <button class="market-price-go" onclick="filterByPrice()">OK</button>
       </div>
     </div>
 
@@ -940,6 +929,16 @@ const sortLabels = {
   discount: "sales",
   rating: "rating"
 };
+
+function filterByPrice() {
+  const min = document.getElementById("price-min")?.value;
+  const max = document.getElementById("price-max")?.value;
+  const params = new URLSearchParams(window.location.search);
+  if (min) params.set("price", max ? `${min}-${max}` : `${min}-`);
+  else if (max) params.set("price", `0-${max}`);
+  else params.delete("price");
+  window.location.href = `catalogue.html?${params.toString()}`;
+}
 
 async function renderCataloguePage() {
   const app = document.getElementById("catalogue-page");

@@ -769,9 +769,11 @@ function renderHomePage() {
         fbBanner.style.display = "";
       }
 
-      fbText.textContent = meta.textOverlay || "";
+      // Use title as fallback for text overlay
+      const displayText = meta.textOverlay || banner.title || "";
+      fbText.textContent = displayText;
       if (meta.textColor) fbText.style.color = meta.textColor;
-      fbText.style.display = meta.textOverlay ? "" : "none";
+      fbText.style.display = displayText ? "" : "none";
 
       // Collect all product IDs across all active banners
       const allProductIds = [];

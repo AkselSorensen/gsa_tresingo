@@ -154,18 +154,20 @@
 }
 
 .trending-carousel-strip {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  position: relative;
 }
 
-.trending-carousel-strip > * {
+.trending-carousel-track {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.4s ease;
+  will-change: transform;
+}
+
+.trending-carousel-track > * {
   flex: 0 0 240px;
   min-width: 0;
-  scroll-snap-align: start;
 }
 
 .trending-carousel-strip::-webkit-scrollbar {

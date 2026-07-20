@@ -690,8 +690,8 @@ function renderHomePage() {
 
   const [first, second, ...rest] = state.bootstrap.trending || [];
   if (featured) featured.innerHTML = [first, second].filter(Boolean).map((p) => trendingCard(p, true)).join("");
-  if (carousel) carousel.innerHTML = rest.map((p) => trendingCard(p)).join("");
-  if (discounts) discounts.innerHTML = (state.bootstrap.discounts || []).slice(0, 3).map((p) => salesCard(p)).join("");
+  if (carousel) carousel.innerHTML = `<div class="trending-carousel-track">${rest.map((p) => trendingCard(p)).join("")}</div>`;
+  if (discounts) discounts.innerHTML = `<div class="sales-carousel-track">${(state.bootstrap.discounts || []).slice(0, 6).map((p) => salesCard(p)).join("")}</div>`;
 
   const landingConfig = state.bootstrap.landingConfig || [];
 
@@ -805,21 +805,32 @@ function renderHomePage() {
     });
   });
 
-  // ── Carousel arrows ────────────────────────────────────────────
-  const scrollCarousel = (carouselId, direction) => {
-    const el = document.getElementById(carouselId);
+  // ── Carousel ───────────────────────────────────────────────────
+  // Transform-based slide carousel (works with any number of items)
+  function initCarousel(containerId) {
+    const el = document.getElementById(containerId);
     if (!el) return;
-    const scrollAmount = el.clientWidth * 0.8; // scroll 80% of visible width
-    el.scrollBy({ left: direction * scrollAmount, behavior: "smooth" });
-  };
+    const track = el.querySelector(".trending-carousel-track, .sales-carousel-track");
+    if (!track) return;
 
-  document.querySelectorAll("[data-carousel-prev]").forEach((button) => {
-    button.addEventListener("click", () => scrollCarousel(button.dataset.carouselPrev, -1));
-  });
+    let currentPos = 0;
+    const maxScroll = () => Math.max(0, track.scrollWidth - el.clientWidth);
 
-  document.querySelectorAll("[data-carousel-next]").forEach((button) => {
-    button.addEventListener("click", () => scrollCarousel(button.dataset.carouselNext, 1));
-  });
+    const slide = (dir) => {
+      const step = el.clientWidth * 0.9; // 90% of visible width
+      const max = maxScroll();
+      currentPos = Math.max(0, Math.min(max, currentPos + dir * step));
+      track.style.transform = `translateX(-${currentPos}px)`;
+    };
+
+    const prev = document.querySelector(`[data-carousel-prev="${containerId}"]`);
+    const next = document.querySelector(`[data-carousel-next="${containerId}"]`);
+    if (prev) prev.addEventListener("click", () => slide(-1));
+    if (next) next.addEventListener("click", () => slide(1));
+  }
+
+  initCarousel("trending-carousel");
+  initCarousel("discount-carousel");
 }
 
 function renderCatalogueFilters(categories, activeCategory, search, tag, discount, sort) {

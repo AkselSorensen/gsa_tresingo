@@ -97,18 +97,20 @@
 }
 
 .sales-carousel-strip {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;
+  position: relative;
 }
 
-.sales-carousel-strip > * {
+.sales-carousel-track {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.4s ease;
+  will-change: transform;
+}
+
+.sales-carousel-track > * {
   flex: 0 0 calc(33.333% - 8px);
   min-width: 220px;
-  scroll-snap-align: start;
 }
 
 .sales-carousel-strip::-webkit-scrollbar {

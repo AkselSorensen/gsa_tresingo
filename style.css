@@ -967,31 +967,32 @@ select {
 }
 
 .footer-grid {
-  grid-template-columns: 1.5fr 0.8fr 0.8fr;
-  padding: 24px 0;
+  grid-template-columns: 1.3fr 0.7fr 0.7fr;
+  padding: 16px 0;
+  gap: 24px;
 }
 
 .site-footer {
-  margin-top: 16px;
+  margin-top: 12px;
   border-top: none;
   background: var(--panel-2);
 }
 
 .footer-column {
   display: grid;
-  gap: 10px;
+  gap: 4px;
   align-content: start;
 }
 
 .footer-column h3 {
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
 }
 
 .footer-column a {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   transition: color 0.2s;
 }
 
@@ -1000,7 +1001,12 @@ select {
 }
 
 .footer-brand {
-  margin-bottom: 14px;
+  margin-bottom: 8px;
+}
+
+.footer-copy {
+  font-size: 0.78rem !important;
+  line-height: 1.4 !important;
 }
 
 .page-hero.small {

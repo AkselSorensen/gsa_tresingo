@@ -758,7 +758,7 @@ select {
 .script-card-media,
 .market-products-grid .product-card-media {
   display: block !important;
-  height: 130px !important;
+  height: 120px !important;
   width: 100%;
   overflow: hidden;
 }

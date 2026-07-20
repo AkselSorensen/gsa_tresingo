@@ -817,7 +817,7 @@ function renderHomePage() {
     const progress = panel.querySelector(".trending-progress, .sales-progress");
     if (!strip || !strip.children.length) return;
 
-    const getPages = () => Math.max(1, Math.ceil((strip.scrollWidth - 10) / strip.clientWidth));
+    const getPages = () => Math.max(1, Math.round(strip.scrollWidth / strip.clientWidth));
     let currentPage = 0;
 
     const updateProgress = () => {

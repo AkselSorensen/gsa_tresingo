@@ -76,8 +76,11 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.product-card-media img,
 .trending-featured-media img,
-.trending-mini-media img {
+.trending-mini-media img,
+.sales-card-media img,
+.script-card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;

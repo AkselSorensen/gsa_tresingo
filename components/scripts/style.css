@@ -106,12 +106,6 @@
   width: 100%;
 }
 
-.script-card-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .script-card-body {
   padding-top: 7px;
   width: 100%;

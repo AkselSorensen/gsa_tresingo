@@ -38,7 +38,8 @@
 }
 
 .featured-banner-item {
-  margin-bottom: 48px;
+  display: block;
+  margin-bottom: 56px;
 }
 
 .featured-banner-item:last-child {

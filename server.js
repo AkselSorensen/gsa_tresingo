@@ -419,6 +419,9 @@ async function maintenanceMiddleware(req, res, next) {
     "/auth/steam",
     "/auth/steam/callback",
     "/api/me",
+    "/api/stripe/config",
+    "/api/stripe/connect",
+    "/api/stripe/callback",
     "/login.html",
     "/maintenance.html",
     "/style.css",
@@ -1731,7 +1734,10 @@ app.get("/api/stripe/callback", async (req, res) => {
   }
 });
 
-app.get("/api/me", async (req, res) => {
+app.get("/api/me",
+    "/api/stripe/config",
+    "/api/stripe/connect",
+    "/api/stripe/callback", async (req, res) => {
   if (!req.session.user?.id) {
     return res.json({
       authenticated: false,

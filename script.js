@@ -767,6 +767,7 @@ async function renderHomePage() {
 
         const productsHtml = bannerProducts.length
           ? `<div class="featured-banner-products">
+              ${bannerProducts.length > 3 ? `
               <div class="featured-carousel-header">
                 <h3>Produits associés</h3>
                 <div class="featured-carousel-nav">
@@ -775,6 +776,7 @@ async function renderHomePage() {
                 </div>
               </div>
               <div class="featured-carousel-strip" id="fb-carousel-${idx}">
+              ` : `<div class="featured-carousel-strip" id="fb-carousel-${idx}" style="flex-wrap:wrap;">`}
                 ${bannerProducts.map(p => {
                   const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
                   const ps = p.slug || p.id;
@@ -811,16 +813,17 @@ async function renderHomePage() {
       // Clear the old global products container (now per-banner)
       fbProducts.innerHTML = "";
 
-      // Init carousel navigation
-      document.querySelectorAll('.fb-carousel-prev, .fb-carousel-next').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const idx = btn.dataset.cbanner;
-          const strip = document.getElementById(`fb-carousel-${idx}`);
-          if (!strip) return;
-          const dir = btn.classList.contains('fb-carousel-prev') ? -1 : 1;
-          const amt = strip.clientWidth * 0.8;
-          strip.scrollBy({ left: dir * amt, behavior: 'smooth' });
-        });
+      // Init carousel navigation (only for banners with >3 products)
+      activeBanners.forEach((banner, idx) => {
+        const meta = banner.metadata || {};
+        const productIds = Array.isArray(meta.productIds) ? meta.productIds : [];
+        if (productIds.length <= 3) return;
+        const strip = document.getElementById(`fb-carousel-${idx}`);
+        if (!strip) return;
+        const prev = strip.parentElement.querySelector('.fb-carousel-prev');
+        const next = strip.parentElement.querySelector('.fb-carousel-next');
+        if (prev) prev.addEventListener('click', () => strip.scrollBy({ left: -strip.clientWidth * 0.8, behavior: 'smooth' }));
+        if (next) next.addEventListener('click', () => strip.scrollBy({ left: strip.clientWidth * 0.8, behavior: 'smooth' }));
       });
     } else {
       fbSection.style.display = "none";

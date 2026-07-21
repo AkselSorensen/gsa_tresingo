@@ -774,9 +774,8 @@ async function renderHomePage() {
                   <button class="fb-carousel-prev" data-cbanner="${idx}">◀</button>
                   <button class="fb-carousel-next" data-cbanner="${idx}">▶</button>
                 </div>
-              </div>
-              <div class="featured-carousel-strip" id="fb-carousel-${idx}">
-              ` : `<div class="featured-carousel-strip" id="fb-carousel-${idx}" style="flex-wrap:wrap;">`}
+              </div>` : ''}
+              <div class="featured-carousel-strip" id="fb-carousel-${idx}" style="${bannerProducts.length > 3 ? '' : 'flex-wrap:wrap;'}">
                 ${bannerProducts.map(p => {
                   const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
                   const ps = p.slug || p.id;
@@ -813,15 +812,12 @@ async function renderHomePage() {
       // Clear the old global products container (now per-banner)
       fbProducts.innerHTML = "";
 
-      // Init carousel navigation (only for banners with >3 products)
-      activeBanners.forEach((banner, idx) => {
-        const meta = banner.metadata || {};
-        const productIds = Array.isArray(meta.productIds) ? meta.productIds : [];
-        if (productIds.length <= 3) return;
-        const strip = document.getElementById(`fb-carousel-${idx}`);
+      // Init carousel navigation
+      document.querySelectorAll('.featured-carousel-nav').forEach(nav => {
+        const strip = nav.closest('.featured-banner-products')?.querySelector('.featured-carousel-strip');
         if (!strip) return;
-        const prev = strip.parentElement.querySelector('.fb-carousel-prev');
-        const next = strip.parentElement.querySelector('.fb-carousel-next');
+        const prev = nav.querySelector('.fb-carousel-prev');
+        const next = nav.querySelector('.fb-carousel-next');
         if (prev) prev.addEventListener('click', () => strip.scrollBy({ left: -strip.clientWidth * 0.8, behavior: 'smooth' }));
         if (next) next.addEventListener('click', () => strip.scrollBy({ left: strip.clientWidth * 0.8, behavior: 'smooth' }));
       });

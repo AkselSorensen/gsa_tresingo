@@ -732,6 +732,53 @@
             </div>
           </div>
 
+          <!-- Gradient text toggle -->
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-right:4px;">Dégradé texte</div>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="fb-text-gradient" style="width:16px;height:16px;accent-color:var(--accent);" />
+              <span style="font-size:0.82rem;color:var(--muted);">Activer</span>
+            </label>
+          </div>
+          <div id="fb-text-gradient-options" style="display:none;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:0.7rem;color:var(--muted-2);margin-bottom:4px;">Couleur début</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="fb-text-grad-start" value="#2f7df6" style="width:40px;height:34px;border-radius:6px;border:1px solid var(--panel-border);background:transparent;cursor:pointer;padding:2px;" />
+                <input type="text" id="fb-text-grad-start-hex" value="#2f7df6" maxlength="9" style="flex:1;padding:6px 8px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+              </div>
+            </div>
+            <div>
+              <div style="font-size:0.7rem;color:var(--muted-2);margin-bottom:4px;">Couleur fin</div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="fb-text-grad-end" value="#6c5ce7" style="width:40px;height:34px;border-radius:6px;border:1px solid var(--panel-border);background:transparent;cursor:pointer;padding:2px;" />
+                <input type="text" id="fb-text-grad-end-hex" value="#6c5ce7" maxlength="9" style="flex:1;padding:6px 8px;font-size:0.8rem;border-radius:6px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Text style options -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Taille</div>
+              <select id="fb-text-size" style="width:100%;padding:8px 10px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);font-family:inherit;">
+                <option value="small">Petite</option>
+                <option value="medium" selected>Moyenne</option>
+                <option value="large">Grande</option>
+                <option value="xlarge">Très grande</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Épaisseur</div>
+              <select id="fb-text-weight" style="width:100%;padding:8px 10px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);font-family:inherit;">
+                <option value="500">Normal</option>
+                <option value="700" selected>Gras</option>
+                <option value="800">Extra gras</option>
+                <option value="900">Black</option>
+              </select>
+            </div>
+          </div>
+
           <!-- Products selector -->
           <div style="display:grid;gap:8px;">
             <div style="font-size:0.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;">Produits liés</div>
@@ -1722,6 +1769,14 @@
       document.getElementById('fb-text').value = '';
       document.getElementById('fb-text-color').value = '#ffffff';
       document.getElementById('fb-text-color-hex').value = '#ffffff';
+      document.getElementById('fb-text-gradient').checked = false;
+      document.getElementById('fb-text-gradient-options').style.display = 'none';
+      document.getElementById('fb-text-grad-start').value = '#2f7df6';
+      document.getElementById('fb-text-grad-start-hex').value = '#2f7df6';
+      document.getElementById('fb-text-grad-end').value = '#6c5ce7';
+      document.getElementById('fb-text-grad-end-hex').value = '#6c5ce7';
+      document.getElementById('fb-text-size').value = 'medium';
+      document.getElementById('fb-text-weight').value = '700';
       document.getElementById('fb-preview-cont').style.display = 'none';
       document.getElementById('fb-upload-zone').style.display = '';
       document.getElementById('fb-preview-img').src = '';
@@ -1753,6 +1808,16 @@
       document.getElementById('fb-text').value = meta.textOverlay || '';
       document.getElementById('fb-text-color').value = meta.textColor || '#ffffff';
       document.getElementById('fb-text-color-hex').value = meta.textColor || '#ffffff';
+      // Text style
+      const useGrad = meta.textGradient === true;
+      document.getElementById('fb-text-gradient').checked = useGrad;
+      document.getElementById('fb-text-gradient-options').style.display = useGrad ? 'grid' : 'none';
+      document.getElementById('fb-text-grad-start').value = meta.textGradStart || '#2f7df6';
+      document.getElementById('fb-text-grad-start-hex').value = meta.textGradStart || '#2f7df6';
+      document.getElementById('fb-text-grad-end').value = meta.textGradEnd || '#6c5ce7';
+      document.getElementById('fb-text-grad-end-hex').value = meta.textGradEnd || '#6c5ce7';
+      document.getElementById('fb-text-size').value = meta.textSize || 'medium';
+      document.getElementById('fb-text-weight').value = String(meta.textWeight || '700');
 
       // Handle base64 image
       if (bannerImage.startsWith('data:')) {
@@ -1819,6 +1884,11 @@
           bgColor: document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a',
           textOverlay: document.getElementById('fb-text').value.trim(),
           textColor: document.getElementById('fb-text-color-hex').value.trim() || '#ffffff',
+          textGradient: document.getElementById('fb-text-gradient').checked,
+          textGradStart: document.getElementById('fb-text-grad-start-hex').value.trim() || '#2f7df6',
+          textGradEnd: document.getElementById('fb-text-grad-end-hex').value.trim() || '#6c5ce7',
+          textSize: document.getElementById('fb-text-size').value,
+          textWeight: Number(document.getElementById('fb-text-weight').value) || 700,
           productIds: selectedFeaturedBannerProducts,
         };
         const isActive = document.getElementById('fb-active').checked;
@@ -1861,6 +1931,18 @@
       const displayText = textOverlay || titleVal || 'Bannière mise en avant';
       const textColor = document.getElementById('fb-text-color-hex').value.trim() || '#ffffff';
       const bgColor = document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a';
+      const useGrad = document.getElementById('fb-text-gradient').checked;
+      const gradStart = document.getElementById('fb-text-grad-start-hex').value.trim() || '#2f7df6';
+      const gradEnd = document.getElementById('fb-text-grad-end-hex').value.trim() || '#6c5ce7';
+      const textSize = document.getElementById('fb-text-size').value;
+      const textWeight = document.getElementById('fb-text-weight').value || '700';
+
+      const sizes = { small: '1rem', medium: 'clamp(1.4rem,3vw,2rem)', large: 'clamp(1.8rem,4vw,2.8rem)', xlarge: 'clamp(2.2rem,5vw,3.6rem)' };
+      const fontSize = sizes[textSize] || sizes.medium;
+
+      const textStyle = useGrad
+        ? `background:linear-gradient(135deg, ${gradStart}, ${gradEnd});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:${textWeight};`
+        : `color:${textColor};font-weight:${textWeight};`;
 
       if (imageUrl) {
         imgEl.src = imageUrl;
@@ -1874,7 +1956,7 @@
       }
 
       textEl.textContent = displayText;
-      textEl.style.color = textColor;
+      textEl.style.cssText = `${textStyle}font-size:${fontSize};margin:0;padding:16px 24px;text-align:center;letter-spacing:-0.02em;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.5);max-width:600px;`;
       renderFeaturedBannerProducts();
     }
 
@@ -1954,7 +2036,9 @@
 
     // Live preview on input changes
     document.addEventListener('input', function(e) {
-      if (['fb-image-url', 'fb-bg-color', 'fb-bg-color-hex', 'fb-text', 'fb-text-color', 'fb-text-color-hex'].includes(e.target.id)) {
+      if (['fb-image-url', 'fb-bg-color', 'fb-bg-color-hex', 'fb-text', 'fb-text-color', 'fb-text-color-hex',
+           'fb-text-grad-start', 'fb-text-grad-start-hex', 'fb-text-grad-end', 'fb-text-grad-end-hex',
+           'fb-text-size', 'fb-text-weight'].includes(e.target.id)) {
         // Sync color picker <-> hex input
         if (e.target.id === 'fb-bg-color') {
           document.getElementById('fb-bg-color-hex').value = e.target.value;
@@ -2047,6 +2131,14 @@
           document.getElementById('fb-preview-cont').style.display = 'none';
           document.getElementById('fb-upload-zone').style.display = '';
           document.getElementById('fb-preview-img').src = '';
+          updateFeaturedBannerPreview();
+        });
+      }
+      // Gradient toggle
+      const fbGradToggle = document.getElementById('fb-text-gradient');
+      if (fbGradToggle) {
+        fbGradToggle.addEventListener('change', () => {
+          document.getElementById('fb-text-gradient-options').style.display = fbGradToggle.checked ? 'grid' : 'none';
           updateFeaturedBannerPreview();
         });
       }

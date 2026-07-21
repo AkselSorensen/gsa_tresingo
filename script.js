@@ -797,7 +797,10 @@ async function renderHomePage() {
             <a class="featured-banner-inner" style="display:block;text-decoration:none;width:100%;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:21/9;min-height:160px;background:${!imgUrl ? bgColor : 'none'};">
               ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" />` : ''}
               <div class="featured-banner-overlay">
-                ${txt ? `<h2 class="featured-banner-title" style="margin:0;color:${txtColor};">${escapeHtml(txt)}</h2>` : ''}
+                ${txt ? (meta.textGradient
+                  ? `<h2 class="featured-banner-title" style="margin:0;background:linear-gradient(135deg,${meta.textGradStart || '#2f7df6'},${meta.textGradEnd || '#6c5ce7'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:${meta.textWeight || 700};font-size:${({small:'1rem',medium:'clamp(1.4rem,3vw,2rem)',large:'clamp(1.8rem,4vw,2.8rem)',xlarge:'clamp(2.2rem,5vw,3.6rem)'})[meta.textSize] || 'clamp(1.4rem,3vw,2rem)'};">${escapeHtml(txt)}</h2>`
+                  : `<h2 class="featured-banner-title" style="margin:0;color:${meta.textColor || txtColor};font-weight:${meta.textWeight || 700};font-size:${({small:'1rem',medium:'clamp(1.4rem,3vw,2rem)',large:'clamp(1.8rem,4vw,2.8rem)',xlarge:'clamp(2.2rem,5vw,3.6rem)'})[meta.textSize] || 'clamp(1.4rem,3vw,2rem)'};">${escapeHtml(txt)}</h2>`
+                ) : ''}
               </div>
             </a>
             ${productsHtml}

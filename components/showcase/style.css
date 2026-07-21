@@ -39,8 +39,8 @@
 
 .featured-banner-item {
   display: block;
-  padding-bottom: 64px;
-  margin-bottom: 64px;
+  padding: 32px 0 64px;
+  margin: 32px 0 64px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -48,6 +48,11 @@
   padding-bottom: 0;
   margin-bottom: 0;
   border-bottom: none;
+}
+
+.featured-banner-item:first-of-type {
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .featured-banner-inner {

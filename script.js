@@ -774,7 +774,8 @@ async function renderHomePage() {
                 const oldP = hasDiscount ? `<span class="fbpc-oldprice">${Number(p.old_price || p.price).toFixed(2)}€</span>` : '';
                 return `
                   <a href="/product.html?slug=${encodeURIComponent(ps)}" class="featured-product-card">
-                    ${pu ? `<img src="${pu}" alt="${escapeHtml(p.title)}" loading="lazy" class="fbpc-img" />` : '<div class="fbpc-img"></div>'}
+                    ${pu ? `<img src="${pu}" alt="${escapeHtml(p.title)}" loading="lazy" class="fbpc-img" />` : '<div class="fbpc-img" style="background:var(--panel-border);"></div>'}
+                    <div class="fbpc-overlay"></div>
                     <div class="fbpc-body">
                       <div class="fbpc-title">${escapeHtml(p.title)}</div>
                       <div class="fbpc-meta">

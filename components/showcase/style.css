@@ -212,19 +212,19 @@
   display: block;
   text-decoration: none;
   color: inherit;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
-  aspect-ratio: 16 / 7;
-  min-height: 100px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-  border: 1px solid rgba(255,255,255,0.06);
+  aspect-ratio: 16 / 6;
+  min-height: 70px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid rgba(255,255,255,0.05);
 }
 
 .featured-product-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
-  border-color: rgba(47,125,246,0.25);
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(47,125,246,0.2);
 }
 
 .featured-product-card .fbpc-img {
@@ -239,7 +239,7 @@
 .featured-product-card .fbpc-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.35) 100%);
+  background: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.02) 60%, rgba(0,0,0,0.3) 100%);
   z-index: 1;
 }
 
@@ -249,36 +249,36 @@
   left: 0;
   right: 0;
   z-index: 2;
-  padding: 16px 14px 14px;
+  padding: 10px 12px 10px;
   display: grid;
-  gap: 3px;
+  gap: 2px;
 }
 
 .featured-product-card .fbpc-title {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  line-height: 1.25;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .featured-product-card .fbpc-price {
-  font-size: 0.9rem;
-  font-weight: 800;
+  font-size: 0.78rem;
+  font-weight: 700;
   color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
 }
 
 .featured-product-card .fbpc-oldprice {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.55);
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.5);
   text-decoration: line-through;
-  margin-right: 4px;
+  margin-right: 3px;
   font-weight: 500;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .sales-section-v2 {

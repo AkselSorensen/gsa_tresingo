@@ -419,9 +419,6 @@ async function maintenanceMiddleware(req, res, next) {
     "/auth/steam",
     "/auth/steam/callback",
     "/api/me",
-    "/api/checkout/create-session",
-    "/api/checkout/confirm-session",
-    "/api/checkout/buy-now",
     "/login.html",
     "/maintenance.html",
     "/style.css",
@@ -1708,10 +1705,7 @@ app.get("/api/stripe/config", (_req, res) => {
   });
 });
 
-app.get("/api/me",
-    "/api/checkout/create-session",
-    "/api/checkout/confirm-session",
-    "/api/checkout/buy-now", async (req, res) => {
+app.get("/api/me", async (req, res) => {
   if (!req.session.user?.id) {
     return res.json({
       authenticated: false,
@@ -2246,40 +2240,8 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       discounts: stripeDiscounts,
       success_url: `${APP_BASE_URL}/cart.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_BASE_URL}/cart.html?checkout=cancel`,
-      // Quick buy - single product checkout
-app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
-  if (!stripe || !STRIPE_PUBLIC_KEY) {
-    return res.status(503).json({ message: "Stripe non configuré" });
-  }
-  try {
-    const { slug } = req.body;
-    const prod = await pool.query(`SELECT * FROM products WHERE slug = $1 LIMIT 1`, [slug]);
-    if (!prod.rowCount) return res.status(404).json({ message: "Produit introuvable" });
-    const p = prod.rows[0];
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      customer_email: req.session.user.email,
-      line_items: [{
-        quantity: 1,
-        price_data: {
-          currency: "eur",
-          unit_amount: Math.round(Number(p.price) * 100),
-          product_data: { name: p.title, images: p.preview?.thumbnail ? [p.preview.thumbnail] : [] },
-        },
-      }],
-      success_url: `${APP_BASE_URL}/product/${slug}?buy=success`,
-      cancel_url: `${APP_BASE_URL}/product/${slug}?buy=cancel`,
-      metadata: { userId: String(req.session.user.id), productSlug: slug, productId: String(p.id) },
-    });
-    res.json({ ok: true, url: session.url });
-  } catch (err) {
-    console.error("Buy now error:", err);
-    res.status(500).json({ message: "Erreur Stripe" });
-  }
-});
-
-metadata: { userId: String(req.session.user.id),
+      metadata: {
+        userId: String(req.session.user.id),
         cartId: String(cart.id),
         promoCodeId: promoState?.promo ? String(promoState.promo.id) : "",
         promoCode: promoState?.promo?.code || "",

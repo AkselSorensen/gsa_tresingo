@@ -113,6 +113,7 @@
 /* Product carousel under each banner */
 .featured-banner-products {
   margin-top: 16px;
+  margin-bottom: 8px;
   position: relative;
 }
 

@@ -1795,11 +1795,8 @@
     async function deleteFeaturedBanner(key) {
       if (!confirm('Supprimer cette mise en avant ?')) return;
       try {
-        // Delete by setting is_active false + clearing metadata to hide it
-        // We can't truly delete from admin_landing_config via the API, so we deactivate
         await apiFetch(`/api/admin/landing-config/${encodeURIComponent(key)}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ isActive: false, title: '', description: '', metadata: {} })
+          method: 'DELETE',
         });
         if (fbEditingKey === key) cancelFeaturedBannerEdit();
         await loadFeaturedBanner();

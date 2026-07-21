@@ -2812,6 +2812,18 @@ app.patch("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/landing-config/:key - remove landing configuration
+app.delete("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
+  const sectionKey = String(req.params.key);
+  try {
+    await pool.query(`DELETE FROM admin_landing_config WHERE section_key = $1`, [sectionKey]);
+    res.json({ ok: true, deleted: true });
+  } catch (error) {
+    console.error("Landing config delete error:", error);
+    res.status(500).json({ message: "Unable to delete landing config" });
+  }
+});
+
 // PATCH /api/admin/settings -update maintenance mode
 app.patch("/api/admin/settings", requireAdmin, async (req, res) => {
   const { maintenanceMode } = req.body;

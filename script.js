@@ -767,24 +767,31 @@ async function renderHomePage() {
 
         const productsHtml = bannerProducts.length
           ? `<div class="featured-banner-products">
-              ${bannerProducts.map(p => {
-                const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
-                const ps = p.slug || p.id;
-                const hasDiscount = Number(p.discount_percent) > 0;
-                const oldP = hasDiscount ? `<span class="fbpc-oldprice">${Number(p.old_price || p.price).toFixed(2)}€</span>` : '';
-                return `
-                  <a href="/product.html?slug=${encodeURIComponent(ps)}" class="featured-product-card">
-                    ${pu ? `<img src="${pu}" alt="${escapeHtml(p.title)}" loading="lazy" class="fbpc-img" />` : '<div class="fbpc-img" style="background:var(--panel-border);"></div>'}
-                    <div class="fbpc-overlay"></div>
-                    <div class="fbpc-body">
-                      <div class="fbpc-title">${escapeHtml(p.title)}</div>
-                      <div class="fbpc-meta">
+              <div class="featured-carousel-header">
+                <h3>Produits associés</h3>
+                <div class="featured-carousel-nav">
+                  <button class="fb-carousel-prev" data-cbanner="${idx}">◀</button>
+                  <button class="fb-carousel-next" data-cbanner="${idx}">▶</button>
+                </div>
+              </div>
+              <div class="featured-carousel-strip" id="fb-carousel-${idx}">
+                ${bannerProducts.map(p => {
+                  const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
+                  const ps = p.slug || p.id;
+                  const hasDiscount = Number(p.discount_percent) > 0;
+                  const oldP = hasDiscount ? `<span class="fbpc-oldprice">${Number(p.old_price || p.price).toFixed(2)}€</span>` : '';
+                  return `
+                    <a href="/product.html?slug=${encodeURIComponent(ps)}" class="featured-product-card">
+                      ${pu ? `<img src="${pu}" alt="${escapeHtml(p.title)}" loading="lazy" class="fbpc-img" />` : '<div class="fbpc-img" style="background:var(--panel-border);"></div>'}
+                      <div class="fbpc-overlay"></div>
+                      <div class="fbpc-body">
+                        <div class="fbpc-title">${escapeHtml(p.title)}</div>
                         <div class="fbpc-price">${oldP}${p.price ? Number(p.price).toFixed(2) + '€' : ''}</div>
                       </div>
-                    </div>
-                  </a>
-                `;
-              }).join('')}
+                    </a>
+                  `;
+                }).join('')}
+              </div>
             </div>`
           : '';
 
@@ -803,6 +810,18 @@ async function renderHomePage() {
 
       // Clear the old global products container (now per-banner)
       fbProducts.innerHTML = "";
+
+      // Init carousel navigation
+      document.querySelectorAll('.fb-carousel-prev, .fb-carousel-next').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const idx = btn.dataset.cbanner;
+          const strip = document.getElementById(`fb-carousel-${idx}`);
+          if (!strip) return;
+          const dir = btn.classList.contains('fb-carousel-prev') ? -1 : 1;
+          const amt = strip.clientWidth * 0.8;
+          strip.scrollBy({ left: dir * amt, behavior: 'smooth' });
+        });
+      });
     } else {
       fbSection.style.display = "none";
     }

@@ -39,12 +39,14 @@
 
 .featured-banner-item {
   display: block;
-  padding-bottom: 80px;
+  padding-bottom: 64px;
+  margin-bottom: 64px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .featured-banner-item:last-child {
   padding-bottom: 0;
+  margin-bottom: 0;
   border-bottom: none;
 }
 
@@ -153,14 +155,14 @@
 }
 
 .featured-carousel-strip > * {
-  flex: 0 0 calc((100% - 12px) / 2);
+  flex: 0 0 calc((100% - 12px) / 3);
   min-width: 0;
   scroll-snap-align: start;
 }
 
 @media (max-width: 700px) {
   .featured-carousel-strip > * {
-    flex: 0 0 calc((100% - 12px) / 1.2);
+    flex: 0 0 calc((100% - 12px) / 1.5);
   }
 }
 

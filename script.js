@@ -732,19 +732,26 @@ async function renderHomePage() {
   const fbWrap = document.querySelector("#featured-banner-section .featured-banner-wrap");
   const fbProducts = document.getElementById("featured-banner-products");
 
-  // Get all product IDs from active banners
-  const activeBanners = fbBanners.filter(c => c.is_active !== false);
-  const allBannerProductIds = [];
-  activeBanners.forEach(b => {
-    const ids = Array.isArray(b.metadata?.productIds) ? b.metadata.productIds : [];
-    ids.forEach(id => { if (!allBannerProductIds.includes(id)) allBannerProductIds.push(id); });
-  });
-
-  if (fbSection && fbWrap && fbProducts) {
+  if (fbSection && fbWrap) {
+    const activeBanners = fbBanners.filter(c => c.is_active !== false);
     if (activeBanners.length) {
       fbSection.style.display = "";
       // Hide social proof banners when featured banners exist
       banners.forEach(b => { b.style.display = "none"; });
+
+      // Fetch all products once (bootstrap + API) for all banners
+      const allBoot = [
+        ...(state.bootstrap.trending || []),
+        ...(state.bootstrap.discounts || []),
+        ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
+      ];
+      let allProductsMap = new Map(allBoot.map(p => [p.id, p]));
+      // Try API for any missing products
+      try {
+        const apiRes = await api('/api/products?limit=200');
+        const apiP = (apiRes.items || apiRes.products || []);
+        apiP.forEach(p => { if (!allProductsMap.has(p.id)) allProductsMap.set(p.id, p); });
+      } catch(e) { console.error('Fetch products:', e); }
 
       // Build all banner HTML
       fbWrap.innerHTML = activeBanners.map((banner, idx) => {
@@ -755,15 +762,8 @@ async function renderHomePage() {
         const txtColor = meta.textColor || "#ffffff";
         const productIds = Array.isArray(meta.productIds) ? meta.productIds : [];
 
-        // Find this banner's products
-        const allBoot = [
-          ...(state.bootstrap.trending || []),
-          ...(state.bootstrap.discounts || []),
-          ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
-        ];
-        let bannerProducts = Array.from(new Map(allBoot.map(p => [p.id, p])).values())
-          .filter(p => productIds.includes(p.id));
-        // For products not found in bootstrap, use allBannerProductIds fallback
+        // Find this banner's products from combined pool
+        let bannerProducts = productIds.map(id => allProductsMap.get(id)).filter(Boolean);
 
         const productsHtml = bannerProducts.length
           ? `<div class="featured-banner-products" style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">

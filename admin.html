@@ -742,6 +742,24 @@
           </div>
           <div id="fb-text-gradient-options" style="display:none;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
+              <div style="font-size:0.7rem;color:var(--muted-2);margin-bottom:4px;">Dégradé prédéfini</div>
+              <select id="fb-grad-preset" style="width:100%;padding:8px 10px;font-size:0.85rem;border-radius:8px;border:1px solid var(--panel-border);background:#0e131b;color:var(--text);font-family:inherit;" onchange="applyGradPreset()">
+                <option value="">-- Personnalisé --</option>
+                <option value="#2f7df6,#6c5ce7">Bleu → Violet</option>
+                <option value="#f093fb,#f5576c">Rose → Rouge</option>
+                <option value="#4facfe,#00f2fe">Bleu → Cyan</option>
+                <option value="#43e97b,#38f9d7">Vert → Menthe</option>
+                <option value="#fa709a,#fee140">Rose → Jaune</option>
+                <option value="#a18cd1,#fbc2eb">Violet → Rose</option>
+                <option value="#fccb90,#d57eeb">Orange → Violet</option>
+                <option value="#e0c3fc,#8ec5fc">Lavande → Bleu</option>
+                <option value="#f5af19,#f12711">Jaune → Rouge</option>
+                <option value="#667eea,#764ba2">Bleu roi → Violet</option>
+                <option value="#ffffff,#e0e0e0">Blanc → Gris</option>
+                <option value="#ffecd2,#fcb69f">Crème → Pêche</option>
+              </select>
+            </div>
+            <div>
               <div style="font-size:0.7rem;color:var(--muted-2);margin-bottom:4px;">Couleur début</div>
               <div style="display:flex;gap:8px;align-items:center;">
                 <input type="color" id="fb-text-grad-start" value="#2f7df6" style="width:40px;height:34px;border-radius:6px;border:1px solid var(--panel-border);background:transparent;cursor:pointer;padding:2px;" />
@@ -2032,6 +2050,17 @@
       }
       renderFeaturedBannerProductsList();
       renderFeaturedBannerProducts();
+    }
+
+    function applyGradPreset() {
+      const val = document.getElementById('fb-grad-preset').value;
+      if (!val) return;
+      const [start, end] = val.split(',');
+      document.getElementById('fb-text-grad-start').value = start;
+      document.getElementById('fb-text-grad-start-hex').value = start;
+      document.getElementById('fb-text-grad-end').value = end;
+      document.getElementById('fb-text-grad-end-hex').value = end;
+      updateFeaturedBannerPreview();
     }
 
     // Live preview on input changes

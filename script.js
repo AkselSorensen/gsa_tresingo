@@ -679,7 +679,7 @@ function applyNavigationConfig(configs = []) {
   });
 }
 
-function renderHomePage() {
+async function renderHomePage() {
   if (!state.bootstrap) return;
 
   const featured = document.getElementById("trending-featured");
@@ -731,15 +731,16 @@ function renderHomePage() {
   const fbSection = document.getElementById("featured-banner-section");
   const fbWrap = document.querySelector("#featured-banner-section .featured-banner-wrap");
   const fbProducts = document.getElementById("featured-banner-products");
-  const allSiteProducts = [
-    ...(state.bootstrap.trending || []),
-    ...(state.bootstrap.discounts || []),
-    ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
-  ];
-  const uniqueSiteProducts = Array.from(new Map(allSiteProducts.map(p => [p.id, p])).values());
+
+  // Get all product IDs from active banners
+  const activeBanners = fbBanners.filter(c => c.is_active !== false);
+  const allBannerProductIds = [];
+  activeBanners.forEach(b => {
+    const ids = Array.isArray(b.metadata?.productIds) ? b.metadata.productIds : [];
+    ids.forEach(id => { if (!allBannerProductIds.includes(id)) allBannerProductIds.push(id); });
+  });
 
   if (fbSection && fbWrap && fbProducts) {
-    const activeBanners = fbBanners.filter(c => c.is_active !== false);
     if (activeBanners.length) {
       fbSection.style.display = "";
       // Hide social proof banners when featured banners exist
@@ -766,14 +767,29 @@ function renderHomePage() {
       }).join("");
 
       // Collect all product IDs across all active banners
-      const allProductIds = [];
-      activeBanners.forEach(b => {
-        const ids = Array.isArray(b.metadata?.productIds) ? b.metadata.productIds : [];
-        ids.forEach(id => { if (!allProductIds.includes(id)) allProductIds.push(id); });
-      });
+      // (already done above in allBannerProductIds)
 
-      if (allProductIds.length) {
-        const selected = uniqueSiteProducts.filter(p => allProductIds.includes(p.id));
+      if (allBannerProductIds.length) {
+        // First try to find products in bootstrap
+        const allBootProducts = [
+          ...(state.bootstrap.trending || []),
+          ...(state.bootstrap.discounts || []),
+          ...((state.bootstrap.featuredByCategory || []).flatMap(g => g.products || [])),
+        ];
+        let selected = Array.from(new Map(allBootProducts.map(p => [p.id, p])).values())
+          .filter(p => allBannerProductIds.includes(p.id));
+
+        // For products not found in bootstrap, fetch from API
+        const missingIds = allBannerProductIds.filter(id => !selected.find(p => p.id === id));
+        if (missingIds.length) {
+          try {
+            const apiRes = await api('/api/products?limit=200');
+            const apiProducts = (apiRes.items || apiRes.products || []);
+            const extra = apiProducts.filter(p => missingIds.includes(p.id));
+            selected = [...selected, ...extra];
+          } catch(e) { console.error('Fetch products for banner:', e); }
+        }
+
         if (selected.length) {
           fbProducts.innerHTML = selected.map(p => {
             const imgUrl = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';

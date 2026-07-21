@@ -1705,6 +1705,32 @@ app.get("/api/stripe/config", (_req, res) => {
   });
 });
 
+// Stripe Connect - initiate OAuth
+app.get("/api/stripe/connect", (_req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ message: "Stripe not configured" });
+  }
+  const clientId = process.env.STRIPE_CLIENT_ID || "ca_...";
+  const redirectUri = (process.env.APP_BASE_URL || "https://gsa-tresingo.vercel.app") + "/api/stripe/callback";
+  res.redirect(`https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}`);
+});
+
+app.get("/api/stripe/callback", async (req, res) => {
+  const { code } = req.query;
+  if (!code || !stripe) return res.status(400).send("Invalid request");
+  try {
+    const response = await stripe.oauth.token({ grant_type: "authorization_code", code });
+    // Store stripe_account_id in user's session/DB
+    if (req.session.user) {
+      await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE id = $2`, [response.stripe_user_id, req.session.user.id]);
+    }
+    res.redirect("/seller/account?stripe=connected");
+  } catch (err) {
+    console.error("Stripe OAuth error:", err);
+    res.status(500).send("Stripe connection failed");
+  }
+});
+
 app.get("/api/me", async (req, res) => {
   if (!req.session.user?.id) {
     return res.json({

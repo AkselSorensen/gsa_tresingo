@@ -767,7 +767,7 @@ async function renderHomePage() {
 
         const productsHtml = bannerProducts.length
           ? `<div class="featured-banner-products">
-              ${bannerProducts.length > 3 ? `
+              ${bannerProducts.length >= 3 ? `
               <div class="featured-carousel-header">
                 <h3>Produits associés</h3>
                 <div class="featured-carousel-nav">
@@ -775,7 +775,7 @@ async function renderHomePage() {
                   <button class="fb-carousel-next" data-cbanner="${idx}">▶</button>
                 </div>
               </div>` : ''}
-              <div class="featured-carousel-strip" id="fb-carousel-${idx}" style="${bannerProducts.length > 3 ? '' : 'flex-wrap:wrap;'}">
+              <div class="featured-carousel-strip" id="fb-carousel-${idx}" style="${bannerProducts.length >= 3 ? '' : 'flex-wrap:wrap;'}">
                 ${bannerProducts.map(p => {
                   const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
                   const ps = p.slug || p.id;

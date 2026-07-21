@@ -796,7 +796,7 @@ async function renderHomePage() {
           : '';
 
         return `
-          <div class="featured-banner-item" style="margin-bottom:${idx < activeBanners.length - 1 ? '28px' : '0'};">
+          <div class="featured-banner-item">
             <a class="featured-banner-inner" style="display:block;text-decoration:none;width:100%;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:21/9;min-height:160px;background:${!imgUrl ? bgColor : 'none'};">
               ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" />` : ''}
               <div class="featured-banner-overlay">

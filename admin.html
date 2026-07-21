@@ -1752,6 +1752,8 @@
       const urlVal = document.getElementById('fb-image-url').value.trim();
       const imageUrl = fbBannerBase64 || urlVal;
       const textOverlay = document.getElementById('fb-text').value.trim();
+      const titleVal = document.getElementById('fb-title').value.trim();
+      const displayText = textOverlay || titleVal || 'Bannière mise en avant';
       const textColor = document.getElementById('fb-text-color-hex').value.trim() || '#ffffff';
       const bgColor = document.getElementById('fb-bg-color-hex').value.trim() || '#2a2a2a';
 
@@ -1766,7 +1768,7 @@
         bgEl.style.background = bgColor;
       }
 
-      textEl.textContent = textOverlay || 'Bannière mise en avant';
+      textEl.textContent = displayText;
       textEl.style.color = textColor;
       renderFeaturedBannerProducts();
     }

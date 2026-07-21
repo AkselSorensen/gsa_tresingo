@@ -34,75 +34,169 @@
 }
 
 .featured-banner-wrap {
-  width: min(100%, 790px);
+  width: min(100%, 960px);
+}
+
+.featured-banner-item {
+  margin-bottom: 32px;
+}
+
+.featured-banner-item:last-child {
+  margin-bottom: 0;
 }
 
 .featured-banner-inner {
   width: 100%;
   display: block;
   text-decoration: none;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   position: relative;
   aspect-ratio: 21 / 9;
-  min-height: 160px;
-  background-size: cover;
-  background-position: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 200px;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .featured-banner-inner:hover {
-  transform: scale(1.01);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transform: scale(1.02);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
 }
 
 .featured-banner-overlay {
   position: absolute;
   inset: 0;
+  z-index: 1;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.4) 100%);
 }
 
 .featured-banner-title {
   margin: 0;
-  padding: 20px;
+  padding: 24px 32px;
   text-align: center;
-  font-size: clamp(1.4rem, 4vw, 2.6rem);
+  font-size: clamp(1.6rem, 4.5vw, 3rem);
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.2;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+  max-width: 700px;
 }
 
+.featured-banner-cta {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 28px;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.featured-banner-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255,255,255,0.3);
+}
+
+/* Product grid under banner - 4 columns */
 .featured-banner-products {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  margin-top: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
 }
 
+@media (max-width: 900px) {
+  .featured-banner-products { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .featured-banner-products { grid-template-columns: 1fr; }
+}
+
+/* Premium product card */
 .featured-product-card {
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--panel);
-  transition: border-color 0.2s, transform 0.2s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   text-decoration: none;
   color: inherit;
   display: block;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
 .featured-product-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  border-color: rgba(47,125,246,0.3);
 }
 
-.featured-product-card img {
+.featured-product-card .fbpc-img {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   display: block;
+  background: var(--panel-border);
+}
+
+.featured-product-card .fbpc-body {
+  padding: 14px 14px 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.featured-product-card .fbpc-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.featured-product-card .fbpc-category {
+  font-size: 0.72rem;
+  color: var(--muted-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.featured-product-card .fbpc-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.featured-product-card .fbpc-price {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.featured-product-card .fbpc-rating {
+  font-size: 0.78rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.featured-product-card .fbpc-rating svg {
+  width: 14px;
+  height: 14px;
+}
+
+.featured-product-card .fbpc-oldprice {
+  font-size: 0.78rem;
+  color: var(--muted-2);
+  text-decoration: line-through;
+  margin-right: 6px;
 }
 
 .sales-section-v2 {

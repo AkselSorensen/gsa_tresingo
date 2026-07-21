@@ -729,8 +729,7 @@ function renderHomePage() {
   // ── Featured Banner (multi) ──────────────────────────────
   const fbBanners = landingConfig.filter(c => c.section_key && c.section_key.startsWith('featured_banner'));
   const fbSection = document.getElementById("featured-banner-section");
-  const fbBanner = document.getElementById("featured-banner-link");
-  const fbText = document.getElementById("featured-banner-text");
+  const fbWrap = document.querySelector("#featured-banner-section .featured-banner-wrap");
   const fbProducts = document.getElementById("featured-banner-products");
   const allSiteProducts = [
     ...(state.bootstrap.trending || []),
@@ -739,41 +738,32 @@ function renderHomePage() {
   ];
   const uniqueSiteProducts = Array.from(new Map(allSiteProducts.map(p => [p.id, p])).values());
 
-  if (fbSection && fbBanner && fbText && fbProducts) {
+  if (fbSection && fbWrap && fbProducts) {
     const activeBanners = fbBanners.filter(c => c.is_active !== false);
     if (activeBanners.length) {
       fbSection.style.display = "";
-
-      // Hide social proof banners when a featured banner is active
+      // Hide social proof banners when featured banners exist
       banners.forEach(b => { b.style.display = "none"; });
 
-      // Use the first active banner for the main banner slot
-      const banner = activeBanners[0];
-      const meta = banner.metadata || {};
+      // Build all banner HTML
+      fbWrap.innerHTML = activeBanners.map((banner, idx) => {
+        const meta = banner.metadata || {};
+        const imgUrl = meta.bannerImage || "";
+        const bgColor = meta.bgColor || "#2a2a2a";
+        const txt = meta.textOverlay || banner.title || "";
+        const txtColor = meta.textColor || "#ffffff";
 
-      const fbImg = document.getElementById("featured-banner-img");
-      const fbBg = document.getElementById("featured-banner-bg");
-
-      if (meta.bannerImage) {
-        fbImg.src = meta.bannerImage;
-        fbImg.style.display = "";
-        if (fbBg) fbBg.style.display = "none";
-        fbBanner.style.display = "";
-        fbBanner.style.background = "none";
-      } else {
-        fbImg.style.display = "none";
-        if (fbBg) {
-          fbBg.style.display = "";
-          fbBg.style.background = meta.bgColor || "#2a2a2a";
-        }
-        fbBanner.style.display = "";
-      }
-
-      // Use title as fallback for text overlay
-      const displayText = meta.textOverlay || banner.title || "";
-      fbText.textContent = displayText;
-      if (meta.textColor) fbText.style.color = meta.textColor;
-      fbText.style.display = displayText ? "" : "none";
+        return `
+          <div class="featured-banner-item" style="margin-bottom:${idx < activeBanners.length - 1 ? '20px' : '0'};">
+            <a class="featured-banner-inner" style="display:block;text-decoration:none;width:100%;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:21/9;min-height:160px;background:${!imgUrl ? bgColor : 'none'};">
+              ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" />` : ''}
+              <div class="featured-banner-overlay" style="position:absolute;inset:0;z-index:1;display:grid;place-items:center;background:rgba(0,0,0,0.25);${!txt ? 'display:none;' : ''}">
+                ${txt ? `<h2 class="featured-banner-title" style="margin:0;padding:20px;text-align:center;color:${txtColor};font-size:clamp(1.4rem,4vw,2.6rem);font-weight:800;letter-spacing:-0.03em;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,0.5);">${escapeHtml(txt)}</h2>` : ''}
+              </div>
+            </a>
+          </div>
+        `;
+      }).join("");
 
       // Collect all product IDs across all active banners
       const allProductIds = [];

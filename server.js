@@ -1713,7 +1713,10 @@ app.get("/api/stripe/connect", (_req, res) => {
   if (!stripe) {
     return res.status(503).json({ message: "Stripe not configured" });
   }
-  const clientId = process.env.STRIPE_CLIENT_ID || "ca_...";
+  const clientId = process.env.STRIPE_CLIENT_ID;
+  if (!clientId) {
+    return res.status(500).json({ message: "STRIPE_CLIENT_ID missing. Add it in Vercel env vars." });
+  }
   const redirectUri = (process.env.APP_BASE_URL || "https://gsa-tresingo.vercel.app") + "/api/stripe/callback";
   res.redirect(`https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}`);
 });

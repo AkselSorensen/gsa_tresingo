@@ -8,9 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    .admin-shell { padding: 8px 0; }
+    .admin-shell { padding: 8px 16px; }
     .admin-shell .site-shell { min-height: auto; }
-    .admin-header { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+    .admin-shell .container {
+      max-width: 100% !important;
+    }
     .admin-tab-panel { display:none; }
     .admin-tab-panel.active { display:block; }
     .admin-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
@@ -209,61 +211,163 @@
     /* Sidebar layout */
     .admin-layout {
       display: grid;
-      grid-template-columns: 180px 1fr;
+      grid-template-columns: 220px 1fr;
       align-items: start;
+      min-height: calc(100vh - 16px);
+      gap: 0;
     }
+    /* ── Sidebar ───────────────────────────────── */
     .admin-sidebar {
+      background: linear-gradient(180deg, #0f1219 0%, #0a0d14 100%);
+      border-right: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px 0 0 12px;
+      padding: 0 0 16px;
+      position: sticky;
+      top: 0;
+      min-height: calc(100vh - 16px);
+      display: flex;
+      flex-direction: column;
     }
-    .admin-sidebar .admin-header {
-      padding: 16px 12px 4px;
+    .admin-sidebar-brand {
+      padding: 24px 18px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 8px;
+    }
+    .admin-sidebar-brand .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2f7df6, #6c5ce7);
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .admin-sidebar-brand h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .admin-sidebar-brand .badge-admin {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(47,125,246,0.15);
+      color: #90cdf4;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .admin-sidebar-actions {
+      padding: 12px 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 4px;
+      display: flex;
+      gap: 6px;
+    }
+    .admin-sidebar-actions a,
+    .admin-sidebar-actions button {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      text-align: center;
+      text-decoration: none;
+    }
+    .admin-sidebar-actions a:hover,
+    .admin-sidebar-actions button:hover {
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
     }
     .admin-sidebar .admin-tabs {
       display: flex;
       flex-direction: column;
-      gap: 1px;
-      padding: 4px 8px 12px;
+      gap: 2px;
+      padding: 4px 10px;
+      flex: 1;
     }
     .admin-sidebar .tab-button {
       justify-content: flex-start;
-      padding: 8px 10px;
-      border-radius: 6px;
+      padding: 10px 14px;
+      border-radius: 8px;
       border: none;
       background: transparent;
-      color: var(--muted);
-      font-size: 0.82rem;
+      color: #7a8394;
+      font-size: 0.85rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all 0.2s ease;
       font-family: inherit;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       text-align: left;
+      position: relative;
     }
     .admin-sidebar .tab-button:hover {
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      color: #d0d6e0;
     }
     .admin-sidebar .tab-button.active {
-      background: rgba(47,125,246,0.12);
+      background: linear-gradient(135deg, rgba(47,125,246,0.15), rgba(108,92,231,0.08));
       color: #90cdf4;
+      font-weight: 600;
+    }
+    .admin-sidebar .tab-button.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 20px;
+      border-radius: 0 3px 3px 0;
+      background: linear-gradient(180deg, #2f7df6, #6c5ce7);
     }
     .admin-sidebar .tab-button svg {
       width: 18px;
       height: 18px;
       flex-shrink: 0;
+      opacity: 0.7;
     }
+    .admin-sidebar .tab-button.active svg {
+      opacity: 1;
+    }
+    .admin-sidebar-footer {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.65rem;
+      color: rgba(255,255,255,0.2);
+      text-align: center;
+    }
+    /* ── Main Content ──────────────────────────── */
     .admin-main {
       flex: 1;
       min-width: 0;
-      padding: 20px 0 20px 24px;
+      padding: 24px 28px;
+      background: rgba(255,255,255,0.01);
+      border-radius: 0 12px 12px 0;
+      min-height: calc(100vh - 16px);
     }
     @media (max-width: 768px) {
       .admin-layout { grid-template-columns: 1fr; }
-      .admin-main { padding: 12px 0; }
-      .admin-sidebar .admin-tabs { flex-direction: row; overflow-x: auto; }
-      .admin-sidebar .tab-button { white-space: nowrap; flex-shrink: 0; }
+      .admin-main { padding: 16px; }
+      .admin-sidebar { min-height: auto; border-radius: 12px 12px 0 0; }
+      .admin-sidebar .admin-tabs { flex-direction: row; flex-wrap: wrap; }
+      .admin-sidebar .tab-button { white-space: nowrap; flex-shrink: 0; flex: 1; min-width: 100px; justify-content: center; }
+      .admin-sidebar .tab-button.active::before { display: none; }
+      .admin-sidebar-footer { display: none; }
     }
   </style>
 </head>
@@ -274,15 +378,14 @@
       <div class="admin-layout">
 
       <div class="admin-sidebar">
-      <div class="admin-header">
-        <div>
-          <div class="eyebrow" style="font-size:0.7rem;">Administration</div>
-          <h1 style="margin:0;font-size:1rem;">Dashboard Admin</h1>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <a class="ghost-button" href="/" style="font-size:0.72rem;min-height:24px;padding:2px 8px;">← Retour</a>
-          <button class="danger-button" id="btn-logout" style="font-size:0.72rem;min-height:24px;padding:2px 8px;">Déconnexion</button>
-        </div>
+      <div class="admin-sidebar-brand">
+        <div class="brand-icon">G</div>
+        <h1>Dashboard</h1>
+        <span class="badge-admin">Administrateur</span>
+      </div>
+      <div class="admin-sidebar-actions">
+        <a href="/">← Retour</a>
+        <button id="btn-logout">Déconnexion</button>
       </div>
 
       <div class="admin-tabs">
@@ -293,6 +396,7 @@
         <button class="tab-button" data-tab="featured"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Mise en avant</button>
         <button class="tab-button" data-tab="pages"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Pages</button>
       </div>
+      <div class="admin-sidebar-footer">GSA Admin v1.0</div>
       </div>
 
       <div class="admin-main">

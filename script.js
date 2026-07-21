@@ -772,16 +772,13 @@ async function renderHomePage() {
                 const ps = p.slug || p.id;
                 const hasDiscount = Number(p.discount_percent) > 0;
                 const oldP = hasDiscount ? `<span class="fbpc-oldprice">${Number(p.old_price || p.price).toFixed(2)}€</span>` : '';
-                const star = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#f5b342" stroke="#f5b342" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
                 return `
                   <a href="/product.html?slug=${encodeURIComponent(ps)}" class="featured-product-card">
                     ${pu ? `<img src="${pu}" alt="${escapeHtml(p.title)}" loading="lazy" class="fbpc-img" />` : '<div class="fbpc-img"></div>'}
                     <div class="fbpc-body">
-                      <div class="fbpc-category">${escapeHtml(p.category || p.category_name || '')}</div>
                       <div class="fbpc-title">${escapeHtml(p.title)}</div>
-                      <div class="fbpc-bottom">
+                      <div class="fbpc-meta">
                         <div class="fbpc-price">${oldP}${p.price ? Number(p.price).toFixed(2) + '€' : ''}</div>
-                        <div class="fbpc-rating">${star} ${Number(p.rating || 0).toFixed(1)}</div>
                       </div>
                     </div>
                   </a>
@@ -795,10 +792,7 @@ async function renderHomePage() {
             <a class="featured-banner-inner" style="display:block;text-decoration:none;width:100%;border-radius:12px;overflow:hidden;position:relative;aspect-ratio:21/9;min-height:160px;background:${!imgUrl ? bgColor : 'none'};">
               ${imgUrl ? `<img src="${escapeHtml(imgUrl)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" />` : ''}
               <div class="featured-banner-overlay">
-                ${txt ? `<div style="text-align:center;">
-                  <h2 class="featured-banner-title" style="margin:0;color:${txtColor};">${escapeHtml(txt)}</h2>
-                  <a href="/catalogue.html" class="featured-banner-cta">Découvrir</a>
-                </div>` : ''}
+                ${txt ? `<h2 class="featured-banner-title" style="margin:0;color:${txtColor};">${escapeHtml(txt)}</h2>` : ''}
               </div>
             </a>
             ${productsHtml}

@@ -84,6 +84,31 @@
   max-width: 600px;
 }
 
+/* Section title above banners */
+.featured-section-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.featured-section-title h2 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.featured-section-title::after {
+  content: '';
+  display: block;
+  width: 50px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), #6c5ce7);
+  margin: 10px auto 0;
+}
+
 /* Product carousel under each banner */
 .featured-banner-products {
   margin-top: 16px;

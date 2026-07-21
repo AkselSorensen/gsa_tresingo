@@ -739,6 +739,9 @@ async function renderHomePage() {
       // Hide social proof banners when featured banners exist
       banners.forEach(b => { b.style.display = "none"; });
 
+      // Add section title
+      const titleHtml = `<div class="featured-section-title"><h2>Nos partenaires</h2></div>`;
+
       // Fetch all products once (bootstrap + API) for all banners
       const allBoot = [
         ...(state.bootstrap.trending || []),
@@ -754,7 +757,7 @@ async function renderHomePage() {
       } catch(e) { console.error('Fetch products:', e); }
 
       // Build all banner HTML
-      fbWrap.innerHTML = activeBanners.map((banner, idx) => {
+      fbWrap.innerHTML = titleHtml + activeBanners.map((banner, idx) => {
         const meta = banner.metadata || {};
         const imgUrl = meta.bannerImage || "";
         const bgColor = meta.bgColor || "#2a2a2a";

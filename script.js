@@ -767,15 +767,11 @@ async function renderHomePage() {
 
         const productsHtml = bannerProducts.length
           ? `<div class="featured-banner-products">
-              ${bannerProducts.length >= 3 ? `
-              <div class="featured-carousel-header">
-                <h3>Produits associés</h3>
-                <div class="featured-carousel-nav">
-                  <button class="fb-carousel-prev" data-cbanner="${idx}">◀</button>
-                  <button class="fb-carousel-next" data-cbanner="${idx}">▶</button>
-                </div>
-              </div>` : ''}
-              <div class="featured-carousel-strip" id="fb-carousel-${idx}" style="${bannerProducts.length >= 3 ? '' : 'flex-wrap:wrap;'}">
+              <div class="featured-carousel-wrapper">
+                ${bannerProducts.length >= 3 ? `
+                <button class="featured-carousel-arrow prev" data-cbanner="${idx}">◀</button>
+                <button class="featured-carousel-arrow next" data-cbanner="${idx}">▶</button>` : ''}
+                <div class="featured-carousel-strip" id="fb-carousel-${idx}" style="${bannerProducts.length >= 3 ? '' : 'flex-wrap:wrap;'}">
                 ${bannerProducts.map(p => {
                   const pu = p.thumbnail || p.media?.[0]?.thumbnail || p.media?.[0]?.url || '';
                   const ps = p.slug || p.id;
@@ -813,13 +809,13 @@ async function renderHomePage() {
       fbProducts.innerHTML = "";
 
       // Init carousel navigation
-      document.querySelectorAll('.featured-carousel-nav').forEach(nav => {
-        const strip = nav.closest('.featured-banner-products')?.querySelector('.featured-carousel-strip');
+      document.querySelectorAll('.featured-carousel-arrow').forEach(btn => {
+        const wrapper = btn.closest('.featured-carousel-wrapper');
+        if (!wrapper) return;
+        const strip = wrapper.querySelector('.featured-carousel-strip');
         if (!strip) return;
-        const prev = nav.querySelector('.fb-carousel-prev');
-        const next = nav.querySelector('.fb-carousel-next');
-        if (prev) prev.addEventListener('click', () => strip.scrollBy({ left: -strip.clientWidth * 0.8, behavior: 'smooth' }));
-        if (next) next.addEventListener('click', () => strip.scrollBy({ left: strip.clientWidth * 0.8, behavior: 'smooth' }));
+        const dir = btn.classList.contains('prev') ? -1 : 1;
+        btn.addEventListener('click', () => strip.scrollBy({ left: dir * strip.clientWidth * 0.8, behavior: 'smooth' }));
       });
     } else {
       fbSection.style.display = "none";

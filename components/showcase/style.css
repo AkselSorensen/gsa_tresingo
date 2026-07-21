@@ -87,46 +87,25 @@
 /* Product carousel under each banner */
 .featured-banner-products {
   margin-top: 16px;
+  position: relative;
 }
 
 .featured-carousel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .featured-carousel-header h3 {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.featured-carousel-nav {
-  display: flex;
-  gap: 6px;
-}
-
-.featured-carousel-nav button {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--muted);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: all 0.2s;
-  font-size: 0.85rem;
-  padding: 0;
-  line-height: 1;
 }
 
-.featured-carousel-nav button:hover {
-  background: rgba(255,255,255,0.1);
-  color: var(--text);
+.featured-carousel-wrapper {
+  position: relative;
 }
 
 .featured-carousel-strip {
@@ -137,7 +116,7 @@
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
-  padding-bottom: 4px;
+  padding: 4px 0;
 }
 
 .featured-carousel-strip::-webkit-scrollbar {
@@ -153,6 +132,53 @@
 @media (max-width: 700px) {
   .featured-carousel-strip > * {
     flex: 0 0 calc((100% - 12px) / 1.2);
+  }
+}
+
+/* Side arrows */
+.featured-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(20,22,28,0.85);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.featured-carousel-arrow:hover {
+  background: rgba(40,42,50,0.95);
+  border-color: rgba(255,255,255,0.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.featured-carousel-arrow.prev {
+  left: -18px;
+}
+
+.featured-carousel-arrow.next {
+  right: -18px;
+}
+
+@media (max-width: 600px) {
+  .featured-carousel-arrow.prev { left: -8px; }
+  .featured-carousel-arrow.next { right: -8px; }
+  .featured-carousel-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 0.75rem;
   }
 }
 

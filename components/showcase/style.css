@@ -39,11 +39,13 @@
 
 .featured-banner-item {
   display: block;
-  margin-bottom: 80px;
+  padding-bottom: 80px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .featured-banner-item:last-child {
-  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .featured-banner-inner {

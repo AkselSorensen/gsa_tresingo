@@ -2601,7 +2601,7 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
     res.json({ url: accountLink.url });
   } catch (error) {
     console.error("Stripe Connect error:", error);
-    res.status(500).json({ message: "Impossible de créer le lien Stripe Connect" });
+        res.status(500).json({ message: "Stripe Connect: " + (error?.message || error) });
   }
 });
 

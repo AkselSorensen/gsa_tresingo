@@ -88,10 +88,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      // Force à false pour tester si c'est bien la source du problème (souvent le cas sur les domaines sans SSL explicite en dev)
-      secure: false, 
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 jours
+      sameSite: "none",
+      secure: true,
+      maxAge: 1000 * 60 * 60 * 24 * 30,
     },
   })
 );

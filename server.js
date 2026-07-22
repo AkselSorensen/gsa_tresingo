@@ -585,6 +585,10 @@ async function initializeDatabase() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_id TEXT UNIQUE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS steam_id TEXT UNIQUE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_account_id TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS seller_status TEXT NOT NULL DEFAULT 'none';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS seller_description TEXT NOT NULL DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name TEXT NOT NULL DEFAULT '';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_tag TEXT NOT NULL DEFAULT '';
 
     CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_unique_idx ON users(discord_id) WHERE discord_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS users_steam_id_unique_idx ON users(steam_id) WHERE steam_id IS NOT NULL;
@@ -1783,7 +1787,7 @@ app.get("/api/me", async (req, res) => {
 });
 
 app.post("/api/auth/register", async (req, res) => {
-  const { email, password, displayName, preferredLanguage } = req.body;
+  const { email, password, displayName, preferredLanguage, role, sellerDescription, shopName, discordTag } = req.body;
 
   if (!email || !password || !displayName) {
     return res.status(400).json({ message: "email, password and displayName are required" });
@@ -1795,10 +1799,15 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(409).json({ message: "Email already in use" });
     }
 
+    // Si inscription vendeur -> pending, sinon customer
+    const isSeller = role === 'seller';
+    const userRole = isSeller ? 'customer' : 'customer';
+    const sellerStatus = isSeller ? 'pending' : 'none';
+
     const inserted = await pool.query(
       `
-        INSERT INTO users (email, password_hash, display_name, slug, role, preferred_language)
-        VALUES ($1, $2, $3, $4, 'customer', $5)
+        INSERT INTO users (email, password_hash, display_name, slug, role, preferred_language, seller_status, seller_description, shop_name, discord_tag)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
       `,
       [
@@ -1806,7 +1815,12 @@ app.post("/api/auth/register", async (req, res) => {
         hashPassword(password),
         String(displayName).trim(),
         `${slugify(displayName)}-${Date.now()}`,
+        userRole,
         preferredLanguage === "en" ? "en" : "fr",
+        sellerStatus,
+        String(sellerDescription || "").trim(),
+        String(shopName || "").trim(),
+        String(discordTag || "").trim(),
       ]
     );
 
@@ -1815,6 +1829,7 @@ app.post("/api/auth/register", async (req, res) => {
     res.status(201).json({
       ok: true,
       user: req.session.user,
+      sellerPending: isSeller,
     });
   } catch (error) {
     console.error("Register error:", error);
@@ -3213,6 +3228,70 @@ app.delete("/api/admin/landing-config/:key", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Landing config delete error:", error);
     res.status(500).json({ message: "Unable to delete landing config" });
+  }
+});
+
+// ─── Admin : Demandes vendeurs ─────────────────────────────
+// Lister les demandes en attente
+app.get("/api/admin/seller-requests", requireAdmin, async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, email, display_name AS "displayName", slug, seller_description AS "sellerDescription",
+             shop_name AS "shopName", discord_tag AS "discordTag", created_at AS "createdAt"
+      FROM users
+      WHERE seller_status = 'pending'
+      ORDER BY created_at ASC
+    `);
+    res.json({ items: result.rows });
+  } catch (error) {
+    console.error("Seller requests error:", error);
+    res.status(500).json({ message: "Unable to fetch seller requests" });
+  }
+});
+
+// Approuver un vendeur
+app.post("/api/admin/seller-requests/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    if (!userId) return res.status(400).json({ message: "Invalid user id" });
+
+    const result = await pool.query(`
+      UPDATE users SET seller_status = 'approved', role = 'seller'
+      WHERE id = $1 AND seller_status = 'pending'
+      RETURNING id, email, display_name, slug, role, seller_status
+    `, [userId]);
+
+    if (!result.rowCount) {
+      return res.status(404).json({ message: "Demande introuvable ou déjà traitée" });
+    }
+
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (error) {
+    console.error("Approve seller error:", error);
+    res.status(500).json({ message: "Unable to approve seller" });
+  }
+});
+
+// Refuser un vendeur
+app.post("/api/admin/seller-requests/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    const userId = Number(req.params.id);
+    if (!userId) return res.status(400).json({ message: "Invalid user id" });
+
+    const result = await pool.query(`
+      UPDATE users SET seller_status = 'rejected'
+      WHERE id = $1 AND seller_status = 'pending'
+      RETURNING id, email, display_name, slug, role, seller_status
+    `, [userId]);
+
+    if (!result.rowCount) {
+      return res.status(404).json({ message: "Demande introuvable ou déjà traitée" });
+    }
+
+    res.json({ ok: true, user: result.rows[0] });
+  } catch (error) {
+    console.error("Reject seller error:", error);
+    res.status(500).json({ message: "Unable to reject seller" });
   }
 });
 

@@ -722,10 +722,9 @@ async function initializeDatabase() {
       seller_net_amount = CASE
         WHEN seller_net_amount = 0 THEN ROUND((price * quantity * (1 - COALESCE(NULLIF(platform_fee_percent, 0), 15) / 100))::numeric, 2)
         ELSE seller_net_amount
-      ELSE seller_net_amount
-      END;
+        END;
 
-  // Table pour les fichiers produits (liés au R2)
+        // Table pour les fichiers produits (liés au R2)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS product_files (
       id SERIAL PRIMARY KEY,

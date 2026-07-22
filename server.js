@@ -2020,9 +2020,12 @@ app.get("/auth/steam/callback", async (req, res) => {
 app.get("/auth/discord", (req, res) => {
   const scope = encodeURIComponent("identify email");
   const redirectUri = encodeURIComponent(DISCORD_REDIRECT_URI);
+  const returnUrl = req.query.return_url || "";
+  const state = returnUrl ? Buffer.from(returnUrl).toString("base64") : "";
   const discordUrl =
     `https://discord.com/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}` +
-    `&response_type=code&redirect_uri=${redirectUri}&scope=${scope}`;
+    `&response_type=code&redirect_uri=${redirectUri}&scope=${scope}` +
+    (state ? `&state=${encodeURIComponent(state)}` : "");
 
   res.redirect(discordUrl);
 });
@@ -2080,7 +2083,17 @@ app.get("/auth/discord/callback", async (req, res) => {
       );
       const updated = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.session.user.id]);
       req.session.user = sanitizeUser(updated.rows[0]);
-      return res.redirect(`${APP_BASE_URL}/profile.html`);
+      let redirectAfterLink = `${APP_BASE_URL}/profile.html`;
+      try {
+        const s = String(req.query.state || "");
+        if (s) {
+          const decoded = Buffer.from(s, "base64").toString("utf8");
+          if (decoded.startsWith("http") || decoded.startsWith("/")) redirectAfterLink = decoded;
+        }
+      } catch (_) {}
+      const sep = redirectAfterLink.includes("?") ? "&" : "?";
+      redirectAfterLink += `${sep}discord_id=${discordUser.id}&discord_username=${discordUser.username}`;
+      return res.redirect(redirectAfterLink);
     }
 
     const existing = await pool.query(`SELECT * FROM users WHERE discord_id = $1 OR email = $2 LIMIT 1`, [

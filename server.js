@@ -2581,7 +2581,6 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
         type: "express",
         country: "FR",
         email: user.email,
-        capabilities: { transfers: { requested: true } },
         business_type: "individual",
       });
       accountId = account.id;

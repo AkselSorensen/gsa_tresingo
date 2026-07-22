@@ -1974,7 +1974,7 @@ app.get("/auth/steam/callback", async (req, res) => {
       );
       const updated = await pool.query(`SELECT * FROM users WHERE id = $1`, [req.session.user.id]);
       req.session.user = sanitizeUser(updated.rows[0]);
-      return res.redirect(`${APP_BASE_URL}/profile.html`);
+      return res.redirect(`${APP_BASE_URL}/seller/account?steam_id=${steamId}`);
     }
 
     const existing = await pool.query(`SELECT * FROM users WHERE steam_id = $1 OR email = $2 LIMIT 1`, [

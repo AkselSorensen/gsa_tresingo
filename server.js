@@ -41,6 +41,26 @@ const PLATFORM_COMMISSION_PERCENT = Math.min(
   Math.max(0, Number(process.env.PLATFORM_COMMISSION_PERCENT || 15))
 );
 
+// R2 (Cloudflare) pour les téléchargements
+const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+const R2_ENDPOINT = process.env.R2_ENDPOINT || "";
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
+const R2_BUCKET = process.env.R2_BUCKET || "gca-files";
+
+const r2Client = (R2_ENDPOINT && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY)
+  ? new S3Client({
+      region: "auto",
+      endpoint: R2_ENDPOINT,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY_ID,
+        secretAccessKey: R2_SECRET_ACCESS_KEY,
+      },
+    })
+  : null;
+
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -702,8 +722,27 @@ async function initializeDatabase() {
       seller_net_amount = CASE
         WHEN seller_net_amount = 0 THEN ROUND((price * quantity * (1 - COALESCE(NULLIF(platform_fee_percent, 0), 15) / 100))::numeric, 2)
         ELSE seller_net_amount
+      ELSE seller_net_amount
       END;
+
+  // Table pour les fichiers produits (liés au R2)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS product_files (
+      id SERIAL PRIMARY KEY,
+      product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      file_size INTEGER NOT NULL DEFAULT 0,
+      storage_path TEXT NOT NULL,
+      is_main BOOLEAN NOT NULL DEFAULT FALSE,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   `);
+
+  // Colonne download_count sur order_items
+  try {
+    await pool.query(`ALTER TABLE order_items ADD COLUMN IF NOT EXISTS download_count INTEGER NOT NULL DEFAULT 0`);
+  } catch (_) {}
 
   await pool.query(
     `
@@ -2385,6 +2424,106 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Téléchargements (R2) ─────────────────────────────────────
+
+// Liste des produits achetés par l'utilisateur connecté
+app.get("/api/user/purchases", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        oi.id AS order_item_id,
+        oi.product_id,
+        oi.price,
+        oi.download_count,
+        o.created_at AS purchase_date,
+        p.slug,
+        p.title,
+        p.rating,
+        p.review_count,
+        c.name AS category_name,
+        (
+          SELECT json_agg(json_build_object(
+            'id', pf.id,
+            'filename', pf.filename,
+            'file_size', pf.file_size,
+            'is_main', pf.is_main
+          ) ORDER BY pf.sort_order ASC)
+          FROM product_files pf
+          WHERE pf.product_id = p.id
+        ) AS files,
+        COALESCE(
+          (SELECT m.thumbnail FROM media m WHERE m.product_id = p.id ORDER BY m.sort_order ASC LIMIT 1),
+          '/placeholder.svg'
+        ) AS thumbnail
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      JOIN products p ON p.id = oi.product_id
+      LEFT JOIN categories c ON c.id = p.category_id
+      WHERE o.user_id = $1
+      ORDER BY o.created_at DESC
+    `, [req.session.user.id]);
+
+    res.json({ items: result.rows });
+  } catch (error) {
+    console.error("User purchases error:", error);
+    res.status(500).json({ message: "Unable to fetch purchases" });
+  }
+});
+
+// Générer une signed URL pour télécharger un fichier
+app.get("/api/download/:orderItemId", requireAuth, async (req, res) => {
+  try {
+    if (!r2Client) {
+      return res.status(503).json({ message: "R2 storage non configuré (manque R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY)" });
+    }
+
+    const orderItemId = Number(req.params.orderItemId);
+    if (!orderItemId) return res.status(400).json({ message: "orderItemId invalide" });
+
+    // Vérifier que l'utilisateur possède bien ce produit
+    const item = await pool.query(`
+      SELECT oi.id, oi.product_id, oi.download_count, o.user_id
+      FROM order_items oi
+      JOIN orders o ON o.id = oi.order_id
+      WHERE oi.id = $1 AND o.user_id = $2
+    `, [orderItemId, req.session.user.id]);
+
+    if (!item.rowCount) {
+      return res.status(403).json({ message: "Vous ne possédez pas ce produit" });
+    }
+
+    // Vérifier qu'il y a un fichier associé
+    const files = await pool.query(`
+      SELECT id, filename, file_size, storage_path
+      FROM product_files
+      WHERE product_id = $1
+      ORDER BY sort_order ASC, is_main DESC
+    `, [item.rows[0].product_id]);
+
+    if (!files.rowCount) {
+      return res.status(404).json({ message: "Aucun fichier disponible pour ce produit" });
+    }
+
+    // Incrémenter le compteur de downloads
+    await pool.query(`UPDATE order_items SET download_count = download_count + 1 WHERE id = $1`, [orderItemId]);
+
+    // Générer une signed URL pour chaque fichier
+    const signedUrls = await Promise.all(files.rows.map(async (f) => {
+      const url = await getSignedUrl(r2Client, new GetObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: f.storage_path,
+      }), { expiresIn: 3600 }); // 1h
+
+      return { filename: f.filename, file_size: f.file_size, url };
+    }));
+
+    res.json({ files: signedUrls });
+  } catch (error) {
+    console.error("Download error:", error);
+    res.status(500).json({ message: "Erreur lors de la génération du lien de téléchargement" });
+  }
+});
+
 app.post("/api/reviews", requireAuth, async (req, res) => {
   const { productId, rating, comment } = req.body;
   const normalizedProductId = Number(productId);
@@ -2574,6 +2713,80 @@ app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin delete product error:", error);
     res.status(500).json({ message: "Unable to delete admin product" });
+  }
+});
+
+// ─── Admin : Gestion des fichiers produits ─────────────────────
+
+app.get("/api/admin/products/:id/files", requireAdmin, async (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+    if (!productId) return res.status(400).json({ message: "Invalid product id" });
+    const files = await pool.query(`
+      SELECT id, filename, file_size, storage_path, is_main, sort_order, created_at
+      FROM product_files WHERE product_id = $1
+      ORDER BY sort_order ASC, is_main DESC
+    `, [productId]);
+    res.json({ items: files.rows });
+  } catch (error) {
+    console.error("Admin list files error:", error);
+    res.status(500).json({ message: "Unable to fetch files" });
+  }
+});
+
+app.post("/api/admin/products/:id/files", requireAdmin, async (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+    const { filename, file_size, storage_path, is_main, sort_order } = req.body;
+    if (!filename || !storage_path) {
+      return res.status(400).json({ message: "filename et storage_path requis" });
+    }
+    const result = await pool.query(`
+      INSERT INTO product_files (product_id, filename, file_size, storage_path, is_main, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id
+    `, [productId, filename, file_size || 0, storage_path, !!is_main, sort_order || 0]);
+    res.status(201).json({ ok: true, id: result.rows[0].id });
+  } catch (error) {
+    console.error("Admin register file error:", error);
+    res.status(500).json({ message: "Unable to register file" });
+  }
+});
+
+app.post("/api/admin/products/:id/upload", requireAdmin, async (req, res) => {
+  try {
+    if (!r2Client) return res.status(503).json({ message: "R2 non configuré" });
+    const productId = Number(req.params.id);
+    const { filename, data_base64 } = req.body;
+    if (!filename || !data_base64) return res.status(400).json({ message: "filename et data_base64 requis" });
+    const buffer = Buffer.from(data_base64, "base64");
+    const key = `products/${productId}/${filename}`;
+    await r2Client.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, Body: buffer }));
+    const result = await pool.query(`
+      INSERT INTO product_files (product_id, filename, file_size, storage_path, is_main, sort_order)
+      VALUES ($1, $2, $3, $4, FALSE, $5) RETURNING id
+    `, [productId, filename, buffer.length, key, 0]);
+    res.status(201).json({ ok: true, id: result.rows[0].id, key, size: buffer.length });
+  } catch (error) {
+    console.error("Admin upload file error:", error);
+    res.status(500).json({ message: "Unable to upload file" });
+  }
+});
+
+app.delete("/api/admin/products/:productId/files/:fileId", requireAdmin, async (req, res) => {
+  try {
+    const fileId = Number(req.params.fileId);
+    const file = await pool.query(`SELECT storage_path FROM product_files WHERE id = $1`, [fileId]);
+    if (!file.rowCount) return res.status(404).json({ message: "File not found" });
+    if (r2Client) {
+      try {
+        await r2Client.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: file.rows[0].storage_path }));
+      } catch (r2Err) { console.error("R2 delete error:", r2Err); }
+    }
+    await pool.query(`DELETE FROM product_files WHERE id = $1`, [fileId]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Admin delete file error:", error);
+    res.status(500).json({ message: "Unable to delete file" });
   }
 });
 

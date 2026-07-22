@@ -2592,8 +2592,8 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
     // Créer un lien d'onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${APP_BASE_URL}/seller/account?refresh=true`,
-      return_url: `${APP_BASE_URL}/seller/account?success=true`,
+      refresh_url: `https://gca-nuxt.vercel.app/seller/account?refresh=true`,
+      return_url: `https://gca-nuxt.vercel.app/seller/account?success=true`,
       type: "account_onboarding",
     });
 

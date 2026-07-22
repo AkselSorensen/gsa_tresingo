@@ -1630,6 +1630,8 @@ app.get("/api/sellers/:slug", async (req, res) => {
         displayName: seller.display_name,
         slug: seller.slug,
         avatarUrl: seller.avatar_url,
+        bio: '',
+        discordId: seller.discord_id,
         discordLinked: !!seller.discord_id,
         joinedAt: seller.created_at,
         totalUnitsSold: parseInt(publicStatsResult.rows[0].units_sold || 0),

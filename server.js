@@ -2424,6 +2424,175 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Stripe Webhook ─────────────────────────────────────────
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object;
+
+      // Vérifier si la commande existe déjà
+      const existing = await pool.query(`SELECT id FROM orders WHERE stripe_session_id = $1 LIMIT 1`, [session.id]);
+      if (existing.rowCount) {
+        return res.json({ received: true, alreadyProcessed: true });
+      }
+
+      const userId = Number(session.metadata?.userId || 0);
+      const cartId = Number(session.metadata?.cartId || 0);
+      if (!userId || !cartId) {
+        console.error("Webhook: missing userId or cartId in session metadata");
+        return res.status(400).json({ error: "Missing metadata" });
+      }
+
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        const subtotalAmount = Number(session.metadata?.subtotalAmount || 0) || Number(session.amount_subtotal || 0) / 100;
+        const discountAmount = Number(session.metadata?.discountAmount || 0) || Number(session.total_details?.amount_discount || 0) / 100;
+        const promoCodeId = Number(session.metadata?.promoCodeId || 0) || null;
+
+        const orderInsert = await client.query(`
+          INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, discount_amount, promo_code_id, status)
+          VALUES ($1, $2, $3, $4, $5, $6, 'completed')
+          RETURNING id
+        `, [userId, session.id, Number(session.amount_total || 0) / 100, subtotalAmount, discountAmount, promoCodeId]);
+
+        const orderId = orderInsert.rows[0].id;
+
+        const itemsInsert = await client.query(`
+          INSERT INTO order_items (order_id, product_id, seller_id, price, quantity, customer_email, platform_fee_percent, platform_fee_amount, seller_net_amount)
+          SELECT $1, p.id, p.seller_id, p.price, ci.quantity, $2, $4,
+            ROUND((p.price * ci.quantity * $4 / 100)::numeric, 2),
+            ROUND((p.price * ci.quantity * (1 - $4 / 100))::numeric, 2)
+          FROM cart_items ci
+          JOIN products p ON p.id = ci.product_id
+          WHERE ci.cart_id = $3
+          RETURNING id
+        `, [orderId, session.customer_details?.email || "", cartId, PLATFORM_COMMISSION_PERCENT]);
+
+        if (!itemsInsert.rowCount) {
+          throw new Error("No items to insert for this order");
+        }
+
+        // Gérer le promo code
+        if (promoCodeId) {
+          const promoUpdate = await client.query(`
+            UPDATE promo_codes SET redeemed_count = redeemed_count + 1,
+              points_balance = points_balance + GREATEST(points_per_redemption, 0)
+            WHERE id = $1 RETURNING points_per_redemption
+          `, [promoCodeId]);
+          const pointsAwarded = Math.max(0, Number(promoUpdate.rows[0]?.points_per_redemption || 0));
+          await client.query(`
+            INSERT INTO promo_redemptions (promo_code_id, user_id, order_id, discount_amount, order_amount, points_awarded)
+            VALUES ($1, $2, $3, $4, $5, $6)
+          `, [promoCodeId, userId, orderId, discountAmount, Number(session.amount_total || 0) / 100, pointsAwarded]);
+        }
+
+        await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cartId]);
+        await client.query("COMMIT");
+        console.log(`Webhook: order ${orderId} created for user ${userId}`);
+      } catch (err) {
+        await client.query("ROLLBACK");
+        console.error("Webhook order creation error:", err);
+      } finally {
+        client.release();
+      }
+      break;
+    }
+
+    case "account.updated": {
+      const account = event.data.object;
+      // Mettre à jour le stripe_account_id si le compte devient complété
+      if (account.charges_enabled) {
+        await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE stripe_account_id IS NULL AND email = $2`, 
+          [account.id, account.email || ""]);
+      }
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+// ─── Stripe Connect (onboarding vendeur) ──────────────────
+// Créer un lien d'onboarding Stripe Connect pour le vendeur
+app.post("/api/stripe/connect", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ message: "Stripe non configuré" });
+
+  try {
+    const user = req.session.user;
+    let accountId = user.stripeAccountId;
+
+    // Créer un compte Connect si pas encore fait
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        country: "FR",
+        email: user.email,
+        capabilities: { transfers: { requested: true } },
+        business_type: "individual",
+      });
+      accountId = account.id;
+
+      await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE id = $2`, [accountId, user.id]);
+      req.session.user.stripeAccountId = accountId;
+    }
+
+    // Créer un lien d'onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${APP_BASE_URL}/seller/account?refresh=true`,
+      return_url: `${APP_BASE_URL}/seller/account?success=true`,
+      type: "account_onboarding",
+    });
+
+    res.json({ url: accountLink.url });
+  } catch (error) {
+    console.error("Stripe Connect error:", error);
+    res.status(500).json({ message: "Impossible de créer le lien Stripe Connect" });
+  }
+});
+
+// Vérifier le statut du compte Stripe Connect
+app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
+  if (!stripe) return res.json({ connected: false });
+
+  try {
+    const userId = req.session.user.id;
+    if (!req.session.user.stripeAccountId) {
+      return res.json({ connected: false, onboardingLink: `${APP_BASE_URL}/api/stripe/connect` });
+    }
+
+    const account = await stripe.accounts.retrieve(req.session.user.stripeAccountId);
+    const connected = account.charges_enabled && account.payouts_enabled;
+
+    res.json({
+      connected,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted,
+    });
+  } catch (error) {
+    console.error("Stripe Connect status error:", error);
+    res.status(500).json({ connected: false, error: error.message });
+  }
+});
+
 // ─── Téléchargements (R2) ─────────────────────────────────────
 
 // Liste des produits achetés par l'utilisateur connecté

@@ -2250,6 +2250,47 @@ app.post("/api/promo/validate", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Buy Now (achat direct d'un produit) ─────────────────
+app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
+  if (!stripe || !STRIPE_PUBLIC_KEY) {
+    return res.status(503).json({ message: "Stripe n'est pas configuré." });
+  }
+  try {
+    const { slug } = req.body;
+    if (!slug) return res.status(400).json({ message: "Slug du produit requis" });
+
+    const prodResult = await pool.query("SELECT * FROM products WHERE slug = $1", [slug]);
+    if (!prodResult.rowCount) return res.status(404).json({ message: "Produit introuvable" });
+    const product = prodResult.rows[0];
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      customer_email: req.session.user.email,
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: "eur",
+          unit_amount: Math.round(Number(product.price) * 100),
+          product_data: {
+            name: product.title,
+            images: product.thumbnail ? [product.thumbnail] : [],
+            metadata: { productSlug: product.slug, productId: String(product.id) },
+          },
+        },
+      }],
+      success_url: `https://gca-nuxt.vercel.app/cart?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://gca-nuxt.vercel.app/product/${slug}`,
+      metadata: { userId: String(req.session.user.id), productSlug: product.slug },
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Buy-now error:", error);
+    res.status(500).json({ message: "Erreur lors de la création du paiement" });
+  }
+});
+
 app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
   if (!stripe || !STRIPE_PUBLIC_KEY) {
     return res.status(503).json({

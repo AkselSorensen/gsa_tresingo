@@ -2279,8 +2279,8 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
           },
         },
       }],
-      success_url: `https://gca-nuxt.vercel.app/cart?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://gca-nuxt.vercel.app/product/${slug}`,
+      success_url: `https://gca-nuxt.vercel.app/downloads?confirmed=1&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://gca-nuxt.vercel.app/product/${slug}`,
       metadata: { userId: String(req.session.user.id), productSlug: product.slug },
     });
 

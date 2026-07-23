@@ -2521,39 +2521,6 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
   }
 });
 
-// ─── DEBUG: Forcer confirmation d'une session Stripe ──────
-app.post("/api/checkout/debug-confirm", requireAuth, async (req, res) => {
-  try {
-    const { sessionId } = req.body;
-    if (!sessionId) return res.status(400).json({ message: "sessionId requis" });
-
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    const prodSlug = session.metadata?.productSlug;
-    if (!prodSlug) return res.status(400).json({ message: "Pas de productSlug dans la session" });
-
-    const prodResult = await pool.query("SELECT * FROM products WHERE slug = $1", [prodSlug]);
-    if (!prodResult.rowCount) return res.status(404).json({ message: "Produit introuvable" });
-    const product = prodResult.rows[0];
-
-    const existing = await pool.query("SELECT id FROM orders WHERE stripe_session_id = $1", [sessionId]);
-    if (existing.rowCount) return res.json({ ok: true, orderId: existing.rows[0].id, alreadyConfirmed: true });
-
-    const cp = Number(process.env.PLATFORM_COMMISSION_PERCENT || 15);
-    const fee = Math.round(Number(product.price) * cp / 100 * 100) / 100;
-    const ord = await pool.query(
-      `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
-      [req.session.user.id, sessionId, product.price, product.price]
-    );
-    await pool.query(
-      `INSERT INTO order_items (order_id, product_id, seller_id, price, quantity, customer_email, platform_fee_percent, platform_fee_amount, seller_net_amount) VALUES ($1,$2,$3,$4,1,$5,$6,$7,$8)`,
-      [ord.rows[0].id, product.id, product.seller_id, product.price, req.session.user.email, cp, fee, Number(product.price) - fee]
-    );
-    res.json({ ok: true, orderId: ord.rows[0].id, paymentStatus: session.payment_status });
-  } catch (e: any) {
-    res.status(500).json({ message: e.message });
-  }
-});
-
 // ─── Stripe Webhook ─────────────────────────────────────────
 app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];

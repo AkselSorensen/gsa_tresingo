@@ -2407,6 +2407,25 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
     }
 
     const cartId = Number(session.metadata?.cartId || 0);
+    // Buy-now: no cart, but has productSlug in metadata
+    if (!cartId && session.metadata?.productSlug) {
+      const p = await client.query("SELECT * FROM products WHERE slug = $1", [session.metadata.productSlug]);
+      if (!p.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Produit introuvable." }); }
+      const product = p.rows[0];
+      const price = Number(product.price);
+      const cp = Number(process.env.PLATFORM_COMMISSION_PERCENT || 25);
+      const fee = Math.round(price * cp / 100 * 100) / 100;
+      const ord = await client.query(
+        `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
+        [req.session.user.id, session.id, price, price]
+      );
+      await client.query(
+        `INSERT INTO order_items (order_id, product_id, seller_id, price, quantity, customer_email, platform_fee_percent, platform_fee_amount, seller_net_amount) VALUES ($1,$2,$3,$4,1,$5,$6,$7,$8)`,
+        [ord.rows[0].id, product.id, product.seller_id, price, req.session.user.email, cp, fee, price - fee]
+      );
+      await client.query("COMMIT");
+      return res.json({ ok: true, orderId: ord.rows[0].id });
+    }
     if (!cartId) {
       return res.status(400).json({ message: "Panier Stripe introuvable." });
     }

@@ -3284,6 +3284,8 @@ app.post("/api/admin/seller-requests/:id/approve", requireAdmin, async (req, res
 });
 
 // Refuser un vendeur
+app.get("/api/admin/tags", async (_req, res) => { try { const r = await pool.query("SELECT DISTINCT unnest(tags) AS tag FROM products ORDER BY tag"); res.json({ tags: r.rows.map(t => t.tag) }); } catch { res.json({ tags: [] }); } });
+
 app.post("/api/admin/seller-requests/:id/reject", requireAdmin, async (req, res) => {
   try {
     const userId = Number(req.params.id);

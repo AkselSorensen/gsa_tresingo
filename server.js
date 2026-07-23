@@ -2407,7 +2407,6 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
     }
 
     const cartId = Number(session.metadata?.cartId || 0);
-    // Buy-now: no cart, but has productSlug in metadata
     if (!cartId && session.metadata?.productSlug) {
       const p = await client.query("SELECT * FROM products WHERE slug = $1", [session.metadata.productSlug]);
       if (!p.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Produit introuvable." }); }
@@ -2514,7 +2513,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
     } catch (_rollbackError) {
       // Ignore rollback failures.
     }
-    console.error("Stripe confirm session error:", error);
+    console.error("Stripe confirm session error:", error.message || error);
     res.status(500).json({ message: "Impossible de confirmer la commande Stripe." });
   } finally {
     client.release();

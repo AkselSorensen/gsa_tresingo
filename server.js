@@ -2412,7 +2412,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
       if (!p.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Produit introuvable." }); }
       const product = p.rows[0];
       const price = Number(product.price);
-      const cp = Number(process.env.PLATFORM_COMMISSION_PERCENT || 25);
+      const cp = PLATFORM_COMMISSION_PERCENT;
       const fee = Math.round(price * cp / 100 * 100) / 100;
       const ord = await client.query(
         `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
@@ -2546,9 +2546,40 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 
       const userId = Number(session.metadata?.userId || 0);
       const cartId = Number(session.metadata?.cartId || 0);
-      if (!userId || !cartId) {
-        console.error("Webhook: missing userId or cartId in session metadata");
-        return res.status(400).json({ error: "Missing metadata" });
+      const productSlug = session.metadata?.productSlug || "";
+
+      if (!userId) {
+        console.error("Webhook: missing userId in session metadata");
+        return res.status(400).json({ error: "Missing userId metadata" });
+      }
+
+      // Buy-now : pas de cartId, on crée la commande directement depuis le productSlug
+      if (!cartId && productSlug) {
+        const productResult = await pool.query("SELECT * FROM products WHERE slug = $1", [productSlug]);
+        if (!productResult.rowCount) {
+          console.error("Webhook buy-now: product not found for slug", productSlug);
+          return res.status(404).json({ error: "Product not found" });
+        }
+        const product = productResult.rows[0];
+        const price = Number(product.price);
+        const cp = PLATFORM_COMMISSION_PERCENT;
+        const fee = Math.round(price * cp / 100 * 100) / 100;
+
+        const orderInsert = await pool.query(
+          `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
+          [userId, session.id, price, price]
+        );
+        await pool.query(
+          `INSERT INTO order_items (order_id, product_id, seller_id, price, quantity, customer_email, platform_fee_percent, platform_fee_amount, seller_net_amount) VALUES ($1,$2,$3,$4,1,$5,$6,$7,$8)`,
+          [orderInsert.rows[0].id, product.id, product.seller_id, price, session.customer_details?.email || "", cp, fee, price - fee]
+        );
+        console.log(`Webhook buy-now: order ${orderInsert.rows[0].id} created for user ${userId}`);
+        return res.json({ received: true, orderId: orderInsert.rows[0].id });
+      }
+
+      if (!cartId) {
+        console.error("Webhook: missing cartId in session metadata (and no productSlug)");
+        return res.status(400).json({ error: "Missing cartId/productSlug metadata" });
       }
 
       const client = await pool.connect();

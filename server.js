@@ -2747,7 +2747,7 @@ app.get("/api/user/purchases", requireAuth, async (req, res) => {
           WHERE pf.product_id = p.id
         ) AS files,
         COALESCE(
-          (SELECT m.thumbnail FROM product_media m WHERE m.product_id = p.id ORDER BY m.sort_order ASC LIMIT 1),
+          (SELECT m.thumbnail_url FROM product_media m WHERE m.product_id = p.id ORDER BY m.sort_order ASC LIMIT 1),
           '/placeholder.svg'
         ) AS thumbnail
       FROM order_items oi

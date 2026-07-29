@@ -2718,7 +2718,7 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
     }
 
     const account = await stripe.accounts.retrieve(req.session.user.stripeAccountId);
-    const connected = account.charges_enabled && account.payouts_enabled;
+    const connected = account.charges_enabled; // charges_enabled suffit pour recevoir des paiements
 
     res.json({
       connected,

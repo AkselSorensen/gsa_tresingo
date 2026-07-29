@@ -2732,6 +2732,20 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
   }
 });
 
+// Lien vers le dashboard Stripe Express du vendeur
+app.post("/api/stripe/dashboard", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ message: "Stripe non configuré" });
+  try {
+    const accountId = req.session.user.stripeAccountId;
+    if (!accountId) return res.status(400).json({ message: "Aucun compte Stripe lié" });
+    const loginLink = await stripe.accounts.createLoginLink(accountId);
+    res.json({ url: loginLink.url });
+  } catch (error) {
+    console.error("Stripe dashboard link error:", error);
+    res.status(500).json({ message: "Impossible de générer le lien dashboard" });
+  }
+});
+
 // ─── Téléchargements (R2) ─────────────────────────────────────
 
 // Liste des produits achetés par l'utilisateur connecté

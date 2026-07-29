@@ -2713,11 +2713,22 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
 
   try {
     const userId = req.session.user.id;
-    if (!req.session.user.stripeAccountId) {
+
+    // Récupérer le stripe_account_id depuis la session ou la base
+    let accountId = req.session.user.stripeAccountId;
+    if (!accountId) {
+      const userRow = await pool.query("SELECT stripe_account_id FROM users WHERE id = $1", [userId]);
+      accountId = userRow.rows[0]?.stripe_account_id || null;
+      if (accountId) {
+        req.session.user.stripeAccountId = accountId; // resync session
+      }
+    }
+
+    if (!accountId) {
       return res.json({ connected: false, onboardingLink: `${APP_BASE_URL}/api/stripe/connect` });
     }
 
-    const account = await stripe.accounts.retrieve(req.session.user.stripeAccountId);
+    const account = await stripe.accounts.retrieve(accountId);
     const connected = account.charges_enabled; // charges_enabled suffit pour recevoir des paiements
 
     res.json({

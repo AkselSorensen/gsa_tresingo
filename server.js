@@ -2260,9 +2260,19 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
     const { slug } = req.body;
     if (!slug) return res.status(400).json({ message: "Slug du produit requis" });
 
-    const prodResult = await pool.query("SELECT * FROM products WHERE slug = $1", [slug]);
+    const prodResult = await pool.query("SELECT p.*, u.stripe_account_id AS seller_stripe_id FROM products p JOIN users u ON u.id = p.seller_id WHERE p.slug = $1", [slug]);
     if (!prodResult.rowCount) return res.status(404).json({ message: "Produit introuvable" });
     const product = prodResult.rows[0];
+
+    const unitAmount = Math.round(Number(product.price) * 100);
+    const platformFee = Math.round(unitAmount * PLATFORM_COMMISSION_PERCENT / 100);
+
+    // Build payment_intent_data for Stripe Connect if seller has a connected account
+    const paymentIntentData = {};
+    if (product.seller_stripe_id) {
+      paymentIntentData.application_fee_amount = platformFee;
+      paymentIntentData.transfer_data = { destination: product.seller_stripe_id };
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -2272,7 +2282,7 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
         quantity: 1,
         price_data: {
           currency: "eur",
-          unit_amount: Math.round(Number(product.price) * 100),
+          unit_amount: unitAmount,
           product_data: {
             name: product.title,
             images: product.thumbnail ? [product.thumbnail] : [],
@@ -2280,6 +2290,7 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
           },
         },
       }],
+      ...(paymentIntentData.transfer_data ? { payment_intent_data: paymentIntentData } : {}),
       success_url: `https://gca-nuxt.vercel.app/downloads?confirmed=1&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://gca-nuxt.vercel.app/product/${slug}`,
       metadata: { userId: String(req.session.user.id), productSlug: product.slug },
@@ -2413,7 +2424,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
       if (!p.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Produit introuvable." }); }
       const product = p.rows[0];
       const price = Number(product.price);
-      const cp = 25; // Force 25% pour debug
+      const cp = PLATFORM_COMMISSION_PERCENT;
       const fee = Math.round(price * cp) / 100;
       console.log('[confirm-session buy-now] cp=%s price=%s fee=%s sellerNet=%s', cp, price, fee, price - fee);
       const ord = await client.query(
@@ -2564,7 +2575,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         }
         const product = productResult.rows[0];
         const price = Number(product.price);
-        const cp = 25; // Force 25% pour debug
+        const cp = PLATFORM_COMMISSION_PERCENT;
         const fee = Math.round(price * cp) / 100;
 
         const orderInsert = await pool.query(

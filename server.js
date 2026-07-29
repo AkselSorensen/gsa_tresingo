@@ -2413,8 +2413,8 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
       if (!p.rowCount) { await client.query("ROLLBACK"); return res.status(404).json({ message: "Produit introuvable." }); }
       const product = p.rows[0];
       const price = Number(product.price);
-      const cp = PLATFORM_COMMISSION_PERCENT;
-      const fee = Math.round(price * cp / 100 * 100) / 100;
+      const cp = 25; // Force 25% pour debug
+      const fee = Math.round(price * cp) / 100;
       console.log('[confirm-session buy-now] cp=%s price=%s fee=%s sellerNet=%s', cp, price, fee, price - fee);
       const ord = await client.query(
         `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
@@ -2564,8 +2564,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         }
         const product = productResult.rows[0];
         const price = Number(product.price);
-        const cp = PLATFORM_COMMISSION_PERCENT;
-        const fee = Math.round(price * cp / 100 * 100) / 100;
+        const cp = 25; // Force 25% pour debug
+        const fee = Math.round(price * cp) / 100;
 
         const orderInsert = await pool.query(
           `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,

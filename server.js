@@ -40,6 +40,7 @@ const PLATFORM_COMMISSION_PERCENT = Math.min(
   100,
   Math.max(0, Number(process.env.PLATFORM_COMMISSION_PERCENT || 15))
 );
+console.log('[startup] PLATFORM_COMMISSION_PERCENT =', PLATFORM_COMMISSION_PERCENT, '(env:', process.env.PLATFORM_COMMISSION_PERCENT, ')');
 
 // R2 (Cloudflare) pour les téléchargements
 const { S3Client, PutObjectCommand, GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require("@aws-sdk/client-s3");
@@ -2414,6 +2415,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
       const price = Number(product.price);
       const cp = PLATFORM_COMMISSION_PERCENT;
       const fee = Math.round(price * cp / 100 * 100) / 100;
+      console.log('[confirm-session buy-now] cp=%s price=%s fee=%s sellerNet=%s', cp, price, fee, price - fee);
       const ord = await client.query(
         `INSERT INTO orders (user_id, stripe_session_id, total_amount, subtotal_amount, status) VALUES ($1,$2,$3,$4,'completed') RETURNING id`,
         [req.session.user.id, session.id, price, price]

@@ -1266,7 +1266,7 @@ app.get("/api/health", async (_req, res) => {
 
 app.get("/api/bootstrap", async (req, res) => {
   try {
-    const [categories, trending, discounts, featured] = await Promise.all([
+    const [categories, trending, discounts, featured, stats] = await Promise.all([
       pool.query(`SELECT c.name, c.slug, c.description, COALESCE(COUNT(p.id), 0)::int AS "productCount" FROM categories c LEFT JOIN products p ON p.category_id = c.id AND p.is_hidden = FALSE GROUP BY c.name, c.slug, c.description, c.sort_order ORDER BY c.sort_order ASC, c.name ASC`),
       pool.query(
         `
@@ -1375,6 +1375,13 @@ app.get("/api/bootstrap", async (req, res) => {
           ORDER BY MIN(c.sort_order) ASC
         `
       ),
+      pool.query(`
+        SELECT
+          (SELECT COUNT(*) FROM products WHERE is_hidden = FALSE)::int AS "totalProducts",
+          (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.status = 'completed')::int AS "totalSales",
+          (SELECT COALESCE(AVG(rating), 0) FROM products WHERE is_hidden = FALSE)::float AS "avgRating",
+          (SELECT COUNT(DISTINCT seller_id) FROM products WHERE is_hidden = FALSE)::int AS "totalCreators"
+      `),
     ]);
 
     res.json({
@@ -1383,6 +1390,7 @@ app.get("/api/bootstrap", async (req, res) => {
       categories: categories.rows,
       trending: trending.rows,
       discounts: discounts.rows,
+      ...(stats.rows[0] || {}),
       featuredByCategory: featured.rows.map((row) => ({
         categorySlug: row.category_slug,
         categoryName: row.category_name,

@@ -2304,6 +2304,15 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
     if (!prodResult.rowCount) return res.status(404).json({ message: "Produit introuvable" });
     const product = prodResult.rows[0];
 
+    // Empêche le rachat d'un produit déjà possédé
+    const ownedCheck = await pool.query(
+      `SELECT 1 FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = $1 AND o.user_id = $2 AND o.status = 'completed' LIMIT 1`,
+      [product.id, req.session.user.id]
+    );
+    if (ownedCheck.rowCount) {
+      return res.status(400).json({ message: "Vous possédez déjà ce produit." });
+    }
+
     const unitAmount = Math.round(Number(product.price) * 100);
     const platformFee = Math.round(unitAmount * PLATFORM_COMMISSION_PERCENT / 100);
 
@@ -2356,6 +2365,16 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
 
     if (!cart.items.length) {
       return res.status(400).json({ message: "Votre panier est vide." });
+    }
+
+    // Empêche le rachat d'articles déjà possédés
+    const ownedRows = await pool.query(
+      `SELECT oi.product_id FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.user_id = $1 AND o.status = 'completed'`,
+      [req.session.user.id]
+    );
+    const ownedIds = new Set(ownedRows.rows.map((r) => r.product_id));
+    if (cart.items.some((it) => ownedIds.has(it.product.id))) {
+      return res.status(400).json({ message: "Vous possédez déjà l'un de ces articles." });
     }
 
     const promoCode = normalizePromoCode(req.body?.promoCode);
@@ -2962,14 +2981,33 @@ app.get("/api/admin/products", requireAdmin, async (_req, res) => {
           c.name AS category,
           p.seller_id,
           u.slug AS seller_slug,
+          u.display_name AS seller_name,
           p.tags,
           p.is_featured,
           p.is_trending,
           p.is_new,
-          p.created_at
+          p.is_hidden,
+          p.created_at,
+          COALESCE((SELECT pm2.thumbnail_url FROM product_media pm2 WHERE pm2.product_id = p.id ORDER BY pm2.sort_order ASC, pm2.id ASC LIMIT 1), '') AS thumbnail,
+          COALESCE((SELECT SUM(oi.quantity) FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = p.id AND o.status = 'completed'), 0)::int AS sales,
+          COALESCE(
+            json_agg(
+              json_build_object(
+                'id', pm.id,
+                'type', pm.media_type,
+                'url', pm.url,
+                'thumbnail', pm.thumbnail_url,
+                'sortOrder', pm.sort_order
+              )
+              ORDER BY pm.sort_order ASC, pm.id ASC
+            ) FILTER (WHERE pm.id IS NOT NULL),
+            '[]'::json
+          ) AS media
         FROM products p
         JOIN categories c ON c.id = p.category_id
         JOIN users u ON u.id = p.seller_id
+        LEFT JOIN product_media pm ON pm.product_id = p.id
+        GROUP BY p.id, c.slug, c.name, u.slug, u.display_name
         ORDER BY p.created_at DESC, p.id DESC
       `
     );
@@ -3599,6 +3637,44 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin product update error:", error);
     res.status(500).json({ message: "Unable to update product" });
+  }
+});
+
+app.post("/api/admin/products/:id/media", requireAdmin, async (req, res) => {
+  const productId = Number(req.params.id);
+  const url = String(req.body?.url || "").trim();
+  if (Number.isNaN(productId) || !url) {
+    return res.status(400).json({ message: "url required" });
+  }
+  try {
+    const sortRes = await pool.query(
+      `SELECT COALESCE(MAX(sort_order), 0) + 1 AS next FROM product_media WHERE product_id = $1`,
+      [productId]
+    );
+    const next = Number(sortRes.rows[0].next);
+    const r = await pool.query(
+      `INSERT INTO product_media (product_id, media_type, url, thumbnail_url, sort_order) VALUES ($1, 'image', $2, $2, $3) RETURNING id`,
+      [productId, url, next]
+    );
+    res.json({ ok: true, id: r.rows[0].id });
+  } catch (error) {
+    console.error("Add media error:", error);
+    res.status(500).json({ message: "Unable to add media" });
+  }
+});
+
+app.delete("/api/admin/products/:id/media/:mediaId", requireAdmin, async (req, res) => {
+  const productId = Number(req.params.id);
+  const mediaId = Number(req.params.mediaId);
+  if (Number.isNaN(productId) || Number.isNaN(mediaId)) {
+    return res.status(400).json({ message: "Invalid ids" });
+  }
+  try {
+    await pool.query(`DELETE FROM product_media WHERE id = $1 AND product_id = $2`, [mediaId, productId]);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Delete media error:", error);
+    res.status(500).json({ message: "Unable to delete media" });
   }
 });
 

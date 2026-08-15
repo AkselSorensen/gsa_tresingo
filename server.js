@@ -361,6 +361,27 @@ async function getCart(userId) {
   };
 }
 
+async function syncClientCart(userId, clientItems) {
+  if (!Array.isArray(clientItems) || !clientItems.length) return;
+  const cart = await getCart(userId);
+  await pool.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cart.id]);
+  for (const item of clientItems) {
+    const slug = (typeof item === "string" ? item : String(item?.slug || "")).trim();
+    if (!slug) continue;
+    const prodResult = await pool.query(
+      `SELECT id FROM products WHERE slug = $1 AND is_hidden = FALSE LIMIT 1`,
+      [slug]
+    );
+    if (prodResult.rowCount) {
+      const qty = Math.max(1, Number(item?.quantity || 1));
+      await pool.query(
+        `INSERT INTO cart_items (cart_id, product_id, quantity) VALUES ($1, $2, $3) ON CONFLICT (cart_id, product_id) DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity`,
+        [cart.id, prodResult.rows[0].id, qty]
+      );
+    }
+  }
+}
+
 function normalizePromoCode(code) {
   return String(code || "")
     .trim()
@@ -1683,7 +1704,17 @@ app.get("/api/products/:slug", async (req, res) => {
     await pool.query(`UPDATE products SET views = views + 1, updated_at = NOW() WHERE id = $1`, [product.id]);
     product.views += 1;
 
-    res.json(product);
+    // Indique si l'utilisateur connecté possède déjà ce produit (pour éviter le rachat)
+    let owned = false;
+    if (req.session?.user?.id) {
+      const ownedResult = await pool.query(
+        `SELECT 1 FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = $1 AND o.user_id = $2 AND o.status = 'completed' LIMIT 1`,
+        [product.id, req.session.user.id]
+      );
+      owned = ownedResult.rowCount > 0;
+    }
+
+    res.json({ ...product, owned });
   } catch (error) {
     console.error("Product detail error:", error);
     res.status(500).json({ message: "Unable to fetch product" });
@@ -2235,6 +2266,7 @@ app.delete("/api/cart/items/:id", requireAuth, async (req, res) => {
 
 app.post("/api/promo/validate", requireAuth, async (req, res) => {
   try {
+    await syncClientCart(req.session.user.id, req.body?.items);
     const cart = await getCart(req.session.user.id);
     const promoState = await getValidPromoForCart(req.body.code, cart.total);
 
@@ -2319,6 +2351,7 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
   }
 
   try {
+    await syncClientCart(req.session.user.id, req.body?.items);
     const cart = await getCart(req.session.user.id);
 
     if (!cart.items.length) {
@@ -2375,8 +2408,8 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       customer_email: req.session.user.email,
       line_items: lineItems,
       discounts: stripeDiscounts,
-      success_url: `${APP_BASE_URL}/cart.html?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${APP_BASE_URL}/cart.html?checkout=cancel`,
+      success_url: `https://gca-nuxt.vercel.app/cart?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://gca-nuxt.vercel.app/cart?checkout=cancel`,
       metadata: {
         userId: String(req.session.user.id),
         cartId: String(cart.id),

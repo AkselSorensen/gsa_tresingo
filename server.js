@@ -71,6 +71,9 @@ app.use(cors({
   },
   credentials: true,
 }));
+// Stripe webhook needs the RAW body — parse it BEFORE the global JSON parser
+// (otherwise express.json() consumes the stream and the signature check always 400s)
+app.use("/api/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 // Trust proxy is required if you are behind a reverse proxy like Vercel

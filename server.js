@@ -2898,6 +2898,7 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
         country: "FR",
         email: user.email,
         business_type: "individual",
+        metadata: { gsa_user_id: String(user.id) },
       });
       accountId = account.id;
 
@@ -2905,18 +2906,48 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
       req.session.user.stripeAccountId = accountId;
     }
 
-    // Créer un lien d'onboarding
+    // Créer un lien d'onboarding — le return_url porte l'ID du compte pour
+    // l'associer à l'utilisateur au retour SANS dépendre de l'email.
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `https://gca-nuxt.vercel.app/seller/account?refresh=true`,
-      return_url: `https://gca-nuxt.vercel.app/seller/account?success=true`,
+      refresh_url: `https://gca-nuxt.vercel.app/seller/account?refresh=true&account=${accountId}`,
+      return_url: `https://gca-nuxt.vercel.app/seller/account?success=true&account=${accountId}`,
       type: "account_onboarding",
     });
 
-    res.json({ url: accountLink.url });
+    res.json({ url: accountLink.url, accountId });
   } catch (error) {
     console.error("Stripe Connect error:", error);
         res.status(500).json({ message: "Stripe Connect: " + (error?.message || error) });
+  }
+});
+
+// Associer un compte Stripe Connect précis à l'utilisateur (appelé au retour
+// d'onboarding avec ?account=acct_xxx — indépendant de l'email).
+app.post("/api/stripe/connect/link", requireAuth, async (req, res) => {
+  if (!stripe) return res.status(503).json({ message: "Stripe non configuré" });
+  const accountId = req.body?.accountId;
+  if (!accountId || typeof accountId !== "string" || !accountId.startsWith("acct_")) {
+    return res.status(400).json({ message: "Compte Stripe invalide" });
+  }
+  try {
+    const account = await stripe.accounts.retrieve(accountId);
+    const userId = req.session.user.id;
+    await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE id = $2`, [accountId, userId]);
+    req.session.user.stripeAccountId = accountId;
+    console.log(
+      `[stripe-link] user=${userId} -> account=${accountId} charges=${account.charges_enabled}`
+    );
+    res.json({
+      ok: true,
+      connected: !!account.charges_enabled,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      detailsSubmitted: account.details_submitted,
+    });
+  } catch (error) {
+    console.error("Stripe link error:", error);
+    res.status(500).json({ message: "Stripe link: " + (error?.message || error) });
   }
 });
 
@@ -2949,13 +2980,16 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
     // On cherche un compte activé avec le même email et on resynchronise.
     if (!connected) {
       const myEmail = (req.session.user.email || "").toLowerCase();
-      if (myEmail) {
+      const myUserId = String(userId);
+      if (myEmail || myUserId) {
         const listRes = await stripe.accounts.list({ limit: 100 });
-        const mine = listRes.data.filter(
-          (a) => a.email && a.email.toLowerCase() === myEmail
-        );
+        const mine = listRes.data.filter((a) => {
+          const byEmail = !!(a.email && a.email.toLowerCase() === myEmail);
+          const byMeta = !!(a.metadata && a.metadata.gsa_user_id === myUserId);
+          return byEmail || byMeta;
+        });
         console.log(
-          `[stripe-status] ${myEmail}: ${mine.length} compte(s) avec cet email (activé: ${mine.filter(a => a.charges_enabled).length})`
+          `[stripe-status] user=${myUserId} email=${myEmail}: ${mine.length} compte(s) match (activé: ${mine.filter(a => a.charges_enabled).length})`
         );
         const enabled = mine.find((a) => a.charges_enabled);
         if (enabled && enabled.id !== accountId) {

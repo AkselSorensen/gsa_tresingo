@@ -215,7 +215,7 @@ function mapProduct(row) {
   };
 }
 
-async function getProductBySlug(slug) {
+async function getProductBySlug(slug, userId = null) {
   const result = await pool.query(
     `
       SELECT
@@ -262,7 +262,9 @@ async function getProductBySlug(slug) {
         r.rating,
         r.comment,
         r.created_at,
-        u.display_name
+        r.user_id,
+        u.display_name,
+        u.avatar_url
       FROM reviews r
       JOIN users u ON u.id = r.user_id
       WHERE r.product_id = $1
@@ -276,7 +278,9 @@ async function getProductBySlug(slug) {
     rating: review.rating,
     comment: review.comment,
     displayName: review.display_name,
+    avatarUrl: review.avatar_url,
     createdAt: review.created_at,
+    mine: userId ? review.user_id === userId : false,
   }));
 
   return product;
@@ -633,8 +637,19 @@ async function initializeDatabase() {
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
       comment TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+    -- Un seul avis par utilisateur et par produit : on supprime les doublons éventuels
+    -- avant de créer l'index unique.
+    DELETE FROM reviews a
+    USING reviews b
+    WHERE a.id > b.id AND a.user_id = b.user_id AND a.product_id = b.product_id;
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_user_product ON reviews(user_id, product_id);
 
     CREATE TABLE IF NOT EXISTS carts (
       id SERIAL PRIMARY KEY,
@@ -1698,7 +1713,7 @@ app.get("/api/sellers/:slug", async (req, res) => {
 
 app.get("/api/products/:slug", async (req, res) => {
   try {
-    const product = await getProductBySlug(req.params.slug);
+    const product = await getProductBySlug(req.params.slug, req.session?.user?.id || null);
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -2925,17 +2940,45 @@ app.post("/api/reviews", requireAuth, async (req, res) => {
   const normalizedProductId = Number(productId);
   const normalizedRating = Number(rating);
 
-  if (Number.isNaN(normalizedProductId) || Number.isNaN(normalizedRating) || !comment) {
+  if (
+    Number.isNaN(normalizedProductId) ||
+    !Number.isInteger(normalizedRating) ||
+    normalizedRating < 1 ||
+    normalizedRating > 5 ||
+    typeof comment !== "string" ||
+    !comment.trim()
+  ) {
     return res.status(400).json({ message: "Invalid review payload" });
   }
 
   try {
-    await pool.query(
+    const productResult = await pool.query(`SELECT id FROM products WHERE id = $1`, [normalizedProductId]);
+    if (!productResult.rowCount) {
+      return res.status(404).json({ message: "Produit introuvable" });
+    }
+
+    // Seuls les acheteurs (commande completed) peuvent laisser un avis
+    const ownedResult = await pool.query(
+      `SELECT 1 FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE oi.product_id = $1 AND o.user_id = $2 AND o.status = 'completed' LIMIT 1`,
+      [normalizedProductId, req.session.user.id]
+    );
+    if (!ownedResult.rowCount) {
+      return res.status(403).json({ message: "Vous devez posséder ce produit pour laisser un avis" });
+    }
+
+    // Upsert : un seul avis par utilisateur et par produit (mise à jour si déjà noté)
+    const inserted = await pool.query(
       `
-        INSERT INTO reviews (product_id, user_id, rating, comment)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO reviews (product_id, user_id, rating, comment, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (user_id, product_id)
+        DO UPDATE SET
+          rating = EXCLUDED.rating,
+          comment = EXCLUDED.comment,
+          updated_at = NOW()
+        RETURNING id, rating, comment, created_at, updated_at
       `,
-      [normalizedProductId, req.session.user.id, normalizedRating, String(comment).trim()]
+      [normalizedProductId, req.session.user.id, normalizedRating, comment.trim()]
     );
 
     await pool.query(
@@ -2958,10 +3001,55 @@ app.post("/api/reviews", requireAuth, async (req, res) => {
       [normalizedProductId]
     );
 
-    res.status(201).json({ ok: true });
+    const review = inserted.rows[0];
+    res.status(201).json({
+      ok: true,
+      review: {
+        id: review.id,
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.created_at,
+      },
+    });
   } catch (error) {
     console.error("Review error:", error);
     res.status(500).json({ message: "Unable to submit review" });
+  }
+});
+
+app.delete("/api/reviews/:id", requireAuth, async (req, res) => {
+  const reviewId = Number(req.params.id);
+  if (Number.isNaN(reviewId)) {
+    return res.status(400).json({ message: "Invalid review id" });
+  }
+
+  try {
+    // Un utilisateur ne peut supprimer que son propre avis
+    const deleted = await pool.query(
+      `DELETE FROM reviews WHERE id = $1 AND user_id = $2 RETURNING product_id`,
+      [reviewId, req.session.user.id]
+    );
+    if (!deleted.rowCount) {
+      return res.status(404).json({ message: "Avis introuvable" });
+    }
+
+    const productId = deleted.rows[0].product_id;
+    await pool.query(
+      `
+        UPDATE products
+        SET
+          rating = COALESCE((SELECT AVG(rating) FROM reviews WHERE product_id = $1), 5),
+          review_count = (SELECT COUNT(*) FROM reviews WHERE product_id = $1),
+          updated_at = NOW()
+        WHERE id = $1
+      `,
+      [productId]
+    );
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("Review delete error:", error);
+    res.status(500).json({ message: "Unable to delete review" });
   }
 });
 

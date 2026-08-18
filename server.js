@@ -2392,6 +2392,24 @@ async function createSellerTransfers(orderId, transferGroup) {
   }
 }
 
+// Migration lazy des colonnes récentes (garantie même si le boot Vercel a été interrompu)
+let recentMigrationsApplied = false;
+async function ensureRecentMigrations() {
+  if (recentMigrationsApplied) return;
+  try {
+    await pool.query(`
+      ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_id TEXT;
+      ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_status TEXT NOT NULL DEFAULT 'pending';
+      ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_error TEXT;
+      ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMPTZ;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_fee_amount NUMERIC NOT NULL DEFAULT 0;
+    `);
+    recentMigrationsApplied = true;
+  } catch (e) {
+    console.error("[migrate] lazy migration failed:", e.message || e);
+  }
+}
+
 // Enregistre les frais de traitement Stripe réels d'une commande (balance_transaction)
 async function recordStripeFee(orderId, session) {
   if (!stripe) return;
@@ -3116,6 +3134,9 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     if (!result.rowCount) {
       return res.status(404).json({ message: "Commande introuvable" });
     }
+
+    // Garantit que les colonnes récentes existent (voir ensureRecentMigrations)
+    await ensureRecentMigrations();
 
     const order = result.rows[0];
     const items = order.items || [];

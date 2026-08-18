@@ -2951,9 +2951,13 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
       const myEmail = (req.session.user.email || "").toLowerCase();
       if (myEmail) {
         const listRes = await stripe.accounts.list({ limit: 100 });
-        const enabled = listRes.data.find(
-          (a) => a.charges_enabled && a.email && a.email.toLowerCase() === myEmail
+        const mine = listRes.data.filter(
+          (a) => a.email && a.email.toLowerCase() === myEmail
         );
+        console.log(
+          `[stripe-status] ${myEmail}: ${mine.length} compte(s) avec cet email (activé: ${mine.filter(a => a.charges_enabled).length})`
+        );
+        const enabled = mine.find((a) => a.charges_enabled);
         if (enabled && enabled.id !== accountId) {
           await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE id = $2`, [enabled.id, userId]);
           req.session.user.stripeAccountId = enabled.id;

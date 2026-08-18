@@ -37,6 +37,15 @@ const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL || `${BASE_URL_COMPUTED}/a
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PUBLIC_KEY = process.env.STRIPE_PUBLIC_KEY || "";
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+
+// Identifier le compte Stripe propriétaire des clés (mode + ID) pour vérifier
+// que le dashboard regardé est le bon. Ne log jamais la clé elle-même.
+if (stripe) {
+  const mode = STRIPE_SECRET_KEY.startsWith("sk_live") ? "LIVE" : "TEST";
+  stripe.account.retrieve()
+    .then((acc) => console.log(`[startup] Stripe: mode=${mode} account=${acc.id} email=${acc.email || "?"}`))
+    .catch((e) => console.log(`[startup] Stripe: mode=${mode} account retrieval failed: ${e.message}`));
+}
 const PLATFORM_COMMISSION_PERCENT = Math.min(
   100,
   Math.max(0, Number(process.env.PLATFORM_COMMISSION_PERCENT || 15))

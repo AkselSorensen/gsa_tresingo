@@ -1995,7 +1995,20 @@ app.post("/auth/admin/login", async (req, res) => {
 });
 
 app.post("/api/auth/logout", (req, res) => {
-  req.session.destroy(() => {
+  req.session.destroy((err) => {
+    // Effacer explicitement le cookie côté navigateur — requis en cross-origin
+    // (sameSite none + secure), sinon le cookie connect.sid reste et le
+    // navigateur continue de l'envoyer => il faut cliquer 2 fois.
+    res.clearCookie("connect.sid", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: true,
+      path: "/",
+    });
+    if (err) {
+      console.error("Logout destroy error:", err);
+      return res.status(500).json({ ok: false, message: "Logout failed" });
+    }
     res.json({ ok: true });
   });
 });

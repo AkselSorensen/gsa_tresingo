@@ -2961,6 +2961,10 @@ function formatEuro(value) {
   return parts.join(",") + " €";
 }
 
+function formatPercent(value) {
+  return Number(value || 0).toLocaleString("fr-FR", { maximumFractionDigits: 2 }) + " %";
+}
+
 app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
   try {
     const orderItemId = Number(req.params.orderItemId);
@@ -2984,7 +2988,10 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
               'title', p.title,
               'quantity', oi.quantity,
               'price', oi.price,
-              'seller_name', s.display_name
+              'seller_name', s.display_name,
+              'platform_fee_percent', oi.platform_fee_percent,
+              'platform_fee_amount', oi.platform_fee_amount,
+              'seller_net_amount', oi.seller_net_amount
             ) ORDER BY oi.id
           ) AS items
         FROM orders o
@@ -3072,8 +3079,14 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
         doc.addPage();
         rowY = 48;
       }
-      const rowHeight = Math.max(22, doc.heightOfString(item.title, { width: 280 }));
+      const titleHeight = doc.heightOfString(item.title, { width: 280 });
+      const feePct = formatPercent(item.platform_fee_percent);
+      const detailLine = `Dont frais GSA (${feePct}) : ${formatEuro(item.platform_fee_amount)} · Net vendeur : ${formatEuro(item.seller_net_amount)}`;
+      const rowHeight = Math.max(22, titleHeight + 16);
       doc.text(item.title, 48, rowY, { width: 280 });
+      doc.fontSize(8).fillColor(muted)
+        .text(detailLine, 48, rowY + titleHeight + 2, { width: 280 });
+      doc.fontSize(9.5).fillColor(dark);
       doc.text(String(item.quantity), 0, rowY, { align: "right", width: 340 });
       doc.text(formatEuro(item.price), 0, rowY, { align: "right", width: 440 });
       doc.text(formatEuro(Number(item.price) * Number(item.quantity)), 0, rowY, { align: "right", width: W });
@@ -3084,11 +3097,30 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     });
 
     // Totaux (labels alignés à droite jusqu'à x=440, montants jusqu'à x=48+W → marge anti-chevauchement)
+    if (rowY > doc.page.height - 170) {
+      doc.addPage();
+      rowY = 48;
+    }
     rowY += 8;
     doc.fontSize(9.5);
     doc.fillColor(muted).text("Sous-total", 0, rowY, { align: "right", width: 440 });
     doc.fillColor(dark).text(formatEuro(subtotal), 0, rowY, { align: "right", width: W });
     rowY += 18;
+
+    // Détail frais plateforme / net vendeur (basé sur les montants réels stockés dans order_items)
+    const totalFees = items.reduce((acc, it) => acc + Number(it.platform_fee_amount || 0), 0);
+    const totalNet = items.reduce((acc, it) => acc + Number(it.seller_net_amount || 0), 0);
+    const feePercent = items.find((it) => it.platform_fee_percent)?.platform_fee_percent || 0;
+    if (totalFees > 0) {
+      doc.fillColor(muted).text(`Dont frais GSA (${formatPercent(feePercent)})`, 0, rowY, { align: "right", width: 440 });
+      doc.fillColor(dark).text(`-${formatEuro(totalFees)}`, 0, rowY, { align: "right", width: W });
+      rowY += 18;
+    }
+    if (totalNet > 0) {
+      doc.fillColor(muted).text("Net vendeur", 0, rowY, { align: "right", width: 440 });
+      doc.fillColor(dark).text(formatEuro(totalNet), 0, rowY, { align: "right", width: W });
+      rowY += 18;
+    }
     if (discount > 0) {
       doc.fillColor(muted).text("Remise (code promo)", 0, rowY, { align: "right", width: 440 });
       doc.fillColor("#dc2626").text(`-${formatEuro(discount)}`, 0, rowY, { align: "right", width: W });

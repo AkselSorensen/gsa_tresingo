@@ -2883,6 +2883,14 @@ app.post("/api/stripe/connect", requireAuth, async (req, res) => {
     const user = req.session.user;
     let accountId = user.stripeAccountId;
 
+    // Fallback DB : si la session est fraîche (expirée/re-créée), retrouver
+    // le compte déjà créé au lieu d'en créer un nouveau à chaque clic.
+    if (!accountId) {
+      const userRow = await pool.query(`SELECT stripe_account_id FROM users WHERE id = $1`, [user.id]);
+      accountId = userRow.rows[0]?.stripe_account_id || null;
+      if (accountId) req.session.user.stripeAccountId = accountId;
+    }
+
     // Créer un compte Connect si pas encore fait
     if (!accountId) {
       const account = await stripe.accounts.create({

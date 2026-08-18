@@ -1473,6 +1473,10 @@ app.get("/api/bootstrap", async (req, res) => {
       })),
       landingConfig: (await pool.query(`SELECT * FROM admin_landing_config ORDER BY id ASC`)).rows,
       collaborators: ["Tresingo", "Atelier Nova", "Hexa Studio", "Forge 27", "Northline"],
+      // Vrais comptes vendeurs en DB (pour l'assignation de produits dans l'admin)
+      sellers: (await pool.query(
+        `SELECT slug, display_name AS username FROM users WHERE role IN ('seller', 'admin') ORDER BY display_name ASC`
+      )).rows,
       communities: ["Nexus RP", "Helios City", "Sector 12", "NovaLife", "Blackridge RP"],
       discordInvite,
     });

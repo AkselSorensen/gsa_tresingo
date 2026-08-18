@@ -624,6 +624,12 @@ async function initializeDatabase() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS shop_name TEXT NOT NULL DEFAULT '';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS discord_tag TEXT NOT NULL DEFAULT '';
 
+    -- Suivi des transfers Stripe Connect vers les vendeurs (pattern separate charges and transfers)
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_id TEXT;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_status TEXT NOT NULL DEFAULT 'pending';
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_error TEXT;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMPTZ;
+
     CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_unique_idx ON users(discord_id) WHERE discord_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS users_steam_id_unique_idx ON users(steam_id) WHERE steam_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS products_slug_unique_idx ON products(slug);
@@ -2315,6 +2321,53 @@ app.post("/api/promo/validate", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Payouts vendeurs (separate charges and transfers) ────
+// Tous les paiements vont à la plateforme, puis on transfère la part vendeur
+// (seller_net_amount) vers chaque compte Stripe Connect après la commande.
+async function createSellerTransfers(orderId, transferGroup) {
+  if (!stripe) return;
+  try {
+    const result = await pool.query(
+      `SELECT oi.id, oi.transfer_id, oi.seller_net_amount, u.stripe_account_id
+       FROM order_items oi
+       JOIN users u ON u.id = oi.seller_id
+       WHERE oi.order_id = $1`,
+      [orderId]
+    );
+
+    for (const item of result.rows) {
+      if (item.transfer_id) continue; // déjà transféré
+      if (!item.stripe_account_id) {
+        console.log(`[payout] order_item ${item.id}: vendeur sans compte Stripe Connect, pas de transfer`);
+        continue;
+      }
+      const amount = Math.round(Number(item.seller_net_amount || 0) * 100);
+      if (amount <= 0) continue;
+      try {
+        const transfer = await stripe.transfers.create({
+          amount,
+          currency: "eur",
+          destination: item.stripe_account_id,
+          transfer_group: transferGroup || `order-${orderId}`,
+        });
+        await pool.query(
+          `UPDATE order_items SET transfer_id = $1, transfer_status = 'succeeded', transferred_at = NOW() WHERE id = $2`,
+          [transfer.id, item.id]
+        );
+        console.log(`[payout] transfer ${transfer.id} : ${amount / 100} € → ${item.stripe_account_id} (order_item ${item.id})`);
+      } catch (err) {
+        await pool.query(
+          `UPDATE order_items SET transfer_status = 'failed', transfer_error = $1 WHERE id = $2`,
+          [String(err.message || err).slice(0, 500), item.id]
+        );
+        console.error(`[payout] transfer failed order_item ${item.id}:`, err.message || err);
+      }
+    }
+  } catch (error) {
+    console.error("[payout] createSellerTransfers error:", error.message || error);
+  }
+}
+
 // ─── Buy Now (achat direct d'un produit) ─────────────────
 app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
   if (!stripe || !STRIPE_PUBLIC_KEY) {
@@ -2338,15 +2391,9 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
     }
 
     const unitAmount = Math.round(Number(product.price) * 100);
-    const platformFee = Math.round(unitAmount * PLATFORM_COMMISSION_PERCENT / 100);
 
-    // Build payment_intent_data for Stripe Connect if seller has a connected account
-    const paymentIntentData = {};
-    if (product.seller_stripe_id) {
-      paymentIntentData.application_fee_amount = platformFee;
-      paymentIntentData.transfer_data = { destination: product.seller_stripe_id };
-    }
-
+    // Paiement à 100% sur la plateforme ; la part vendeur (75%) sera transférée
+    // séparément après la commande via createSellerTransfers (webhook / confirm-session).
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -2363,7 +2410,6 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
           },
         },
       }],
-      ...(paymentIntentData.transfer_data ? { payment_intent_data: paymentIntentData } : {}),
       success_url: `https://gca-nuxt.vercel.app/downloads?confirmed=1&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://gca-nuxt.vercel.app/product/${slug}`,
       metadata: { userId: String(req.session.user.id), productSlug: product.slug },
@@ -2521,6 +2567,8 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
         [ord.rows[0].id, product.id, product.seller_id, price, req.session.user.email, cp, fee, price - fee]
       );
       await client.query("COMMIT");
+      // Part vendeur → transfert Stripe Connect (75% du prix)
+      await createSellerTransfers(ord.rows[0].id, session.id);
       return res.json({ ok: true, orderId: ord.rows[0].id });
     }
     if (!cartId) {
@@ -2604,6 +2652,9 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
     await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cartId]);
     await client.query("COMMIT");
 
+    // Part vendeur(s) → transferts Stripe Connect (75% du prix de chaque article)
+    await createSellerTransfers(orderId, session.id);
+
     res.status(201).json({ ok: true, orderId, alreadyConfirmed: false });
   } catch (error) {
     try {
@@ -2672,6 +2723,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           [orderInsert.rows[0].id, product.id, product.seller_id, price, session.customer_details?.email || "", cp, fee, price - fee]
         );
         console.log(`Webhook buy-now: order ${orderInsert.rows[0].id} created for user ${userId}`);
+        // Part vendeur → transfert Stripe Connect
+        await createSellerTransfers(orderInsert.rows[0].id, session.id);
         return res.json({ received: true, orderId: orderInsert.rows[0].id });
       }
 
@@ -2728,6 +2781,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         await client.query(`DELETE FROM cart_items WHERE cart_id = $1`, [cartId]);
         await client.query("COMMIT");
         console.log(`Webhook: order ${orderId} created for user ${userId}`);
+        // Part vendeur(s) → transferts Stripe Connect
+        await createSellerTransfers(orderId, session.id);
       } catch (err) {
         await client.query("ROLLBACK");
         console.error("Webhook order creation error:", err);

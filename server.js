@@ -2941,6 +2941,174 @@ app.get("/api/download/:orderItemId", requireAuth, async (req, res) => {
   }
 });
 
+// ─── Facture PDF ─────────────────────────────────────────
+const PDFDocument = require("pdfkit");
+
+function invoiceNumber(orderId) {
+  return `INV-${String(orderId).padStart(5, "0")}`;
+}
+
+function formatInvoiceDate(value) {
+  return new Date(value).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatEuro(value) {
+  return `${Number(value || 0).toFixed(2)} €`;
+}
+
+app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
+  try {
+    const orderItemId = Number(req.params.orderItemId);
+    if (!orderItemId) return res.status(400).json({ message: "orderItemId invalide" });
+
+    // La facture couvre la commande entière ; l'utilisateur doit posséder l'item demandé
+    const result = await pool.query(
+      `
+        SELECT
+          o.id AS order_id,
+          o.created_at,
+          o.total_amount,
+          o.subtotal_amount,
+          o.discount_amount,
+          o.stripe_session_id,
+          u.display_name AS buyer_name,
+          u.email AS buyer_email,
+          json_agg(
+            json_build_object(
+              'order_item_id', oi.id,
+              'title', p.title,
+              'quantity', oi.quantity,
+              'price', oi.price,
+              'seller_name', s.display_name
+            ) ORDER BY oi.id
+          ) AS items
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        JOIN order_items oi ON oi.order_id = o.id
+        JOIN products p ON p.id = oi.product_id
+        JOIN users s ON s.id = oi.seller_id
+        WHERE o.id = (
+          SELECT o2.order_id
+          FROM order_items oi2
+          JOIN orders o2 ON o2.id = oi2.order_id
+          WHERE oi2.id = $1
+        )
+        AND o.user_id = $2
+        GROUP BY o.id, u.display_name, u.email
+        LIMIT 1
+      `,
+      [orderItemId, req.session.user.id]
+    );
+
+    if (!result.rowCount) {
+      return res.status(404).json({ message: "Commande introuvable" });
+    }
+
+    const order = result.rows[0];
+    const items = order.items || [];
+    const discount = Number(order.discount_amount || 0);
+    const subtotal = Number(order.subtotal_amount || 0);
+    const total = Number(order.total_amount || 0);
+    const sellers = [...new Set(items.map((i) => i.seller_name).filter(Boolean))];
+
+    const doc = new PDFDocument({ size: "A4", margin: 48 });
+    const chunks = [];
+    doc.on("data", (c) => chunks.push(c));
+    doc.on("end", () => {
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="facture-${invoiceNumber(order.order_id)}.pdf"`);
+      res.send(Buffer.concat(chunks));
+    });
+
+    const primary = "#2f7df6";
+    const dark = "#11171f";
+    const muted = "#5a6478";
+    const light = "#e2e8f0";
+    const W = doc.page.width - 96; // largeur utile
+
+    // Header sombre
+    doc.rect(0, 0, doc.page.width, 96).fill(dark);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(26).text("GSA", 48, 28);
+    doc.font("Helvetica").fontSize(9.5).fillColor("#8892a8")
+      .text("GSA Tresingo · Marketplace Garry's Mod", 48, 62);
+    doc.fillColor(primary).font("Helvetica-Bold").fontSize(22).text("FACTURE", 0, 32, { align: "right", width: W });
+
+    // N° + date
+    doc.fillColor(muted).font("Helvetica").fontSize(9)
+      .text(`N° ${invoiceNumber(order.order_id)}  ·  Date : ${formatInvoiceDate(order.created_at)}`, 0, 112, { align: "right", width: W });
+
+    // Blocs client / vendeur
+    doc.y = 148;
+    doc.font("Helvetica-Bold").fontSize(8.5).fillColor(muted).text("FACTURÉ À", 48, 148);
+    doc.font("Helvetica").fontSize(10.5).fillColor(dark).text(order.buyer_name || "Client", 48, 162);
+    doc.fontSize(9).fillColor(muted).text(order.buyer_email || "", 48, 178);
+
+    doc.font("Helvetica-Bold").fontSize(8.5).fillColor(muted).text("VENDU PAR", 0, 148, { align: "right", width: W });
+    doc.font("Helvetica").fontSize(10.5).fillColor(dark).text(sellers.join(", ") || "Vendeur GSA", 0, 162, { align: "right", width: W });
+
+    // Tableau des articles
+    const tableTop = 210;
+    doc.y = tableTop;
+    doc.rect(48, tableTop, W, 24).fill("#f1f5f9");
+    doc.fillColor(muted).font("Helvetica-Bold").fontSize(8.5);
+    doc.text("PRODUIT", 48, tableTop + 7);
+    doc.text("QTÉ", 0, tableTop + 7, { align: "right", width: 340 });
+    doc.text("PRIX UNITAIRE", 0, tableTop + 7, { align: "right", width: 440 });
+    doc.text("TOTAL", 0, tableTop + 7, { align: "right", width: W });
+
+    let rowY = tableTop + 30;
+    doc.font("Helvetica").fontSize(9.5).fillColor(dark);
+    items.forEach((item, i) => {
+      if (rowY > doc.page.height - 90) {
+        doc.addPage();
+        rowY = 48;
+      }
+      const rowHeight = Math.max(22, doc.heightOfString(item.title, { width: 280 }));
+      doc.text(item.title, 48, rowY, { width: 280 });
+      doc.text(String(item.quantity), 0, rowY, { align: "right", width: 340 });
+      doc.text(formatEuro(item.price), 0, rowY, { align: "right", width: 440 });
+      doc.text(formatEuro(Number(item.price) * Number(item.quantity)), 0, rowY, { align: "right", width: W });
+      if (i < items.length - 1) {
+        doc.moveTo(48, rowY + rowHeight + 3).lineTo(48 + W, rowY + rowHeight + 3).strokeColor(light).lineWidth(0.5).stroke();
+      }
+      rowY += rowHeight + 10;
+    });
+
+    // Totaux
+    const totalsX = 48 + W - 200;
+    rowY += 8;
+    doc.fontSize(9.5);
+    doc.fillColor(muted).text("Sous-total", totalsX, rowY);
+    doc.fillColor(dark).text(formatEuro(subtotal), 0, rowY, { align: "right", width: W });
+    rowY += 18;
+    if (discount > 0) {
+      doc.fillColor(muted).text("Remise (code promo)", totalsX, rowY);
+      doc.fillColor("#dc2626").text(`-${formatEuro(discount)}`, 0, rowY, { align: "right", width: W });
+      rowY += 18;
+    }
+    doc.rect(48, rowY - 4, W, 26).fill(dark);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11).text("TOTAL TTC", 0, rowY + 5, { align: "right", width: W - 12 });
+    doc.text(formatEuro(total), 0, rowY + 5, { align: "right", width: W });
+
+    // Mentions
+    doc.fillColor(muted).font("Helvetica").fontSize(8);
+    doc.text("Paiement sécurisé via Stripe.", 48, rowY + 46);
+    doc.text("TVA non applicable, art. 293 B du CGI.", 48, rowY + 60);
+    doc.text(`Commande n° ${order.order_id} · Transaction Stripe ${String(order.stripe_session_id || "").slice(0, 18)}`, 48, rowY + 74);
+
+    // Footer
+    const footerY = doc.page.height - 48;
+    doc.moveTo(48, footerY - 8).lineTo(48 + W, footerY - 8).strokeColor(light).lineWidth(0.5).stroke();
+    doc.fillColor(muted).fontSize(8).text("GSA Tresingo · GSA, un standard à venir.", 48, footerY);
+    doc.text(`Facture générée le ${formatInvoiceDate(new Date())}`, 0, footerY, { align: "right", width: W });
+
+    doc.end();
+  } catch (error) {
+    console.error("Invoice error:", error);
+    res.status(500).json({ message: "Erreur lors de la génération de la facture" });
+  }
+});
+
 app.post("/api/reviews", requireAuth, async (req, res) => {
   const { productId, rating, comment } = req.body;
   const normalizedProductId = Number(productId);

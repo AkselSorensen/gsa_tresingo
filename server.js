@@ -3085,6 +3085,9 @@ function formatPercent(value) {
 
 app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
   try {
+    // Garantit que les colonnes récentes existent AVANT le premier SELECT (qui les référence)
+    await ensureRecentMigrations();
+
     const orderItemId = Number(req.params.orderItemId);
     if (!orderItemId) return res.status(400).json({ message: "orderItemId invalide" });
 
@@ -3134,9 +3137,6 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     if (!result.rowCount) {
       return res.status(404).json({ message: "Commande introuvable" });
     }
-
-    // Garantit que les colonnes récentes existent (voir ensureRecentMigrations)
-    await ensureRecentMigrations();
 
     const order = result.rows[0];
     const items = order.items || [];

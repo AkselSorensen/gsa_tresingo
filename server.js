@@ -2859,8 +2859,10 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
       const account = event.data.object;
       // Mettre à jour le stripe_account_id si le compte devient complété
       if (account.charges_enabled) {
-        await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE stripe_account_id IS NULL AND email = $2`, 
-          [account.id, account.email || ""]);
+        await pool.query(
+          `UPDATE users SET stripe_account_id = $1 WHERE email = $2 AND (stripe_account_id IS NULL OR stripe_account_id <> $1)`,
+          [account.id, account.email || ""]
+        );
       }
       break;
     }
@@ -2932,7 +2934,28 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
     }
 
     const account = await stripe.accounts.retrieve(accountId);
-    const connected = account.charges_enabled; // charges_enabled suffit pour recevoir des paiements
+    let connected = account.charges_enabled; // charges_enabled suffit pour recevoir des paiements
+
+    // Si le compte stocké n'est pas activé, l'utilisateur a peut-être complété
+    // l'onboarding sur un AUTRE compte (clics répétés => comptes multiples).
+    // On cherche un compte activé avec le même email et on resynchronise.
+    if (!connected) {
+      const myEmail = (req.session.user.email || "").toLowerCase();
+      if (myEmail) {
+        const listRes = await stripe.accounts.list({ limit: 100 });
+        const enabled = listRes.data.find(
+          (a) => a.charges_enabled && a.email && a.email.toLowerCase() === myEmail
+        );
+        if (enabled && enabled.id !== accountId) {
+          await pool.query(`UPDATE users SET stripe_account_id = $1 WHERE id = $2`, [enabled.id, userId]);
+          req.session.user.stripeAccountId = enabled.id;
+          console.log(`[stripe-status] resync: ${accountId} -> ${enabled.id} (email match)`);
+          account = enabled;
+          accountId = enabled.id;
+          connected = true;
+        }
+      }
+    }
 
     console.log(
       `[stripe-status] account=${accountId} charges=${account.charges_enabled} payouts=${account.payouts_enabled} details=${account.details_submitted} type=${account.type} country=${account.country}`

@@ -2382,6 +2382,15 @@ async function createSellerTransfers(orderId, transferGroup) {
         console.log(`[payout] order_item ${item.id}: vendeur sans compte Stripe Connect, pas de transfer`);
         continue;
       }
+      // Diagnostic : état du compte destination avant transfert
+      try {
+        const destAccount = await stripe.accounts.retrieve(item.stripe_account_id);
+        console.log(
+          `[payout] order_item ${item.id} → compte ${item.stripe_account_id} | charges=${destAccount.charges_enabled} payouts=${destAccount.payouts_enabled} details=${destAccount.details_submitted}`
+        );
+      } catch (e) {
+        console.log(`[payout] order_item ${item.id}: impossible de lire le compte ${item.stripe_account_id}`, e.message || e);
+      }
       const amount = Math.round(Number(item.seller_net_amount || 0) * 100);
       if (amount <= 0) continue;
       try {

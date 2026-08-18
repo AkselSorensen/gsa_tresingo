@@ -2934,11 +2934,17 @@ app.get("/api/stripe/connect/status", requireAuth, async (req, res) => {
     const account = await stripe.accounts.retrieve(accountId);
     const connected = account.charges_enabled; // charges_enabled suffit pour recevoir des paiements
 
+    console.log(
+      `[stripe-status] account=${accountId} charges=${account.charges_enabled} payouts=${account.payouts_enabled} details=${account.details_submitted} type=${account.type} country=${account.country}`
+    );
+
     res.json({
       connected,
+      hasAccount: true,
       chargesEnabled: account.charges_enabled,
       payoutsEnabled: account.payouts_enabled,
       detailsSubmitted: account.details_submitted,
+      onboardingLink: connected ? undefined : `${APP_BASE_URL}/api/stripe/connect`,
     });
   } catch (error) {
     console.error("Stripe Connect status error:", error);

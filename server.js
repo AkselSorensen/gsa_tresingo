@@ -531,6 +531,23 @@ async function maintenanceMiddleware(req, res, next) {
 app.use(maintenanceMiddleware);
 
 async function initializeDatabase() {
+  // Migrations récentes isolées : s'exécutent même si le gros bloc historique ci-dessous échoue
+  await pool.query(`
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_id TEXT;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_status TEXT NOT NULL DEFAULT 'pending';
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_error TEXT;
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMPTZ;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_fee_amount NUMERIC NOT NULL DEFAULT 0;
+  `);
+
+  // Réparation des seller_net_amount (division entière historique)
+  await pool.query(`
+    UPDATE order_items
+    SET seller_net_amount = ROUND((price * quantity * (1 - platform_fee_percent::numeric / 100))::numeric, 2)
+    WHERE seller_net_amount = price * quantity
+      AND platform_fee_percent > 0;
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,

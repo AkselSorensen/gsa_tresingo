@@ -397,6 +397,11 @@ function normalizePromoCode(code) {
     .slice(0, 40);
 }
 
+// Stripe rejette les data: URLs dans product_data.images → ne passer que des URLs http(s)
+function stripeSafeImage(url) {
+  return url && typeof url === "string" && /^https?:\/\//i.test(url) ? url : null;
+}
+
 function generatePromoCode(prefix = "AMB") {
   const safePrefix = normalizePromoCode(prefix).slice(0, 12) || "AMB";
   return `${safePrefix}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
@@ -2352,7 +2357,7 @@ app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
           unit_amount: unitAmount,
           product_data: {
             name: product.title,
-            images: product.thumbnail ? [product.thumbnail] : [],
+            images: (() => { const img = stripeSafeImage(product.thumbnail); return img ? [img] : []; })(),
             metadata: { productSlug: product.slug, productId: String(product.id) },
           },
         },
@@ -2420,24 +2425,25 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       stripeDiscounts = [{ coupon: coupon.id }];
     }
 
-    const lineItems = cart.items.map((item) => ({
-      quantity: item.quantity,
-      price_data: {
-        currency: "eur",
-        unit_amount: Math.round(Number(item.product.price) * 100),
-        product_data: {
-          name: item.product.title,
-          images:
-            item.product.preview?.thumbnail || item.product.preview?.url
-              ? [item.product.preview.thumbnail || item.product.preview.url]
-              : [],
-          metadata: {
-            productSlug: item.product.slug,
-            productId: String(item.product.id),
+    const lineItems = cart.items.map((item) => {
+      const previewUrl = item.product.preview?.thumbnail || item.product.preview?.url || "";
+      const safeImg = stripeSafeImage(previewUrl);
+      return {
+        quantity: item.quantity,
+        price_data: {
+          currency: "eur",
+          unit_amount: Math.round(Number(item.product.price) * 100),
+          product_data: {
+            name: item.product.title,
+            images: safeImg ? [previewUrl] : [],
+            metadata: {
+              productSlug: item.product.slug,
+              productId: String(item.product.id),
+            },
           },
         },
-      },
-    }));
+      };
+    });
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -2445,7 +2451,7 @@ app.post("/api/checkout/create-session", requireAuth, async (req, res) => {
       customer_email: req.session.user.email,
       line_items: lineItems,
       discounts: stripeDiscounts,
-      success_url: `https://gca-nuxt.vercel.app/cart?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `https://gca-nuxt.vercel.app/downloads?confirmed=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://gca-nuxt.vercel.app/cart?checkout=cancel`,
       metadata: {
         userId: String(req.session.user.id),

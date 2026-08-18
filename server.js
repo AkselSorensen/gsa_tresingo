@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const session = require("express-session");
@@ -2953,7 +2954,11 @@ function formatInvoiceDate(value) {
 }
 
 function formatEuro(value) {
-  return `${Number(value || 0).toFixed(2)} €`;
+  // Format français : "1 200,97 €" (virgule décimale + espace milliers)
+  const n = Number(value || 0);
+  const parts = n.toFixed(2).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return parts.join(",") + " €";
 }
 
 app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
@@ -3026,11 +3031,15 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     const light = "#e2e8f0";
     const W = doc.page.width - 96; // largeur utile
 
-    // Header sombre
+    // Header sombre avec logo sur carte blanche
     doc.rect(0, 0, doc.page.width, 96).fill(dark);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(26).text("GSA", 48, 28);
+    const logoPath = path.join(__dirname, "asset/logo/gsa_logo.png");
+    doc.roundedRect(48, 20, 88, 56, 10).fill("#ffffff");
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 48 + 8, 20 + 8, { fit: [72, 40] });
+    }
     doc.font("Helvetica").fontSize(9.5).fillColor("#8892a8")
-      .text("GSA Tresingo · Marketplace Garry's Mod", 48, 62);
+      .text("GSA Tresingo · Marketplace Garry's Mod", 148, 62);
     doc.fillColor(primary).font("Helvetica-Bold").fontSize(22).text("FACTURE", 0, 32, { align: "right", width: W });
 
     // N° + date
@@ -3074,20 +3083,19 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
       rowY += rowHeight + 10;
     });
 
-    // Totaux
-    const totalsX = 48 + W - 200;
+    // Totaux (labels alignés à droite jusqu'à x=440, montants jusqu'à x=48+W → marge anti-chevauchement)
     rowY += 8;
     doc.fontSize(9.5);
-    doc.fillColor(muted).text("Sous-total", totalsX, rowY);
+    doc.fillColor(muted).text("Sous-total", 0, rowY, { align: "right", width: 440 });
     doc.fillColor(dark).text(formatEuro(subtotal), 0, rowY, { align: "right", width: W });
     rowY += 18;
     if (discount > 0) {
-      doc.fillColor(muted).text("Remise (code promo)", totalsX, rowY);
+      doc.fillColor(muted).text("Remise (code promo)", 0, rowY, { align: "right", width: 440 });
       doc.fillColor("#dc2626").text(`-${formatEuro(discount)}`, 0, rowY, { align: "right", width: W });
       rowY += 18;
     }
     doc.rect(48, rowY - 4, W, 26).fill(dark);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11).text("TOTAL TTC", 0, rowY + 5, { align: "right", width: W - 12 });
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11).text("TOTAL TTC", 0, rowY + 5, { align: "right", width: W - 70 });
     doc.text(formatEuro(total), 0, rowY + 5, { align: "right", width: W });
 
     // Mentions

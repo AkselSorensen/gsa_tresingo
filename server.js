@@ -630,6 +630,12 @@ async function initializeDatabase() {
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_error TEXT;
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMPTZ;
 
+    -- Réparation : la division entière SQL (1 - pct / 100 = 1) avait stocké seller_net_amount = prix plein
+    UPDATE order_items
+    SET seller_net_amount = ROUND((price * quantity * (1 - platform_fee_percent::numeric / 100))::numeric, 2)
+    WHERE seller_net_amount = price * quantity
+      AND platform_fee_percent > 0;
+
     CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_unique_idx ON users(discord_id) WHERE discord_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS users_steam_id_unique_idx ON users(steam_id) WHERE steam_id IS NOT NULL;
     CREATE UNIQUE INDEX IF NOT EXISTS products_slug_unique_idx ON products(slug);
@@ -783,7 +789,7 @@ async function initializeDatabase() {
         ELSE platform_fee_amount
       END,
       seller_net_amount = CASE
-        WHEN seller_net_amount = 0 THEN ROUND((price * quantity * (1 - COALESCE(NULLIF(platform_fee_percent, 0), 15) / 100))::numeric, 2)
+        WHEN seller_net_amount = 0 THEN ROUND((price * quantity * (1 - COALESCE(NULLIF(platform_fee_percent, 0), 15)::numeric / 100))::numeric, 2)
         ELSE seller_net_amount
       END;
   `);
@@ -1556,7 +1562,7 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
         COALESCE(SUM(oi.quantity), 0) as units_sold,
         COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
         COALESCE(SUM(ROUND((oi.price * oi.quantity * $2 / 100)::numeric, 2)), 0) as platform_fees,
-        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2)), 0) as seller_net_revenue,
+        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2::numeric / 100))::numeric, 2)), 0) as seller_net_revenue,
         (SELECT COUNT(*) FROM products WHERE seller_id = $1 AND is_hidden = FALSE) as active_products
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
@@ -1592,7 +1598,7 @@ app.get("/api/seller/dashboard", requireAuth, async (req, res) => {
         oi.quantity as quantity,
         $2::numeric as platform_fee_percent,
         ROUND((oi.price * oi.quantity * $2 / 100)::numeric, 2) as platform_fee_amount,
-        ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2) as seller_net_amount
+        ROUND((oi.price * oi.quantity * (1 - $2::numeric / 100))::numeric, 2) as seller_net_amount
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       JOIN products p ON p.id = oi.product_id
@@ -1680,7 +1686,7 @@ app.get("/api/sellers/:slug", async (req, res) => {
       SELECT 
         COALESCE(SUM(oi.quantity), 0) as units_sold,
         COALESCE(SUM(oi.price * oi.quantity), 0) as total_revenue,
-        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2 / 100))::numeric, 2)), 0) as seller_net_revenue
+        COALESCE(SUM(ROUND((oi.price * oi.quantity * (1 - $2::numeric / 100))::numeric, 2)), 0) as seller_net_revenue
       FROM order_items oi
       JOIN orders o ON o.id = oi.order_id
       WHERE oi.seller_id = $1 AND o.status = 'completed'
@@ -2614,7 +2620,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
           $2,
           $4,
           ROUND((p.price * ci.quantity * $4 / 100)::numeric, 2),
-          ROUND((p.price * ci.quantity * (1 - $4 / 100))::numeric, 2)
+          ROUND((p.price * ci.quantity * (1 - $4::numeric / 100))::numeric, 2)
         FROM cart_items ci
         JOIN products p ON p.id = ci.product_id
         WHERE ci.cart_id = $3
@@ -2753,7 +2759,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           INSERT INTO order_items (order_id, product_id, seller_id, price, quantity, customer_email, platform_fee_percent, platform_fee_amount, seller_net_amount)
           SELECT $1, p.id, p.seller_id, p.price, ci.quantity, $2, $4,
             ROUND((p.price * ci.quantity * $4 / 100)::numeric, 2),
-            ROUND((p.price * ci.quantity * (1 - $4 / 100))::numeric, 2)
+            ROUND((p.price * ci.quantity * (1 - $4::numeric / 100))::numeric, 2)
           FROM cart_items ci
           JOIN products p ON p.id = ci.product_id
           WHERE ci.cart_id = $3

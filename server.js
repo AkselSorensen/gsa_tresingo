@@ -629,6 +629,7 @@ async function initializeDatabase() {
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_status TEXT NOT NULL DEFAULT 'pending';
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transfer_error TEXT;
     ALTER TABLE order_items ADD COLUMN IF NOT EXISTS transferred_at TIMESTAMPTZ;
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS stripe_fee_amount NUMERIC NOT NULL DEFAULT 0;
 
     -- Réparation : la division entière SQL (1 - pct / 100 = 1) avait stocké seller_net_amount = prix plein
     UPDATE order_items
@@ -2374,6 +2375,23 @@ async function createSellerTransfers(orderId, transferGroup) {
   }
 }
 
+// Enregistre les frais de traitement Stripe réels d'une commande (balance_transaction)
+async function recordStripeFee(orderId, session) {
+  if (!stripe) return;
+  try {
+    const piId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+    if (!piId) return;
+    const pi = await stripe.paymentIntents.retrieve(piId, { expand: ["latest_charge.balance_transaction"] });
+    const fee = Number(pi.latest_charge?.balance_transaction?.fee || 0) / 100;
+    if (fee > 0) {
+      await pool.query(`UPDATE orders SET stripe_fee_amount = $1 WHERE id = $2`, [fee, orderId]);
+      console.log(`[fees] order ${orderId} : frais Stripe = ${fee} €`);
+    }
+  } catch (error) {
+    console.error("[fees] recordStripeFee error:", error.message || error);
+  }
+}
+
 // ─── Buy Now (achat direct d'un produit) ─────────────────
 app.post("/api/checkout/buy-now", requireAuth, async (req, res) => {
   if (!stripe || !STRIPE_PUBLIC_KEY) {
@@ -2575,6 +2593,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
       await client.query("COMMIT");
       // Part vendeur → transfert Stripe Connect (75% du prix)
       await createSellerTransfers(ord.rows[0].id, session.id);
+      await recordStripeFee(ord.rows[0].id, session);
       return res.json({ ok: true, orderId: ord.rows[0].id });
     }
     if (!cartId) {
@@ -2660,6 +2679,7 @@ app.post("/api/checkout/confirm-session", requireAuth, async (req, res) => {
 
     // Part vendeur(s) → transferts Stripe Connect (75% du prix de chaque article)
     await createSellerTransfers(orderId, session.id);
+    await recordStripeFee(orderId, session);
 
     res.status(201).json({ ok: true, orderId, alreadyConfirmed: false });
   } catch (error) {
@@ -2731,6 +2751,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         console.log(`Webhook buy-now: order ${orderInsert.rows[0].id} created for user ${userId}`);
         // Part vendeur → transfert Stripe Connect
         await createSellerTransfers(orderInsert.rows[0].id, session.id);
+        await recordStripeFee(orderInsert.rows[0].id, session);
         return res.json({ received: true, orderId: orderInsert.rows[0].id });
       }
 
@@ -2789,6 +2810,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         console.log(`Webhook: order ${orderId} created for user ${userId}`);
         // Part vendeur(s) → transferts Stripe Connect
         await createSellerTransfers(orderId, session.id);
+        await recordStripeFee(orderId, session);
       } catch (err) {
         await client.query("ROLLBACK");
         console.error("Webhook order creation error:", err);
@@ -3040,6 +3062,7 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
           o.total_amount,
           o.subtotal_amount,
           o.discount_amount,
+          o.stripe_fee_amount,
           o.stripe_session_id,
           u.display_name AS buyer_name,
           u.email AS buyer_email,
@@ -3098,75 +3121,73 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     const muted = "#5a6478";
     const light = "#e2e8f0";
     const W = doc.page.width - 96; // largeur utile
+    const usableBottom = doc.page.height - 60; // zone sûre (évite les pages fantômes du footer)
 
     // Header sombre avec logo sur carte blanche
-    doc.rect(0, 0, doc.page.width, 96).fill(dark);
+    doc.rect(0, 0, doc.page.width, 84).fill(dark);
     const logoPath = path.join(__dirname, "asset/logo/gsa_logo.png");
-    doc.roundedRect(48, 20, 88, 56, 10).fill("#ffffff");
+    doc.roundedRect(48, 16, 84, 52, 10).fill("#ffffff");
     if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 48 + 8, 20 + 8, { fit: [72, 40] });
+      doc.image(logoPath, 48 + 6, 16 + 6, { fit: [72, 40] });
     }
-    doc.font("Helvetica").fontSize(9.5).fillColor("#8892a8")
-      .text("GSA Tresingo · Marketplace Garry's Mod", 148, 62);
-    doc.fillColor(primary).font("Helvetica-Bold").fontSize(22).text("FACTURE", 0, 32, { align: "right", width: W });
+    doc.font("Helvetica").fontSize(9).fillColor("#8892a8")
+      .text("GSA Tresingo · Marketplace Garry's Mod", 146, 56);
+    doc.fillColor(primary).font("Helvetica-Bold").fontSize(20).text("FACTURE", 0, 26, { align: "right", width: W });
 
     // N° + date
-    doc.fillColor(muted).font("Helvetica").fontSize(9)
-      .text(`N° ${invoiceNumber(order.order_id)}  ·  Date : ${formatInvoiceDate(order.created_at)}`, 0, 112, { align: "right", width: W });
+    doc.fillColor(muted).font("Helvetica").fontSize(8.5)
+      .text(`N° ${invoiceNumber(order.order_id)}  ·  Date : ${formatInvoiceDate(order.created_at)}`, 0, 100, { align: "right", width: W });
 
     // Blocs client / vendeur
-    doc.y = 148;
-    doc.font("Helvetica-Bold").fontSize(8.5).fillColor(muted).text("FACTURÉ À", 48, 148);
-    doc.font("Helvetica").fontSize(10.5).fillColor(dark).text(order.buyer_name || "Client", 48, 162);
-    doc.fontSize(9).fillColor(muted).text(order.buyer_email || "", 48, 178);
-
-    doc.font("Helvetica-Bold").fontSize(8.5).fillColor(muted).text("VENDU PAR", 0, 148, { align: "right", width: W });
-    doc.font("Helvetica").fontSize(10.5).fillColor(dark).text(sellers.join(", ") || "Vendeur GSA", 0, 162, { align: "right", width: W });
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(muted).text("FACTURÉ À", 48, 132);
+    doc.font("Helvetica").fontSize(10).fillColor(dark).text(order.buyer_name || "Client", 48, 145);
+    doc.fontSize(8.5).fillColor(muted).text(order.buyer_email || "", 48, 160);
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(muted).text("VENDU PAR", 0, 132, { align: "right", width: W });
+    doc.font("Helvetica").fontSize(10).fillColor(dark).text(sellers.join(", ") || "Vendeur GSA", 0, 145, { align: "right", width: W });
 
     // Tableau des articles
-    const tableTop = 210;
-    doc.y = tableTop;
-    doc.rect(48, tableTop, W, 24).fill("#f1f5f9");
-    doc.fillColor(muted).font("Helvetica-Bold").fontSize(8.5);
-    doc.text("PRODUIT", 48, tableTop + 7);
-    doc.text("QTÉ", 0, tableTop + 7, { align: "right", width: 340 });
-    doc.text("PRIX UNITAIRE", 0, tableTop + 7, { align: "right", width: 440 });
-    doc.text("TOTAL", 0, tableTop + 7, { align: "right", width: W });
+    const tableTop = 190;
+    doc.rect(48, tableTop, W, 22).fill("#f1f5f9");
+    doc.fillColor(muted).font("Helvetica-Bold").fontSize(8);
+    doc.text("PRODUIT", 48, tableTop + 6);
+    doc.text("QTÉ", 0, tableTop + 6, { align: "right", width: 340 });
+    doc.text("PRIX UNITAIRE", 0, tableTop + 6, { align: "right", width: 440 });
+    doc.text("TOTAL", 0, tableTop + 6, { align: "right", width: W });
 
-    let rowY = tableTop + 30;
-    doc.font("Helvetica").fontSize(9.5).fillColor(dark);
+    let rowY = tableTop + 26;
+    doc.font("Helvetica").fontSize(9).fillColor(dark);
     items.forEach((item, i) => {
-      if (rowY > doc.page.height - 90) {
+      if (rowY > usableBottom - 120) {
         doc.addPage();
         rowY = 48;
       }
       const titleHeight = doc.heightOfString(item.title, { width: 280 });
       const feePct = formatPercent(item.platform_fee_percent);
       const detailLine = `Dont frais GSA (${feePct}) : ${formatEuro(item.platform_fee_amount)} · Net vendeur : ${formatEuro(item.seller_net_amount)}`;
-      const rowHeight = Math.max(22, titleHeight + 16);
+      const rowHeight = Math.max(20, titleHeight + 14);
       doc.text(item.title, 48, rowY, { width: 280 });
-      doc.fontSize(8).fillColor(muted)
-        .text(detailLine, 48, rowY + titleHeight + 2, { width: 280 });
-      doc.fontSize(9.5).fillColor(dark);
+      doc.fontSize(7.5).fillColor(muted)
+        .text(detailLine, 48, rowY + titleHeight + 1, { width: 280 });
+      doc.fontSize(9).fillColor(dark);
       doc.text(String(item.quantity), 0, rowY, { align: "right", width: 340 });
       doc.text(formatEuro(item.price), 0, rowY, { align: "right", width: 440 });
       doc.text(formatEuro(Number(item.price) * Number(item.quantity)), 0, rowY, { align: "right", width: W });
       if (i < items.length - 1) {
-        doc.moveTo(48, rowY + rowHeight + 3).lineTo(48 + W, rowY + rowHeight + 3).strokeColor(light).lineWidth(0.5).stroke();
+        doc.moveTo(48, rowY + rowHeight + 2).lineTo(48 + W, rowY + rowHeight + 2).strokeColor(light).lineWidth(0.5).stroke();
       }
-      rowY += rowHeight + 10;
+      rowY += rowHeight + 8;
     });
 
     // Totaux (labels alignés à droite jusqu'à x=440, montants jusqu'à x=48+W → marge anti-chevauchement)
-    if (rowY > doc.page.height - 170) {
+    if (rowY > usableBottom - 130) {
       doc.addPage();
       rowY = 48;
     }
-    rowY += 8;
-    doc.fontSize(9.5);
+    rowY += 6;
+    doc.fontSize(9);
     doc.fillColor(muted).text("Sous-total", 0, rowY, { align: "right", width: 440 });
     doc.fillColor(dark).text(formatEuro(subtotal), 0, rowY, { align: "right", width: W });
-    rowY += 18;
+    rowY += 15;
 
     // Détail frais plateforme / net vendeur (basé sur les montants réels stockés dans order_items)
     const totalFees = items.reduce((acc, it) => acc + Number(it.platform_fee_amount || 0), 0);
@@ -3175,32 +3196,40 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
     if (totalFees > 0) {
       doc.fillColor(muted).text(`Dont frais GSA (${formatPercent(feePercent)})`, 0, rowY, { align: "right", width: 440 });
       doc.fillColor(dark).text(`-${formatEuro(totalFees)}`, 0, rowY, { align: "right", width: W });
-      rowY += 18;
+      rowY += 15;
     }
     if (totalNet > 0) {
       doc.fillColor(muted).text("Net vendeur", 0, rowY, { align: "right", width: 440 });
       doc.fillColor(dark).text(formatEuro(totalNet), 0, rowY, { align: "right", width: W });
-      rowY += 18;
+      rowY += 15;
+    }
+    // Frais de traitement Stripe (montant réel depuis balance_transaction)
+    const stripeFee = Number(order.stripe_fee_amount || 0);
+    if (stripeFee > 0) {
+      const feeRate = total > 0 ? formatPercent((stripeFee / total) * 100) : "";
+      doc.fillColor(muted).text(`Frais de traitement Stripe (${feeRate})`, 0, rowY, { align: "right", width: 440 });
+      doc.fillColor(dark).text(`-${formatEuro(stripeFee)}`, 0, rowY, { align: "right", width: W });
+      rowY += 15;
     }
     if (discount > 0) {
       doc.fillColor(muted).text("Remise (code promo)", 0, rowY, { align: "right", width: 440 });
       doc.fillColor("#dc2626").text(`-${formatEuro(discount)}`, 0, rowY, { align: "right", width: W });
-      rowY += 18;
+      rowY += 15;
     }
-    doc.rect(48, rowY - 4, W, 26).fill(dark);
-    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11).text("TOTAL TTC", 0, rowY + 5, { align: "right", width: W - 70 });
-    doc.text(formatEuro(total), 0, rowY + 5, { align: "right", width: W });
+    doc.rect(48, rowY - 4, W, 24).fill(dark);
+    doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(10.5).text("TOTAL TTC", 0, rowY + 4, { align: "right", width: W - 70 });
+    doc.text(formatEuro(total), 0, rowY + 4, { align: "right", width: W });
 
     // Mentions
-    doc.fillColor(muted).font("Helvetica").fontSize(8);
-    doc.text("Paiement sécurisé via Stripe.", 48, rowY + 46);
-    doc.text("TVA non applicable, art. 293 B du CGI.", 48, rowY + 60);
-    doc.text(`Commande n° ${order.order_id} · Transaction Stripe ${String(order.stripe_session_id || "").slice(0, 18)}`, 48, rowY + 74);
+    doc.fillColor(muted).font("Helvetica").fontSize(7.5);
+    doc.text("Paiement sécurisé via Stripe.", 48, rowY + 40);
+    doc.text("TVA non applicable, art. 293 B du CGI.", 48, rowY + 52);
+    doc.text(`Commande n° ${order.order_id} · Transaction Stripe ${String(order.stripe_session_id || "").slice(0, 18)}`, 48, rowY + 64);
 
-    // Footer
-    const footerY = doc.page.height - 48;
+    // Footer (dans la zone sûre pour éviter les pages fantômes)
+    const footerY = usableBottom - 4;
     doc.moveTo(48, footerY - 8).lineTo(48 + W, footerY - 8).strokeColor(light).lineWidth(0.5).stroke();
-    doc.fillColor(muted).fontSize(8).text("GSA Tresingo · GSA, un standard à venir.", 48, footerY);
+    doc.fillColor(muted).fontSize(7.5).text("GSA Tresingo · GSA, un standard à venir.", 48, footerY);
     doc.text(`Facture générée le ${formatInvoiceDate(new Date())}`, 0, footerY, { align: "right", width: W });
 
     doc.end();

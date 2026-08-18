@@ -4084,7 +4084,7 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
   if (Number.isNaN(productId)) return res.status(400).json({ message: "Invalid product id" });
   const { 
     title, price, discountPercent, isFeatured, isTrending, isNew,
-    shortDescription, description, installation, categorySlug, tags, isHidden,
+    shortDescription, description, installation, categorySlug, sellerSlug, tags, isHidden,
     thumbnail
   } = req.body;
   
@@ -4097,6 +4097,14 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
         categoryId = catResult.rows[0].id;
         categoryName = catResult.rows[0].name;
       }
+    }
+
+    // Résoudre le vendeur si un sellerSlug est fourni (comme le POST)
+    let sellerId = null;
+    if (sellerSlug) {
+      const sellerResult = await pool.query(`SELECT id FROM users WHERE slug = $1 OR email = $1 LIMIT 1`, [sellerSlug]);
+      if (!sellerResult.rowCount) return res.status(400).json({ message: "Invalid seller" });
+      sellerId = sellerResult.rows[0].id;
     }
 
       const updates = []; const values = []; let idx = 1;
@@ -4138,6 +4146,7 @@ app.patch("/api/admin/products/:id", requireAdmin, async (req, res) => {
       if (isTrending !== undefined) { updates.push(`is_trending = $${idx++}`); values.push(Boolean(isTrending)); }
       if (isNew !== undefined) { updates.push(`is_new = $${idx++}`); values.push(Boolean(isNew)); }
       if (isHidden !== undefined) { updates.push(`is_hidden = $${idx++}`); values.push(Boolean(isHidden)); }
+      if (sellerId !== null) { updates.push(`seller_id = $${idx++}`); values.push(sellerId); }
     
     if (!updates.length) return res.status(400).json({ message: "Nothing to update" });
     

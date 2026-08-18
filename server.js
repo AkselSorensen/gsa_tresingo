@@ -2988,7 +2988,7 @@ app.get("/api/invoice/:orderItemId", requireAuth, async (req, res) => {
         JOIN products p ON p.id = oi.product_id
         JOIN users s ON s.id = oi.seller_id
         WHERE o.id = (
-          SELECT o2.order_id
+          SELECT o2.id
           FROM order_items oi2
           JOIN orders o2 ON o2.id = oi2.order_id
           WHERE oi2.id = $1

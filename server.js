@@ -3671,6 +3671,102 @@ app.delete("/api/admin/products/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Admin : Revenus (dashboard Stripe) ─────────────────────
+// Copie lisible du dashboard Stripe : solde, paiements, transferts, commission.
+app.get("/api/admin/revenue", requireAdmin, async (_req, res) => {
+  try {
+    const out = {
+      stripeMode: "inconnu",
+      accountId: null,
+      accountEmail: null,
+      balance: { available: [], pending: [] },
+      stats: { chargesTotal: 0, transfersTotal: 0, feesTotal: 0, netTotal: 0 },
+      charges: [],
+      transfers: [],
+      orders: [],
+    };
+
+    if (stripe) {
+      out.stripeMode = STRIPE_SECRET_KEY.startsWith("sk_live") ? "LIVE" : "TEST";
+      const account = await stripe.account.retrieve();
+      out.accountId = account.id;
+      out.accountEmail = account.email || null;
+
+      const [balance, charges, transfers] = await Promise.all([
+        stripe.balance.retrieve(),
+        stripe.charges.list({ limit: 50 }),
+        stripe.transfers.list({ limit: 50 }),
+      ]);
+
+      out.balance = {
+        available: (balance.available || []).map((b) => ({ currency: b.currency, amount: b.amount / 100 })),
+        pending: (balance.pending || []).map((b) => ({ currency: b.currency, amount: b.amount / 100 })),
+      };
+
+      out.charges = (charges.data || []).map((c) => ({
+        id: c.id,
+        amount: c.amount / 100,
+        currency: c.currency,
+        status: c.status,
+        email: c.receipt_email || c.billing_details?.email || null,
+        created: c.created * 1000,
+        description: c.description || null,
+      }));
+
+      out.transfers = (transfers.data || []).map((t) => ({
+        id: t.id,
+        amount: t.amount / 100,
+        currency: t.currency,
+        status: t.status,
+        destination: t.destination,
+        created: t.created * 1000,
+        description: t.description || null,
+      }));
+
+      out.stats.chargesTotal = out.charges.reduce((s, c) => s + (c.status === "succeeded" ? c.amount : 0), 0);
+      out.stats.transfersTotal = out.transfers.reduce((s, t) => s + (t.status === "paid" ? t.amount : 0), 0);
+
+      // Frais Stripe réels : balance_transactions de type "charge"
+      try {
+        const bts = await stripe.balanceTransactions.list({ limit: 100, type: "charge" });
+        out.stats.feesTotal = (bts.data || []).reduce((s, bt) => s + bt.fee / 100, 0);
+      } catch { /* non bloquant */ }
+
+      out.stats.netTotal = out.stats.chargesTotal - out.stats.transfersTotal - out.stats.feesTotal;
+    }
+
+    // Stats commandes depuis la DB (commission plateforme réelle)
+    const orders = await pool.query(`
+      SELECT
+        o.id, o.total_amount, o.created_at,
+        COALESCE(o.stripe_fee_amount, 0) AS stripe_fee_amount,
+        COALESCE(SUM(oi.platform_fee_amount), 0) AS platform_fee,
+        COALESCE(SUM(oi.seller_net_amount), 0) AS seller_net,
+        COUNT(DISTINCT oi.id) AS items
+      FROM orders o
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      WHERE o.status = 'completed'
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+      LIMIT 50
+    `);
+    out.orders = orders.rows.map((r) => ({
+      id: r.id,
+      total: Number(r.total_amount),
+      fee: Number(r.stripe_fee_amount),
+      platformFee: Number(r.platform_fee),
+      sellerNet: Number(r.seller_net),
+      items: Number(r.items),
+      createdAt: r.created_at,
+    }));
+
+    res.json(out);
+  } catch (error) {
+    console.error("Admin revenue error:", error);
+    res.status(500).json({ message: "Unable to fetch revenue data" });
+  }
+});
+
 // ─── Admin : Gestion des fichiers produits ─────────────────────
 
 app.get("/api/admin/products/:id/files", requireAdmin, async (req, res) => {
